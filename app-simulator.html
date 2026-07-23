@@ -1,0 +1,2150 @@
+<title>PhoneCam — App Simulator</title>
+<style>
+:root {
+  /* iOS-style dark palette: true-black grounds, inset-grouped cells,
+     system-blue accent, quiet gray label hierarchy. */
+  --page-bg: #0A0A0C;
+  --phone-bezel: #16191A;
+  --phone-screen: #000000;
+  --surface: #1C1C1E;
+  --surface2: #2C2C2E;
+  --surface3: #3A3A3C;
+  --border: #38383A;
+  --text: #FFFFFF;
+  --text-muted: #AEAEB2;
+  --text-dim: #8E8E93;
+  --accent: #0A84FF;
+  --accent-dim: #0A5AC2;
+  --readout: #98989E;
+  --red: #FF453A;
+  --green: #30D158;
+  --focus-ring: #FFD60A;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: "SF Mono", Consolas, monospace;
+}
+
+/* Apple-style spring curves */
+:root {
+  --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+  --spring-snappy: cubic-bezier(0.22, 0.68, 0, 1.71);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: light) { :root { --page-bg: #EDEAE2; } }
+:root[data-theme="light"] { --page-bg: #EDEAE2; }
+:root[data-theme="dark"] { --page-bg: #0D0F0E; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--page-bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 24px;
+  color: var(--text);
+}
+
+/* Phone frame */
+.phone {
+  width: 375px;
+  height: 812px;
+  background: var(--phone-bezel);
+  border-radius: 54px;
+  padding: 12px;
+  box-shadow: 0 0 0 2px #2a2a2e, 0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px #333;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--phone-screen);
+  border-radius: 42px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+  border: 1px solid #1a1a1a;
+}
+
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  background: #555;
+  border-radius: 3px;
+  z-index: 100;
+}
+
+.screens { width: 100%; height: 100%; position: relative; }
+
+.screen {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.55s var(--spring-smooth), opacity 0.45s ease;
+}
+
+.screen.hidden-right { transform: translateY(100%) scale(0.97); opacity: 0.6; }
+.screen.hidden-left { transform: translateY(-20%) scale(0.96); opacity: 0; }
+
+/* Camera screen */
+.camera-screen { background: #000; display: flex; flex-direction: column; }
+.camera-feed { flex: 1; position: relative; overflow: hidden; }
+.camera-feed canvas { width: 100%; height: 100%; display: block; }
+
+.cam-top {
+  position: absolute;
+  top: 50px;
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 10;
+}
+
+.rec-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background 0.3s, transform 0.4s var(--spring-bounce);
+}
+.rec-dot.recording { background: var(--red); transform: scale(1.3); animation: pulse 1.4s var(--ease-out-expo) infinite; }
+@keyframes pulse { 0%,100%{ opacity:1; transform:scale(1.3); } 50%{ opacity:0.3; transform:scale(1); } }
+
+.cam-status { margin-left: 8px; font-size: 13px; font-weight: 500; color: #fff; flex: 1; }
+
+.cam-settings-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s var(--spring-bounce);
+}
+.cam-settings-btn:hover { background: rgba(255,255,255,0.15); transform: rotate(45deg) scale(1.1); }
+.cam-settings-btn:active { transform: rotate(90deg) scale(0.9); transition-duration: 0.15s; }
+
+.cam-torch-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 10px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.35s var(--spring-bounce);
+}
+.cam-torch-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+.cam-torch-btn.on {
+  color: var(--focus-ring);
+  background: rgba(255,214,10,0.18);
+  animation: torch-burst 0.6s var(--ease-out-expo);
+  box-shadow: 0 0 12px rgba(255,214,10,0.35);
+}
+/* Light bursting out of the icon the moment the torch turns on */
+@keyframes torch-burst {
+  0%   { transform: scale(0.7); box-shadow: 0 0 0 0 rgba(255,214,10,0.7); }
+  60%  { transform: scale(1.15); box-shadow: 0 0 0 14px rgba(255,214,10,0); }
+  100% { transform: scale(1); box-shadow: 0 0 12px rgba(255,214,10,0.35); }
+}
+
+/* Reusable click pop (applied via JS, removed on animationend) */
+.pop { animation: chip-pop 0.4s var(--spring-bounce); }
+@keyframes chip-pop {
+  0%   { transform: scale(0.75); }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.mf-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mf-group input[type="range"]::-webkit-slider-thumb { background: var(--focus-ring); }
+
+.exp-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.ae-toggle {
+  border: none; background: none;
+  color: rgba(255,255,255,0.45);
+  font-size: 10px; font-weight: 700;
+  padding: 3px 6px; margin-bottom: 2px;
+  cursor: pointer; border-radius: 6px;
+  transition: color 0.3s ease, transform 0.35s var(--spring-bounce);
+}
+.ae-toggle.on { color: var(--focus-ring); }
+.ae-toggle:active { transform: scale(0.85); }
+
+.zoom-chips {
+  display: flex; gap: 4px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+.zoom-chip {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.35s var(--spring-bounce);
+}
+.zoom-chip:hover { transform: scale(1.1); }
+.zoom-chip.active { color: var(--focus-ring); font-weight: 700; transform: scale(1.05); }
+
+.cam-side {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 19px;
+  padding: 10px 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  z-index: 10;
+}
+
+.cam-side label { font-size: 9px; color: rgba(255,255,255,0.7); font-weight: 500; }
+
+.cam-side input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px; height: 90px;
+  appearance: none;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  outline: none; cursor: pointer;
+}
+.cam-side input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.cam-side .val { font-size: 10px; color: #fff; font-family: var(--mono); }
+.cam-side .divider { width: 16px; height: 1px; background: rgba(255,255,255,0.2); margin: 6px 0; }
+
+/* Audio level meter — mirrors .cam-side on the opposite edge */
+.audio-meter {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: none;
+  align-items: flex-end;
+  gap: 4px;
+  z-index: 10;
+}
+.audio-meter.visible { display: flex; }
+.audio-meter-bar-track {
+  width: 6px; height: 70px;
+  background: rgba(255,255,255,0.13);
+  border-radius: 3px;
+  display: flex; align-items: flex-end;
+  overflow: hidden;
+}
+.audio-meter-bar-fill {
+  width: 100%; height: 0%;
+  background: var(--green);
+  border-radius: 3px;
+  transition: height 0.08s linear, background 0.15s ease;
+}
+
+.cam-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 16px 36px;
+  z-index: 10;
+}
+
+.cam-tier {
+  font-size: 11px; color: rgba(255,255,255,0.6);
+  background: var(--surface3);
+  padding: 3px 12px; border-radius: 8px;
+  font-weight: 500; margin-bottom: 14px;
+}
+.cam-tier.pro { background: linear-gradient(135deg, #0A84FF, #5E5CE6); color: #fff; font-weight: 700; }
+
+.cam-actions { display: flex; align-items: center; gap: 32px; }
+
+.ad-btn {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: none; color: rgba(255,255,255,0.7);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.4s var(--spring-bounce);
+}
+.ad-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.08); }
+.ad-btn:active { transform: scale(0.9); transition-duration: 0.1s; }
+
+.ad-btn-wrap { position: relative; }
+.ad-progress-badge {
+  position: absolute; bottom: -2px; right: -2px;
+  min-width: 22px; padding: 1px 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 1.5px solid var(--surface);
+  color: var(--surface);
+  font-size: 9px; font-weight: 700;
+  text-align: center;
+  display: none;
+}
+.ad-progress-badge.visible { display: block; }
+
+.rec-btn {
+  width: 68px; height: 68px; border-radius: 50%;
+  background: var(--red);
+  border: 4px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: all 0.5s var(--spring-bounce);
+  display: flex; align-items: center; justify-content: center;
+}
+.rec-btn:hover { transform: scale(1.08); }
+.rec-btn:active { transform: scale(0.92); transition-duration: 0.12s; }
+.rec-btn.recording { border-radius: 18px; width: 48px; height: 48px; }
+
+.rec-btn-inner {
+  width: 24px; height: 24px;
+  background: #fff; border-radius: 50%;
+  transition: all 0.5s var(--spring-bounce);
+}
+.rec-btn.recording .rec-btn-inner { border-radius: 5px; width: 18px; height: 18px; }
+
+.spacer-btn { width: 48px; height: 48px; }
+
+/* Settings screen */
+.settings-screen {
+  background: var(--phone-screen);
+  overflow-y: auto;
+  padding: 0 16px 40px;
+  scrollbar-width: none;
+}
+.settings-screen::-webkit-scrollbar { display: none; }
+
+.settings-header {
+  position: sticky; top: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(20px);
+  padding: 56px 0 12px;
+  display: flex; align-items: center; gap: 10px;
+  z-index: 10;
+}
+
+.settings-back {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: none;
+  color: var(--accent); font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.settings-back { transition: all 0.35s var(--spring-bounce); }
+.settings-back:hover { background: rgba(232,163,61,0.12); transform: scale(1.1); }
+.settings-back:active { transform: scale(0.85); transition-duration: 0.1s; }
+
+.settings-title {
+  font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.4px;
+}
+
+/* iOS inset-grouped card */
+.sub-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 16px 0 26px;
+}
+.sub-top { display: flex; align-items: center; justify-content: space-between; }
+.sub-name {
+  font-size: 17px; font-weight: 700; color: var(--text);
+}
+.sub-badge {
+  font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: var(--surface2); color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+.sub-desc { font-size: 13px; color: var(--text-muted); margin: 10px 0 14px; line-height: 1.5; }
+.sub-price-row {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 0 0 14px;
+}
+.sub-price-option { font-size: 13px; color: var(--text); }
+.sub-price-option b { color: var(--accent); font-weight: 700; }
+.sub-price-sep { font-size: 12px; color: var(--text-dim); }
+.sub-btn {
+  width: 100%; padding: 13px; border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.4s var(--spring-bounce);
+}
+.sub-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
+.sub-btn:active { transform: scale(0.96); transition-duration: 0.1s; }
+
+/* iOS grouped-list section header: quiet uppercase gray, no ornament */
+.section-label {
+  font-size: 12px; color: var(--text-dim); font-weight: 500;
+  margin: 0 4px 8px; letter-spacing: 0.6px;
+  text-transform: uppercase;
+  display: flex; align-items: center;
+}
+.section-card {
+  background: var(--surface);
+  border-radius: 14px;
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+.setting-row { display: flex; align-items: center; padding: 13px 16px; min-height: 44px; }
+.setting-row + .setting-row { border-top: 0.5px solid var(--border); margin-left: 16px; padding-left: 0; }
+.setting-label { flex: 1; font-size: 14.5px; color: var(--text); }
+
+.setting-value {
+  font-size: 15px; color: var(--readout); font-variant-numeric: tabular-nums;
+}
+
+/* Inline select — quiet iOS value label with a chevron */
+.setting-select {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--readout);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  cursor: pointer;
+  padding: 4px 14px 4px 0;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23565D5A' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 1px center;
+  background-repeat: no-repeat;
+}
+.setting-select option { background: var(--surface2); color: var(--text); font-family: var(--font); }
+
+/* Custom minimalist popover replacing the native <select> dropdown list */
+.csel-popover {
+  position: fixed;
+  min-width: 168px;
+  max-width: 240px;
+  background: rgba(44,44,46,0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 4px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04) inset;
+  z-index: 500;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.96);
+  transform-origin: top right;
+  transition: opacity 0.16s var(--ease-out-expo), transform 0.16s var(--ease-out-expo);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.csel-popover.open { opacity: 1; transform: translateY(0) scale(1); }
+.csel-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 14.5px;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.csel-item:hover, .csel-item:active { background: rgba(255,255,255,0.07); }
+.csel-item span:first-child { flex: 1; }
+.csel-item.selected { color: var(--accent); font-weight: 600; }
+.csel-item .csel-check { font-size: 13px; color: var(--accent); flex-shrink: 0; }
+.csel-item .csel-pro { font-size: 10px; font-weight: 700; color: var(--focus-ring); opacity: 0.85; flex-shrink: 0; }
+.csel-item + .csel-item { margin-top: 1px; }
+
+/* Pill toggle: accent blue when on, squircle white knob */
+.toggle {
+  width: 51px; height: 31px; border-radius: 11px;
+  background: var(--surface3);
+  border: none;
+  position: relative; cursor: pointer;
+  transition: background 0.35s var(--ease-out-expo);
+  flex-shrink: 0;
+}
+.toggle:active { transform: scaleX(0.97); }
+.toggle.on { background: var(--accent); }
+.toggle-knob {
+  width: 25px; height: 25px; border-radius: 9px;
+  background: #FFFFFF;
+  position: absolute; top: 3px; left: 3px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: transform 0.45s var(--spring-bounce);
+}
+.toggle.on .toggle-knob { transform: translateX(21px); }
+
+/* Overlay section special */
+.overlay-mode-tabs {
+  display: flex; gap: 0;
+  background: var(--surface3);
+  border-radius: 8px;
+  padding: 2px;
+  margin: 0;
+}
+.overlay-tab {
+  flex: 1;
+  padding: 6px 12px;
+  border: none; border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.4s var(--spring-bounce);
+}
+.overlay-tab:active { transform: scale(0.92); }
+.overlay-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.35); transform: scale(1.02); }
+
+.overlay-text-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  margin-top: 10px;
+  transition: border-color 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo), transform 0.4s var(--spring-bounce);
+}
+.overlay-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,163,61,0.15); transform: scale(1.01); }
+
+.overlay-image-upload {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.overlay-upload-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.4s var(--spring-bounce);
+}
+.overlay-upload-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.04); }
+.overlay-upload-btn:active { transform: scale(0.94); transition-duration: 0.1s; }
+
+.overlay-preview {
+  width: 32px; height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: var(--surface3);
+  display: none;
+}
+.overlay-preview.visible { display: block; }
+
+/* Speed test */
+.speed-card { padding: 16px; }
+.speed-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+.speed-results { display: none; align-items: center; justify-content: center; gap: 20px; margin-bottom: 14px; }
+.speed-results.visible { display: flex; }
+.speed-val { text-align: center; }
+.speed-val .num { font-size: 22px; font-weight: 600; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.speed-val .num.up { color: var(--green); }
+.speed-val .num.down { color: var(--accent); }
+.speed-val .unit { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.speed-divider { width: 1px; height: 36px; background: var(--border); }
+.speed-progress { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 12px; overflow: hidden; display: none; }
+.speed-progress.visible { display: block; }
+.speed-progress-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: indeterminate 1.5s infinite; }
+@keyframes indeterminate { 0%{transform:translateX(-100%);width:40%} 50%{transform:translateX(60%);width:40%} 100%{transform:translateX(200%);width:40%} }
+.speed-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; background: var(--green); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.4s var(--spring-bounce); }
+.speed-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
+.speed-btn:active { transform: scale(0.96); transition-duration: 0.1s; }
+.speed-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+.speed-status { text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; min-height: 16px; }
+
+/* Side panel */
+.panel { display: flex; flex-direction: column; gap: 16px; width: 260px; flex-shrink: 0; }
+@media (max-width: 700px) { body { flex-direction: column; } .panel { width: 100%; max-width: 375px; } }
+
+.panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.panel-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-dim); margin-bottom: 10px; }
+.panel-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+.panel-row .label { color: var(--text-muted); }
+.panel-row .value { color: var(--text); font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.panel-btn { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.35s var(--spring-bounce); margin-top: 6px; }
+.panel-btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.panel-btn:active { transform: scale(0.96) translateY(0); transition-duration: 0.1s; }
+.panel-btn.active { background: var(--accent); border-color: var(--accent); color: #14181A; font-weight: 700; }
+.state-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+.state-dot.off { background: var(--text-dim); }
+
+/* Pro-gate toast (in-phone) */
+.pro-toast {
+  position: absolute;
+  left: 16px; right: 16px;
+  bottom: 30px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  z-index: 200;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.55s var(--spring-bounce), opacity 0.4s ease;
+}
+.pro-toast.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.pro-toast-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--red));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.pro-toast-text { flex: 1; }
+.pro-toast-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.pro-toast-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.pro-toast-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 6px; border: none;
+  background: var(--accent);
+  color: #14181A; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: filter 0.2s;
+}
+.pro-toast-btn:hover { filter: brightness(1.1); }
+
+/* Custom value expand */
+.custom-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s var(--spring-smooth);
+}
+.custom-expand.open { max-height: 56px; }
+.custom-expand-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  margin-left: 16px;
+  border-top: 0.5px solid var(--border);
+}
+.custom-num-input {
+  width: 90px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--mono);
+  text-align: right;
+  outline: none;
+  transition: border-color 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo), transform 0.4s var(--spring-bounce);
+}
+.custom-num-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,163,61,0.15); transform: scale(1.02); }
+.custom-num-input::-webkit-inner-spin-button,
+.custom-num-input::-webkit-outer-spin-button { opacity: 0.5; }
+</style>
+
+<!-- Phone -->
+<div class="phone">
+  <div class="phone-screen">
+    <div class="dynamic-island"></div>
+    <div class="home-indicator"></div>
+    <div class="pro-toast" id="proToast">
+      <div class="pro-toast-icon">⟐</div>
+      <div class="pro-toast-text">
+        <div class="pro-toast-title" id="proToastTitle">Pro feature</div>
+        <div class="pro-toast-desc" id="proToastDesc">This setting requires PhoneCam Pro</div>
+      </div>
+      <button class="pro-toast-btn" id="proToastBtn">Upgrade</button>
+    </div>
+    <div class="screens">
+
+      <!-- Camera Screen -->
+      <div class="screen camera-screen" id="cameraScreen">
+        <div class="camera-feed">
+          <canvas id="cameraCanvas"></canvas>
+          <div class="cam-top">
+            <div class="rec-dot" id="recDot"></div>
+            <span class="cam-status" id="camStatus">IDLE</span>
+            <button class="cam-torch-btn" id="torchBtn" title="Torch">&#9889;</button>
+            <button class="cam-settings-btn" id="openSettings">&#9881;</button>
+          </div>
+          <!-- Audio level meter — mirrors cam-side, only visible when the setting is on -->
+          <div class="audio-meter" id="audioMeter">
+            <div class="audio-meter-bar-track"><div class="audio-meter-bar-fill" id="audioMeterBarLeft"></div></div>
+            <div class="audio-meter-bar-track"><div class="audio-meter-bar-fill" id="audioMeterBarRight"></div></div>
+          </div>
+          <div class="cam-side">
+            <button class="ae-toggle on" id="aeToggle">AE</button>
+            <div class="exp-group" id="ssGroup" style="display:none;">
+              <label>S</label>
+              <input type="range" id="ssSlider" min="0" max="100" value="50">
+              <span class="val" id="ssVal">1/60</span>
+              <div class="divider"></div>
+            </div>
+            <div class="exp-group" id="isoGroup" style="display:none;">
+              <label>ISO</label>
+              <input type="range" id="isoSlider" min="0" max="100" value="30">
+              <span class="val" id="isoVal">100</span>
+            </div>
+            <div class="exp-group" id="evGroup">
+              <label>EV</label>
+              <input type="range" id="evSlider" min="-20" max="20" value="0">
+              <span class="val" id="evVal">0.0</span>
+            </div>
+            <div class="mf-group" id="mfGroup" style="display:none;">
+              <div class="divider"></div>
+              <label>MF</label>
+              <input type="range" id="mfSlider" min="0" max="100" value="0">
+              <span class="val" id="mfVal">&#8734;</span>
+            </div>
+          </div>
+          <div class="cam-bottom">
+            <!-- Lens set straight from the device database (S23 Ultra: 0.6/1/3/10) -->
+            <div class="zoom-chips" id="zoomChips">
+              <button class="zoom-chip" data-zoom="0.6">0.6</button>
+              <button class="zoom-chip active" data-zoom="1">1x</button>
+              <button class="zoom-chip" data-zoom="3">3x</button>
+              <button class="zoom-chip" data-zoom="10">10x</button>
+            </div>
+            <div class="cam-tier" id="tierBadge">Free</div>
+            <div class="cam-actions">
+              <div class="ad-btn-wrap">
+                <button class="ad-btn">+1h</button>
+                <span class="ad-progress-badge" id="adProgressBadge">0/3</span>
+              </div>
+              <button class="rec-btn" id="recBtn"><div class="rec-btn-inner"></div></button>
+              <div class="spacer-btn"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Screen -->
+      <div class="screen settings-screen hidden-right" id="settingsScreen">
+        <div class="settings-header">
+          <button class="settings-back" id="closeSettings">&#8249;</button>
+          <h1 class="settings-title">Settings</h1>
+        </div>
+
+        <!-- Subscription -->
+        <div class="sub-card">
+          <div class="sub-top">
+            <span class="sub-name">PhoneCam Pro</span>
+            <span class="sub-badge">FREE</span>
+          </div>
+          <p class="sub-desc">Unlock 4K, remove watermarks, advanced audio, and priority support.</p>
+          <div class="sub-price-row">
+            <span class="sub-price-option"><b>€1.49</b> / month</span>
+            <span class="sub-price-sep">or</span>
+            <span class="sub-price-option"><b>€4.99</b> lifetime</span>
+          </div>
+          <button class="sub-btn">Upgrade to Pro</button>
+        </div>
+
+        <!-- Ad-earned Pro time remaining -->
+        <div id="proTimeRemaining" style="text-align:center;font-size:12px;color:var(--text-dim);margin:-8px 0 20px;">No ad-earned Pro time — watch 3 ads on the camera screen for 1h</div>
+
+        <!-- Device (mock data, in real app queried from Camera2 API) -->
+        <div class="section-label">DEVICE</div>
+        <div class="section-card" style="padding:16px;">
+          <div style="color:var(--text);font-size:15px;font-weight:600;">Samsung SM-S918B</div>
+          <div style="color:var(--text-dim);font-size:12px;font-family:monospace;margin-top:2px;">Android 16 · SDK 36</div>
+          <div style="height:0.5px;background:var(--border);margin:12px 0;"></div>
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;">
+              <div style="color:var(--text-dim);font-size:10px;letter-spacing:0.12em;">RAM</div>
+              <div style="color:var(--readout);font-size:14px;font-family:monospace;margin-top:2px;">12 GB</div>
+            </div>
+            <div style="flex:1;">
+              <div style="color:var(--text-dim);font-size:10px;letter-spacing:0.12em;">STORAGE</div>
+              <div style="color:var(--readout);font-size:14px;font-family:monospace;margin-top:2px;">128 / 256 GB</div>
+            </div>
+            <div style="flex:1;">
+              <div style="color:var(--text-dim);font-size:10px;letter-spacing:0.12em;">CODECS</div>
+              <div style="color:var(--readout);font-size:14px;font-family:monospace;margin-top:2px;">H.264 H.265</div>
+            </div>
+          </div>
+          <div style="height:0.5px;background:var(--border);margin:12px 0;"></div>
+          <div style="color:var(--text-dim);font-size:10px;letter-spacing:0.12em;margin-bottom:6px;">CAMERAS</div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text);font-size:13px;">back · ultra-wide · 0.6x</span>
+            <span style="color:var(--readout);font-size:12px;font-family:monospace;">12MP · 3840×2160 · 60fps</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text);font-size:13px;">back · wide · 1x</span>
+            <span style="color:var(--readout);font-size:12px;font-family:monospace;">200MP · 7680×4320 · 30fps</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text);font-size:13px;">back · telephoto · 3x</span>
+            <span style="color:var(--readout);font-size:12px;font-family:monospace;">10MP · 3840×2160 · 60fps</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text);font-size:13px;">back · supertelephoto · 10x</span>
+            <span style="color:var(--readout);font-size:12px;font-family:monospace;">10MP · 3840×2160 · 60fps</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:var(--text);font-size:13px;">front · wide</span>
+            <span style="color:var(--readout);font-size:12px;font-family:monospace;">12MP · 3840×2160 · 60fps</span>
+          </div>
+        </div>
+
+        <!-- Video -->
+        <div class="section-label">VIDEO</div>
+        <div class="section-card">
+          <div class="setting-row">
+            <span class="setting-label">Resolution</span>
+            <select class="setting-select" id="selResolution">
+              <option>360p</option><option>480p</option><option>720p</option><option selected>1080p</option><option>1440p ⟐ Pro</option><option>2160p 4K ⟐ Pro</option><option>4320p 8K ⟐ Pro</option><option value="custom">Custom…</option>
+            </select>
+          </div>
+          <div class="custom-expand" id="customResolutionRow">
+            <div class="custom-expand-inner">
+              <span class="setting-label" style="font-size:13px;">Custom size (px)</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" class="custom-num-input" id="customWidthInput" min="16" max="7680" placeholder="width" style="width:72px;">
+                <span style="color:var(--text-dim);font-size:12px;">x</span>
+                <input type="number" class="custom-num-input" id="customHeightInput" min="16" max="4320" placeholder="height" style="width:72px;">
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Composition</span>
+            <select class="setting-select" id="selAspectRatio">
+              <option>4:3</option><option selected>16:9</option><option>1:1</option><option>9:16</option><option>3:4</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Codec</span>
+            <select class="setting-select" id="selCodec">
+              <option selected>H.264</option><option>H.265 (HEVC)</option><option>AV1</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Bitrate</span>
+            <select class="setting-select" id="selBitrate">
+              <option>10 Mbps</option><option selected>20 Mbps</option><option>35 Mbps</option><option>50 Mbps</option><option>100 Mbps ⟐ Pro</option><option value="custom">Custom…</option>
+            </select>
+          </div>
+          <div class="custom-expand" id="customBitrateRow">
+            <div class="custom-expand-inner">
+              <span class="setting-label" style="font-size:13px;">Custom value (Mbps)</span>
+              <input type="number" class="custom-num-input" id="customBitrateInput" min="1" max="500" placeholder="e.g. 75">
+            </div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Frame rate</span>
+            <select class="setting-select" id="selFps">
+              <option>24 fps</option><option>30 fps</option><option selected>60 fps</option><option>120 fps ⟐ Pro</option><option value="custom">Custom…</option>
+            </select>
+          </div>
+          <div class="custom-expand" id="customFpsRow">
+            <div class="custom-expand-inner">
+              <span class="setting-label" style="font-size:13px;">Custom value (fps)</span>
+              <input type="number" class="custom-num-input" id="customFpsInput" min="1" max="240" placeholder="e.g. 90">
+            </div>
+          </div>
+          <div id="fpsHint" style="padding:0 16px 10px;font-size:12px;color:var(--text-dim);">This device: up to 60 fps at 1080p</div>
+          <div class="setting-row"><span class="setting-label">HDR</span><div class="toggle" data-key="hdr"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Stabilization</span><div class="toggle on" data-key="stab"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row">
+            <span class="setting-label">Auto-focus</span>
+            <select class="setting-select" id="selAf">
+              <option selected>Continuous</option><option>Tap to focus</option><option>Manual</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Focus style</span>
+            <select class="setting-select" id="selAfSpeed">
+              <option selected>Standard</option><option>Cinematic</option><option>Action</option><option>Macro</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audio -->
+        <div class="section-label">AUDIO</div>
+        <div class="section-card">
+          <div class="setting-row"><span class="setting-label">Record audio</span><div class="toggle on" data-key="audio"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row">
+            <span class="setting-label">Sample rate</span>
+            <select class="setting-select" id="selSampleRate">
+              <option>44.1 kHz</option><option selected>48 kHz</option><option>96 kHz</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Bitrate</span>
+            <select class="setting-select" id="selAudioBitrate">
+              <option>128 kbps</option><option selected>192 kbps</option><option>256 kbps</option><option>320 kbps</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Codec</span>
+            <select class="setting-select" id="selAudioCodec">
+              <option selected>AAC</option><option>OPUS</option><option>FLAC</option>
+            </select>
+          </div>
+          <div class="setting-row"><span class="setting-label">Noise reduction</span><div class="toggle" data-key="nr"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Wind filter</span><div class="toggle" data-key="wind"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Audio level meter</span><div class="toggle" data-key="audioMeter"><div class="toggle-knob"></div></div></div>
+        </div>
+
+        <!-- Camera -->
+        <div class="section-label">CAMERA</div>
+        <div class="section-card">
+          <div class="setting-row">
+            <span class="setting-label">White balance</span>
+            <select class="setting-select" id="selWb">
+              <option selected>Auto</option><option>Daylight</option><option>Cloudy</option><option>Tungsten</option><option>Fluorescent</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Lens</span>
+            <select class="setting-select" id="selLens">
+              <option selected>Wide</option><option>Ultra-wide</option><option>Telephoto</option><option>Super-telephoto</option>
+            </select>
+          </div>
+          <div class="setting-row"><span class="setting-label">Grid overlay</span><div class="toggle" data-key="grid"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Mirror</span><div class="toggle" data-key="mirror"><div class="toggle-knob"></div></div></div>
+        </div>
+
+        <!-- Stream -->
+        <div class="section-label">STREAM</div>
+        <div class="section-card">
+          <div class="setting-row">
+            <span class="setting-label">PC address</span>
+            <input class="overlay-text-input" id="inputPcIp" value="192.168.1.42" style="width:120px;margin:0;padding:4px 8px;text-align:right;">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Find PC</span>
+            <button class="overlay-tab" id="btnScanPc" style="padding:4px 14px;font-size:12px;cursor:pointer;">Scan</button>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Connection</span>
+            <select class="setting-select" id="selConn">
+              <option selected>WiFi</option><option>USB (adb)</option><option>Auto</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Protocol</span>
+            <select class="setting-select" id="selProtocol">
+              <option selected>TCP</option><option>UDP</option><option>WebRTC</option>
+            </select>
+          </div>
+          <div class="setting-row"><span class="setting-label">Low latency</span><div class="toggle on" data-key="lowlat"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Auto reconnect</span><div class="toggle on" data-key="reconn"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row"><span class="setting-label">Sync OBS settings</span><div class="toggle on" data-key="syncObs"><div class="toggle-knob"></div></div></div>
+          <div style="padding:0 16px 10px;font-size:12px;color:var(--text-dim);">Matches OBS's canvas resolution, fps, and bitrate to this stream (needs OBS's WebSocket server enabled).</div>
+        </div>
+
+        <!-- PC Control -->
+        <div class="section-label">PC CONTROL</div>
+        <div class="section-card" style="padding:16px;">
+          <div style="display:flex;align-items:center;margin-bottom:12px;">
+            <div id="pcDot" style="width:8px;height:8px;border-radius:50%;background:#8E8E93;margin-right:8px;"></div>
+            <span id="pcStatusText" style="flex:1;font-size:13px;font-family:monospace;color:var(--text-dim);">Not connected</span>
+            <button class="overlay-tab" id="btnCheckPc" style="padding:3px 12px;font-size:11px;cursor:pointer;">Check</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="btnStartPc" style="flex:1;padding:10px 0;border:none;border-radius:8px;background:var(--green);color:var(--surface);font-size:13px;font-weight:600;cursor:pointer;">Start PC</button>
+            <button id="btnStopPc" style="flex:1;padding:10px 0;border:none;border-radius:8px;background:var(--surface3);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Stop PC</button>
+          </div>
+          <button id="btnAdbReverse" style="width:100%;padding:8px 0;border:none;background:transparent;color:var(--readout);font-size:12px;cursor:pointer;">Setup USB (adb reverse)</button>
+        </div>
+
+        <!-- Speed test -->
+        <div class="section-label">SPEED TEST</div>
+        <div class="section-card speed-card">
+          <p class="speed-desc">Creates a 10 MB file, sends to PC and back, measures speed, auto-deletes.</p>
+          <div class="speed-results" id="speedResults">
+            <div class="speed-val"><div class="num up" id="speedUp">—</div><div class="unit">Upload Mbps</div></div>
+            <div class="speed-divider"></div>
+            <div class="speed-val"><div class="num down" id="speedDown">—</div><div class="unit">Download Mbps</div></div>
+          </div>
+          <div class="speed-progress" id="speedProgress"><div class="speed-progress-bar"></div></div>
+          <div class="speed-status" id="speedStatus"></div>
+          <button class="speed-btn" id="speedBtn">Run Speed Test</button>
+        </div>
+
+        <!-- Display -->
+        <div class="section-label">DISPLAY</div>
+        <div class="section-card">
+          <div class="setting-row"><span class="setting-label">Keep screen awake</span><div class="toggle on" data-key="keepawake"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row">
+            <span class="setting-label">While streaming</span>
+            <select class="setting-select" id="selStreamBrightness">
+              <option selected>Normal</option><option>Full brightness</option><option>Dimmed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Overlay -->
+        <div class="section-label">OVERLAY</div>
+        <div class="section-card">
+          <div class="setting-row"><span class="setting-label">Copyright</span><div class="toggle" data-key="overlay-show"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row">
+            <span class="setting-label">Mode</span>
+            <div class="overlay-mode-tabs" style="margin:0;">
+              <button class="overlay-tab active" id="tabText">Text</button>
+              <button class="overlay-tab" id="tabImage">Image</button>
+            </div>
+          </div>
+          <!-- Text mode -->
+          <div id="overlayTextMode" class="setting-row">
+            <span class="setting-label">Text</span>
+            <input class="overlay-text-input" id="overlayTextInput" placeholder="© Your Name" value="© PhoneCam" style="width:140px;margin:0;padding:4px 8px;text-align:right;">
+          </div>
+          <!-- Image mode -->
+          <div id="overlayImageMode" class="setting-row" style="display:none;">
+            <span class="setting-label">Image</span>
+            <div class="overlay-image-upload" style="display:flex;align-items:center;gap:8px;">
+              <img class="overlay-preview" id="overlayImgPreview" style="width:28px;height:28px;border-radius:4px;display:none;">
+              <button class="overlay-upload-btn" id="overlayUploadBtn" style="font-size:12px;padding:4px 12px;">Choose…</button>
+              <input type="file" id="overlayFileInput" accept="image/*" style="display:none;">
+            </div>
+          </div>
+          <div class="setting-row"><span class="setting-label">Timestamp</span><div class="toggle" data-key="ts"><div class="toggle-knob"></div></div></div>
+          <div class="setting-row">
+            <span class="setting-label">Position</span>
+            <select class="setting-select" id="selOverlayPos">
+              <option selected>Bottom-left</option><option>Bottom-right</option><option>Top-left</option><option>Top-right</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin-top:4px;font-size:12px;color:var(--text-tertiary);">v0.0.13-alpha</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Side panel -->
+<div class="panel">
+  <div class="panel-card">
+    <div class="panel-title">Simulator state</div>
+    <div class="panel-row"><span class="label"><span class="state-dot off" id="stateDot"></span>Recording</span><span class="value" id="stateRec">OFF</span></div>
+    <div class="panel-row"><span class="label">Screen</span><span class="value" id="stateScreen">Camera</span></div>
+    <div class="panel-row"><span class="label">Resolution</span><span class="value" id="stateRes">1080p</span></div>
+    <div class="panel-row"><span class="label">FPS</span><span class="value" id="stateFps">60</span></div>
+    <div class="panel-row"><span class="label">Bitrate</span><span class="value" id="stateBitrate">20 Mbps</span></div>
+    <div class="panel-row"><span class="label">ISO</span><span class="value" id="stateIso">100</span></div>
+    <div class="panel-row"><span class="label">EV</span><span class="value" id="stateEv">0.0</span></div>
+    <div class="panel-row"><span class="label">Tier</span><span class="value" id="stateTier">Free</span></div>
+    <div class="panel-row"><span class="label">Elapsed</span><span class="value" id="stateTime">00:00</span></div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-title">Quick actions</div>
+    <button class="panel-btn" id="btnToggleTier">Toggle Pro / Free</button>
+    <button class="panel-btn" id="btnToggleRec">Start recording</button>
+    <button class="panel-btn" id="btnOpenSettings2">Open settings</button>
+    <button class="panel-btn" id="btnRunTest">Simulate speed test</button>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-title">Connection</div>
+    <div class="panel-row"><span class="label">Mode</span><span class="value" id="panelConn">WiFi</span></div>
+    <div class="panel-row"><span class="label">PC IP</span><span class="value" id="panelIp">192.168.1.42</span></div>
+    <div class="panel-row"><span class="label">Protocol</span><span class="value" id="panelProto">TCP</span></div>
+    <div class="panel-row"><span class="label">Latency</span><span class="value" id="stateLat">2ms</span></div>
+    <div class="panel-row"><span class="label">Frames sent</span><span class="value" id="stateFrames">0</span></div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-title" style="color:#E8A33D;">Pending tasks</div>
+    <div style="font-size:11px;color:#8B928C;margin-bottom:8px;">v0.0.13-alpha roadmap</div>
+
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Speed test (WiFi + USB)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Real camera streaming to PC</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC receiver display window</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Pro subscription (Google Play)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC Control from app (start/stop) — now also called automatically before streaming, not just from Settings buttons</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Zero-touch connect: USB now auto-forwards on plug-in (PC-side watcher, no adb/python command), Wi-Fi auto-discovers + auto-starts PC services — Install_PhoneCam.vbs is the only manual step, once, and it's completely silent (no console ever)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed receiver crash-loop: services were launched as bare scripts instead of `-m pc_receiver.x`, so receiver.py died on import on every single start — invisible since output went to devnull. Now module-launched, single bind + per-connection error isolation, logs to file</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed cmd window flashing on repeat: CREATE_NO_WINDOW alone didn't stop adb.exe from popping a console under the hidden pythonw.exe parent — needed DETACHED_PROCESS + stdin redirection too. Also removed a stale pre-VBS Startup shortcut that pointed at a visible-console .bat</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC service now gated on OBS: PhoneCam_Service.vbs is a lightweight WMI watcher (no ports, no processes) that only starts control_server.py while obs64.exe/obs32.exe is actually running, and stops the whole tree when OBS closes — was previously "always on from login"</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Real H.264 encoding replaces per-frame JPEG: H264Encoder.kt (MediaCodec, buffer-mode) on the phone, PyAV-backed h264_decoder.py on the PC. Video bitrate setting now actually configures the encoder. Not yet verified on real camera hardware — no device in this sandbox — but PC-side decode has real encode/decode round-trip tests</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed the real reason OBS got nothing on record: adb reverse failing once (a race right after USB authorization, confirmed in the wild) marked that device as "handled" forever, so the tunnel just never came up for the rest of the session. Now retries every poll cycle until it actually succeeds. Also hardened CameraStreamer against a H264Encoder construction failure silently killing frame delivery</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed viewfinder looking like a cheap pixelation filter at low resolutions (e.g. 360p): PreviewView defaulted to "performance" mode (SurfaceView/hardware-overlay scaling, blocky at large upscale factors on some GPUs) — switched to "compatible" mode (TextureView, proper GPU bilinear filtering), so a real low-res capture now looks like real low-res video, not a mosaic effect. The preview genuinely captures at the chosen resolution either way, that part was never fake</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed "PC not reachable" over USB: adb reverse silently fails outright ("more than one device/emulator") the moment a phone shows up twice in `adb devices` — which happens for a single phone with USB connected AND wireless debugging paired at the same time. Now every reverse call targets a specific device via -s instead of hoping only one is attached</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Found the real reason no video ever reached the PC: the YUV->Bitmap conversion feeding both encoders bulk-copied camera planes assuming zero row padding, which real camera HALs routinely violate (this code path was never exercised on real hardware before now). A stride mismatch there silently broke every single frame, uncaught, on the analyzer thread — no crash, camera just never showed up. Rewritten stride-aware, matching the approach already used on the encode side</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed "Cannot reach PC" over WiFi: Settings' PC-control actions (Start PC, Check, speed test...) fell back to 127.0.0.1 — the phone's own loopback — whenever no IP had been manually discovered first. Now auto-discovers the same way the main streaming flow already did. (PC-side firewall/discovery both checked and confirmed working; if this still fails, the router may have client/AP isolation enabled between WiFi devices — outside what either side of this app can fix)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Real audio capture + transmission — audio bitrate/codec settings are still decorative, only the local level meter is real, nothing is sent to the PC</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#8E8E93;">BLOCKED</span>
+      <span class="value" style="color:#8E8E93;font-size:12px;text-align:right;line-height:1.4;">Native OBS plugin (a real Source inside OBS, not just feeding its Virtual Camera) — backlog idea, not started. Current pyvirtualcam approach already works and is what DroidCam/Iriun do too; revisit only if that stops being enough</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Copyright overlay on stream</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#E8A33D;">TODO</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Update deps (CameraX 1.6, Ads 25.4, Material 1.14…) — may break APIs, test each one</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Fixed 3x/10x lens swap (S23/S24 Ultra) — logical camera id was double-counted as a lens candidate, shifting every chip past 1x onto the wrong physical lens</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Settings UI (Signal design)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Pro-gating (res/bitrate/fps)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Custom bitrate/fps inputs</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Settings persistence (SharedPrefs)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Device capabilities probe (RAM/storage/cameras)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Tap-to-focus, flip camera, real resolution binding</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Fixed Settings crash (stale photo-picker URI)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">3-ad reward batches, wall-clock stacking, progress badge</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Replaced all native Toast/AlertDialog with custom cards</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">2-bar audio level meter (real mic input)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;">
+      <span class="label" style="color:#4FD8C4;">DONE</span>
+      <span class="value" style="color:#565D5A;font-size:12px;text-align:right;line-height:1.4;">Simulator ↔ App sync</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// State
+let recording = false;
+let isPro = false;
+let currentScreen = 'camera';
+let recStart = 0;
+let frameCount = 0;
+let overlayMode = 'text';
+let overlayImage = null;
+
+// Camera canvas
+const canvas = $('#cameraCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// Declared before the first drawFeed frame runs (it reads all three)
+let aeOn = true;
+const ISO_MIN = 50, ISO_MAX = 6400;
+
+function drawFeed() {
+  const w = canvas.width, h = canvas.height;
+  // AE on: brightness follows the EV bias. AE off: the app does NOT auto-adjust —
+  // the image is exactly what the manual shutter+ISO give (mirrors CONTROL_AE_MODE_OFF).
+  const iso = simIsoValue();
+  let brightness, noise;
+  if (aeOn) {
+    const ev = parseInt($('#evSlider').value);
+    brightness = 0.15 + (ev + 20) / 60 * 0.5;
+    noise = 0.05;
+  } else {
+    const ss = parseInt($('#ssSlider').value);       // 0=1/8000 (dark) .. 100=1/15 (bright)
+    const isoP = parseInt($('#isoSlider').value);    // 0..100 log ISO
+    brightness = 0.06 + (ss / 100) * 0.45 + (isoP / 100) * 0.25;
+    noise = Math.min(iso / 6400, 1) * 0.35;
+  }
+
+  // White balance color shift
+  const wbSel = $('#selWb');
+  let hueShift = 0;
+  if (wbSel) {
+    const wb = wbSel.value;
+    if (wb === 'Daylight') hueShift = 10;
+    else if (wb === 'Cloudy') hueShift = 20;
+    else if (wb === 'Tungsten') hueShift = -30;
+    else if (wb === 'Fluorescent') hueShift = -15;
+  }
+
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, `hsl(${210 + hueShift}, 40%, ${brightness * 50}%)`);
+  grad.addColorStop(0.5, `hsl(${180 + hueShift}, 30%, ${brightness * 40}%)`);
+  grad.addColorStop(1, `hsl(${150 + hueShift}, 35%, ${brightness * 30}%)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Noise
+  if (noise > 0.02) {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 16) {
+      const n = (Math.random() - 0.5) * noise * 80;
+      data[i] += n; data[i+1] += n; data[i+2] += n;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  // Vignette
+  const vg = ctx.createRadialGradient(w/2, h/2, w*0.2, w/2, h/2, w*0.7);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Grid
+  if ($('[data-key="grid"]')?.classList.contains('on')) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(w/3, 0); ctx.lineTo(w/3, h);
+    ctx.moveTo(2*w/3, 0); ctx.lineTo(2*w/3, h);
+    ctx.moveTo(0, h/3); ctx.lineTo(w, h/3);
+    ctx.moveTo(0, 2*h/3); ctx.lineTo(w, 2*h/3);
+    ctx.stroke();
+  }
+
+  // Overlay (copyright text or image + timestamp)
+  const showOverlay = $('[data-key="overlay-show"]')?.classList.contains('on');
+  if (showOverlay) {
+    const pos = $('#selOverlayPos')?.value || 'Bottom-left';
+    let ox, oy, align;
+    if (pos === 'Bottom-left') { ox = 14; oy = h - 60; align = 'left'; }
+    else if (pos === 'Bottom-right') { ox = w - 14; oy = h - 60; align = 'right'; }
+    else if (pos === 'Top-left') { ox = 14; oy = 70; align = 'left'; }
+    else { ox = w - 14; oy = 70; align = 'right'; }
+
+    ctx.textAlign = align;
+
+    if (overlayMode === 'text') {
+      const text = $('#overlayTextInput')?.value || '';
+      if (text) {
+        ctx.font = '500 12px -apple-system, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText(text, ox, oy);
+        ctx.shadowBlur = 0;
+      }
+    } else if (overlayMode === 'image' && overlayImage) {
+      const imgW = 40;
+      const imgH = 40 * (overlayImage.height / overlayImage.width);
+      const drawX = align === 'right' ? ox - imgW : ox;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 4;
+      ctx.drawImage(overlayImage, drawX, oy - imgH + 4, imgW, imgH);
+      ctx.shadowBlur = 0;
+    }
+
+    // Timestamp
+    if ($('[data-key="ts"]')?.classList.contains('on')) {
+      const now = new Date();
+      const ts = now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+      ctx.font = '11px monospace';
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(ts, ox, oy + 16);
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.textAlign = 'start';
+  }
+
+  // Mirror
+  if ($('[data-key="mirror"]')?.classList.contains('on')) {
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(canvas, 0, 0);
+    ctx.restore();
+  }
+
+  if (recording) {
+    frameCount++;
+    $('#stateFrames').textContent = frameCount;
+  }
+
+  requestAnimationFrame(drawFeed);
+}
+drawFeed();
+
+// Exposure controls — AE toggle swaps EV (auto) for shutter+ISO (manual),
+// exactly like the app's Camera2 CONTROL_AE_MODE handling.
+function simIsoValue() {
+  const p = parseInt($('#isoSlider').value);
+  return Math.round(Math.exp(Math.log(ISO_MIN) + (p / 100) * (Math.log(ISO_MAX) - Math.log(ISO_MIN))));
+}
+function simShutterLabel() {
+  const p = parseInt($('#ssSlider').value);
+  const den = Math.round(Math.exp(Math.log(8000) + (p / 100) * (Math.log(15) - Math.log(8000))));
+  return `1/${den}`;
+}
+function updateExposureUi() {
+  $('#aeToggle').classList.toggle('on', aeOn);
+  $('#aeToggle').textContent = aeOn ? 'AE' : 'M';
+  $('#ssGroup').style.display = aeOn ? 'none' : 'flex';
+  $('#isoGroup').style.display = aeOn ? 'none' : 'flex';
+  $('#evGroup').style.display = aeOn ? 'flex' : 'none';
+}
+$('#aeToggle').addEventListener('click', () => { aeOn = !aeOn; updateExposureUi(); });
+
+$('#isoSlider').addEventListener('input', () => {
+  $('#isoVal').textContent = simIsoValue();
+  $('#stateIso').textContent = simIsoValue();
+});
+$('#ssSlider').addEventListener('input', () => {
+  $('#ssVal').textContent = simShutterLabel();
+});
+$('#evSlider').addEventListener('input', e => {
+  const v = (e.target.value / 10).toFixed(1);
+  $('#evVal').textContent = v;
+  $('#stateEv').textContent = v;
+});
+$('#isoVal').textContent = simIsoValue();
+$('#stateIso').textContent = simIsoValue();
+$('#ssVal').textContent = simShutterLabel();
+
+// Settings selects → update panel
+// Pro-gated settings: 4K resolution, >50 Mbps bitrate, >60 fps all require Pro
+let proToastTimer = null;
+let proToastOnButton = null;
+
+function showBottomCard({ icon = '⟐', title, desc, buttonText, onButton = null }) {
+  clearTimeout(proToastTimer);
+  $('#proToast').querySelector('.pro-toast-icon').textContent = icon;
+  $('#proToastTitle').textContent = title;
+  $('#proToastDesc').textContent = desc;
+  const btn = $('#proToastBtn');
+  if (buttonText) {
+    btn.textContent = buttonText;
+    btn.style.display = '';
+    proToastOnButton = onButton;
+  } else {
+    btn.style.display = 'none';
+    proToastOnButton = null;
+  }
+  $('#proToast').classList.add('visible');
+  proToastTimer = setTimeout(() => { $('#proToast').classList.remove('visible'); }, 3500);
+}
+
+function showProToast(desc) {
+  showBottomCard({
+    icon: '⟐',
+    title: 'Pro feature',
+    desc,
+    buttonText: 'Upgrade',
+    onButton: () => { if (!isPro) toggleTier(); },
+  });
+}
+
+function showRewardCelebration(desc) {
+  showBottomCard({ icon: '✓', title: '1h of Pro added', desc, buttonText: null });
+}
+
+$('#proToastBtn').addEventListener('click', () => {
+  proToastOnButton?.();
+  $('#proToast').classList.remove('visible');
+});
+
+// ── Ad-watch batches: 3 ads = 1h of Pro, stacking on real wall-clock time ──
+let adsWatchedInBatch = 0;
+// Plain page-load-scoped flag: false on every fresh open (page load = "opening
+// the app"), stays true across screen navigation within the same load — so
+// only the very first ad tap of a session explains the deal, not every batch.
+let adIntroShownThisSession = false;
+let proExpiresAt = 0; // epoch ms; 0 = no ad-earned Pro time
+
+function updateAdBadge() {
+  const badge = $('#adProgressBadge');
+  if (adsWatchedInBatch === 0) {
+    badge.classList.remove('visible');
+  } else {
+    badge.textContent = `${adsWatchedInBatch}/3`;
+    badge.classList.add('visible');
+  }
+}
+
+function updateProTimeRemaining() {
+  const el = $('#proTimeRemaining');
+  if (!el) return;
+  const remainingMs = proExpiresAt - Date.now();
+  if (remainingMs > 0) {
+    const h = Math.floor(remainingMs / 3600000);
+    const m = Math.floor((remainingMs % 3600000) / 60000);
+    el.textContent = h > 0 ? `Pro time remaining: ${h}h ${m}m` : `Pro time remaining: ${m}m`;
+  } else {
+    el.textContent = 'No ad-earned Pro time — watch 3 ads on the camera screen for 1h';
+  }
+}
+
+function onWatchAdClicked() {
+  if (!adIntroShownThisSession) {
+    adIntroShownThisSession = true;
+    const ordinal = adsWatchedInBatch + 1; // resuming a partial batch from a previous session counts up correctly
+    showBottomCard({
+      icon: '⟐',
+      title: 'Earn 1 hour of Pro',
+      desc: `Watch 3 short ads back to back to unlock 4K, no watermark, and no ads for a full hour — this is ad ${ordinal} of 3.`,
+      buttonText: `Watch ad ${ordinal} of 3`,
+      onButton: simulateWatchAd,
+    });
+  } else {
+    simulateWatchAd();
+  }
+}
+
+function simulateWatchAd() {
+  adsWatchedInBatch++;
+  updateAdBadge();
+
+  if (adsWatchedInBatch < 3) {
+    const remaining = 3 - adsWatchedInBatch;
+    showBottomCard({
+      icon: '⟐',
+      title: `${adsWatchedInBatch}/3 watched`,
+      desc: `${remaining} more ad${remaining === 1 ? '' : 's'} for 1h of Pro`,
+      buttonText: null,
+    });
+    saveSettings();
+    return;
+  }
+
+  adsWatchedInBatch = 0;
+  updateAdBadge();
+  const base = Math.max(Date.now(), proExpiresAt);
+  proExpiresAt = base + 60 * 60 * 1000;
+  if (!isPro) toggleTier();
+  updateProTimeRemaining();
+  showRewardCelebration('Thanks for supporting this independent app — enjoy 1h of 4K, watermark-free streaming.');
+  saveSettings();
+}
+
+// Wall-clock countdown: premium reverts to free the moment ad-earned time runs out,
+// same as the Android app — not tied to whether a stream is active.
+setInterval(() => {
+  updateProTimeRemaining();
+  if (isPro && proExpiresAt > 0 && Date.now() >= proExpiresAt) {
+    toggleTier();
+  }
+}, 5000);
+
+const FREE_MAX_BITRATE = 50;   // Mbps
+const FREE_MAX_FPS = 60;       // fps
+
+let lastResolution = $('#selResolution').value;
+let lastBitrate = $('#selBitrate').value;
+let lastFps = $('#selFps').value;
+
+// Preset selects (resolution / non-custom bitrate / non-custom fps): locked options carry a ⟐ Pro marker
+function guardProSelect(select, lastRef, setLast) {
+  select.addEventListener('change', e => {
+    const v = e.target.value;
+    if (v.includes('⟐ Pro') && !isPro) {
+      e.target.value = lastRef();
+      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      return;
+    }
+    setLast(v);
+  });
+}
+
+guardProSelect($('#selResolution'), () => lastResolution, v => { lastResolution = v; if (v !== 'custom') $('#stateRes').textContent = v.replace(' ⟐ Pro', ''); updateFpsHint(); });
+
+// Custom resolution: two plain width/height inputs, not Pro-gated at the UI
+// level (mirrors the Android app) — the free/premium tier ceiling still caps
+// the *actual* output regardless of what's typed here, same as any preset.
+const customResRow = $('#customResolutionRow');
+const customWidthInput = $('#customWidthInput');
+const customHeightInput = $('#customHeightInput');
+$('#selResolution').addEventListener('change', e => {
+  if (e.target.value === 'custom') {
+    customResRow.classList.add('open');
+    customWidthInput.focus();
+  } else {
+    customResRow.classList.remove('open');
+  }
+});
+function commitCustomResolution() {
+  const w = parseInt(customWidthInput.value, 10);
+  const h = parseInt(customHeightInput.value, 10);
+  if (!w || !h || w <= 0 || h <= 0) return;
+  $('#stateRes').textContent = `${w}x${h} (custom)`;
+  updateFpsHint();
+}
+customWidthInput.addEventListener('change', commitCustomResolution);
+customWidthInput.addEventListener('blur', commitCustomResolution);
+customHeightInput.addEventListener('change', commitCustomResolution);
+customHeightInput.addEventListener('blur', commitCustomResolution);
+
+// Per-resolution max fps of the wide (1x) camera, straight from the device
+// database entry for this model (S23 Ultra: HFR 240 up to 1080p, 4K60, 8K30)
+const DEVICE_MAX_FPS = { '360p': 240, '480p': 240, '720p': 240, '1080p': 240, '1440p': 60, '2160p': 60, '4320p': 30 };
+function updateFpsHint() {
+  const hint = $('#fpsHint');
+  if ($('#selResolution').value === 'custom') {
+    hint.textContent = "Custom resolution — device support isn't pre-checked";
+    hint.style.color = 'var(--text-dim)';
+    return;
+  }
+  const resLabel = $('#selResolution').value.replace(' ⟐ Pro', '').split(' ')[0];
+  const max = DEVICE_MAX_FPS[resLabel];
+  if (!max) { hint.textContent = `⚠ ${resLabel} is not supported by this camera`; hint.style.color = 'var(--red)'; return; }
+  hint.textContent = `This device: up to ${max} fps at ${resLabel}`;
+  hint.style.color = 'var(--text-dim)';
+}
+updateFpsHint();
+
+// Reusable click pop — replays the animation even on rapid re-clicks
+function popIt(el) {
+  el.classList.remove('pop');
+  void el.offsetWidth; // restart the CSS animation
+  el.classList.add('pop');
+  el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+}
+
+// Torch
+let torchOn = false;
+$('#torchBtn').addEventListener('click', () => {
+  torchOn = !torchOn;
+  $('#torchBtn').classList.toggle('on', torchOn);
+});
+
+// Zoom chips — each chip is a real lens (mirrors the app, which rebinds the
+// physical camera): tapping also syncs the Lens selector in Settings.
+const CHIP_LENS = { '0.6': 'Ultra-wide', '1': 'Wide', '3': 'Telephoto', '10': 'Super-telephoto' };
+let currentZoom = 1;
+document.querySelectorAll('.zoom-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.zoom-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    popIt(chip);
+    currentZoom = parseFloat(chip.dataset.zoom);
+    const lens = CHIP_LENS[chip.dataset.zoom];
+    if (lens) setSelectIfPresent($('#selLens'), lens);
+    const canvas = $('#cameraCanvas');
+    canvas.style.transition = 'transform 0.5s var(--spring-smooth)';
+    canvas.style.transform = `scale(${Math.max(1, currentZoom)})`;
+    canvas.style.transformOrigin = 'center';
+  });
+});
+
+// Pop feedback on the remaining tap targets
+['.ad-btn', '#openSettings', '#closeSettings', '#btnScanPc', '#btnCheckPc', '#speedBtn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(el =>
+    el.addEventListener('click', () => popIt(el)));
+});
+
+// Manual focus rail appears only when AF is set to Manual (mirrors the app)
+$('#selAf').addEventListener('change', e => {
+  $('#mfGroup').style.display = e.target.value === 'Manual' ? 'flex' : 'none';
+});
+$('#mfSlider').addEventListener('input', e => {
+  const p = parseInt(e.target.value, 10);
+  // 0 = infinity; slider maps to diopters like the app's LENS_FOCUS_DISTANCE
+  $('#mfVal').textContent = p < 5 ? '∞' : (10 / p).toFixed(1) + 'm';
+});
+
+// Bitrate / FPS: also handle the "Custom…" option, which expands a numeric input
+function setupCustomSelect(select, expandEl, input, lastRef, setLast, stateEl, maxFree, unit, formatState) {
+  select.addEventListener('change', e => {
+    const v = e.target.value;
+
+    if (v === 'custom') {
+      expandEl.classList.add('open');
+      input.focus();
+      return;
+    }
+    expandEl.classList.remove('open');
+
+    if (v.includes('⟐ Pro') && !isPro) {
+      e.target.value = lastRef();
+      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      return;
+    }
+    setLast(v);
+    stateEl.textContent = v.replace(' ⟐ Pro', '');
+  });
+
+  function commitCustom() {
+    let num = parseFloat(input.value);
+    if (!num || num <= 0) return;
+    if (num > maxFree && !isPro) {
+      num = maxFree;
+      input.value = maxFree;
+      showProToast(`Values above ${maxFree} ${unit} require PhoneCam Pro — upgrade to unlock`);
+    }
+    stateEl.textContent = formatState(num);
+  }
+  input.addEventListener('change', commitCustom);
+  input.addEventListener('blur', commitCustom);
+}
+
+setupCustomSelect(
+  $('#selBitrate'), $('#customBitrateRow'), $('#customBitrateInput'),
+  () => lastBitrate, v => { lastBitrate = v; },
+  $('#stateBitrate'), FREE_MAX_BITRATE, 'Mbps', n => `${n} Mbps (custom)`
+);
+setupCustomSelect(
+  $('#selFps'), $('#customFpsRow'), $('#customFpsInput'),
+  () => lastFps, v => { lastFps = v; },
+  $('#stateFps'), FREE_MAX_FPS, 'fps', n => `${n} fps (custom)`
+);
+
+$('#selConn').addEventListener('change', e => { $('#panelConn').textContent = e.target.value; });
+$('#selProtocol').addEventListener('change', e => { $('#panelProto').textContent = e.target.value; });
+$('#inputPcIp').addEventListener('input', e => { $('#panelIp').textContent = e.target.value; });
+
+// Recording
+function toggleRecording() {
+  recording = !recording;
+  const btn = $('#recBtn');
+  const dot = $('#recDot');
+  const res = $('#selResolution').value;
+  const fps = $('#selFps').value;
+
+  if (recording) {
+    btn.classList.add('recording');
+    dot.classList.add('recording');
+    $('#camStatus').textContent = `REC • ${res} ${fps}`;
+    $('#stateRec').textContent = 'ON';
+    $('#stateDot').classList.remove('off');
+    $('#btnToggleRec').textContent = 'Stop recording';
+    $('#btnToggleRec').classList.add('active');
+    recStart = Date.now();
+    frameCount = 0;
+    updateRecTime();
+  } else {
+    btn.classList.remove('recording');
+    dot.classList.remove('recording');
+    $('#camStatus').textContent = 'IDLE';
+    $('#stateRec').textContent = 'OFF';
+    $('#stateDot').classList.add('off');
+    $('#btnToggleRec').textContent = 'Start recording';
+    $('#btnToggleRec').classList.remove('active');
+    $('#stateTime').textContent = '00:00';
+  }
+}
+
+function updateRecTime() {
+  if (!recording) return;
+  const elapsed = Math.floor((Date.now() - recStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  $('#stateTime').textContent = `${m}:${s}`;
+  setTimeout(updateRecTime, 1000);
+}
+
+$('#recBtn').addEventListener('click', toggleRecording);
+$('#btnToggleRec').addEventListener('click', toggleRecording);
+
+// Tier
+function toggleTier() {
+  isPro = !isPro;
+  const badge = $('#tierBadge');
+  if (isPro) { badge.textContent = 'Pro'; badge.classList.add('pro'); $('#stateTier').textContent = 'Pro'; }
+  else {
+    badge.textContent = 'Free'; badge.classList.remove('pro'); $('#stateTier').textContent = 'Free';
+    // Downgrading: revert any Pro-only settings back to the highest Free-tier option
+    if ($('#selResolution').value.includes('⟐ Pro')) { $('#selResolution').value = '1080p'; lastResolution = '1080p'; $('#stateRes').textContent = '1080p'; }
+    if ($('#selBitrate').value.includes('⟐ Pro')) { $('#selBitrate').value = '50 Mbps'; lastBitrate = '50 Mbps'; $('#stateBitrate').textContent = '50 Mbps'; }
+    if ($('#selFps').value.includes('⟐ Pro')) { $('#selFps').value = '60 fps'; lastFps = '60 fps'; $('#stateFps').textContent = '60 fps'; }
+    $('#customBitrateRow').classList.remove('open');
+    $('#customFpsRow').classList.remove('open');
+    const cb = parseFloat($('#customBitrateInput').value);
+    if (cb > FREE_MAX_BITRATE) { $('#customBitrateInput').value = FREE_MAX_BITRATE; if ($('#selBitrate').value === 'custom') $('#stateBitrate').textContent = `${FREE_MAX_BITRATE} Mbps (custom)`; }
+    const cf = parseFloat($('#customFpsInput').value);
+    if (cf > FREE_MAX_FPS) { $('#customFpsInput').value = FREE_MAX_FPS; if ($('#selFps').value === 'custom') $('#stateFps').textContent = `${FREE_MAX_FPS} fps (custom)`; }
+  }
+  if (recording) {
+    const res = $('#selResolution').value;
+    const fps = $('#selFps').value;
+    $('#camStatus').textContent = `REC • ${res} ${fps}`;
+  }
+}
+$('#btnToggleTier').addEventListener('click', toggleTier);
+$('.ad-btn').addEventListener('click', onWatchAdClicked);
+
+// Navigation
+function openSettings() {
+  $('#cameraScreen').classList.add('hidden-left');
+  $('#settingsScreen').classList.remove('hidden-right');
+  currentScreen = 'settings';
+  $('#stateScreen').textContent = 'Settings';
+  $('#btnOpenSettings2').textContent = 'Close settings';
+  // Stagger entrance for setting cards/rows
+  const cards = $$('#settingsScreen .section-card, #settingsScreen .sub-card, #settingsScreen .section-label');
+  cards.forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(12px)';
+    setTimeout(() => {
+      el.style.transition = `opacity 0.45s var(--ease-out-expo), transform 0.5s var(--spring-bounce)`;
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }, 40 + i * 35);
+  });
+}
+function closeSettings() {
+  $('#settingsScreen').classList.add('hidden-right');
+  $('#cameraScreen').classList.remove('hidden-left');
+  currentScreen = 'camera';
+  $('#stateScreen').textContent = 'Camera';
+  $('#btnOpenSettings2').textContent = 'Open settings';
+}
+$('#openSettings').addEventListener('click', openSettings);
+$('#closeSettings').addEventListener('click', closeSettings);
+$('#btnOpenSettings2').addEventListener('click', () => { currentScreen === 'camera' ? openSettings() : closeSettings(); });
+
+// Toggles
+$$('.toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    toggle.classList.toggle('on');
+    if (toggle.dataset.key === 'audioMeter') setAudioMeterVisible(toggle.classList.contains('on'));
+  });
+});
+
+// ── Audio level meter — no real mic access in a mockup, so a plausible speech-like
+// random walk stands in for it, same 2-bar layout and green/amber/red thresholds
+// as the real app's AudioLevelMeter. ──
+let audioMeterTimer = null;
+let audioMeterLevels = [0, 0];
+
+function setAudioMeterVisible(visible) {
+  $('#audioMeter').classList.toggle('visible', visible);
+  clearInterval(audioMeterTimer);
+  if (!visible) {
+    audioMeterLevels = [0, 0];
+    setAudioMeterBar('audioMeterBarLeft', 0);
+    setAudioMeterBar('audioMeterBarRight', 0);
+    return;
+  }
+  audioMeterTimer = setInterval(() => {
+    audioMeterLevels = audioMeterLevels.map(level => {
+      const next = level + (Math.random() - 0.45) * 0.35;
+      return Math.max(0, Math.min(1, next));
+    });
+    setAudioMeterBar('audioMeterBarLeft', audioMeterLevels[0]);
+    setAudioMeterBar('audioMeterBarRight', audioMeterLevels[1]);
+  }, 90);
+}
+
+function setAudioMeterBar(id, level) {
+  const bar = document.getElementById(id);
+  bar.style.height = `${Math.round(level * 100)}%`;
+  bar.style.background = level > 0.9 ? 'var(--red)' : level > 0.7 ? 'var(--focus-ring, #FFD60A)' : 'var(--green)';
+}
+
+// Overlay mode tabs
+function setOverlayMode(mode) {
+  overlayMode = mode;
+  $('#tabText').classList.toggle('active', mode === 'text');
+  $('#tabImage').classList.toggle('active', mode === 'image');
+  $('#overlayTextMode').style.display = mode === 'text' ? '' : 'none';
+  $('#overlayImageMode').style.display = mode === 'image' ? '' : 'none';
+}
+$('#tabText').addEventListener('click', () => { setOverlayMode('text'); saveSettings(); });
+$('#tabImage').addEventListener('click', () => { setOverlayMode('image'); saveSettings(); });
+
+// Image upload
+function setOverlayImage(dataUrl, onDone) {
+  const img = new Image();
+  img.onload = () => {
+    overlayImage = img;
+    $('#overlayImgPreview').src = dataUrl;
+    $('#overlayImgPreview').classList.add('visible');
+    if (onDone) onDone();
+  };
+  img.src = dataUrl;
+}
+$('#overlayUploadBtn').addEventListener('click', () => { $('#overlayFileInput').click(); });
+$('#overlayFileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { setOverlayImage(ev.target.result, saveSettings); };
+  reader.readAsDataURL(file);
+});
+
+// Speed test
+$('#speedBtn').addEventListener('click', simulateSpeedTest);
+$('#btnRunTest').addEventListener('click', () => {
+  if (currentScreen !== 'settings') openSettings();
+  setTimeout(simulateSpeedTest, 500);
+});
+
+function simulateSpeedTest() {
+  const btn = $('#speedBtn');
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+  $('#speedProgress').classList.add('visible');
+  $('#speedResults').classList.remove('visible');
+  $('#speedStatus').textContent = 'Generating test file...';
+  setTimeout(() => { $('#speedStatus').textContent = 'Uploading to PC...'; }, 800);
+  setTimeout(() => { $('#speedStatus').textContent = 'Downloading from PC...'; }, 1800);
+  setTimeout(() => { $('#speedStatus').textContent = 'Cleaning up...'; }, 2600);
+  setTimeout(() => {
+    const up = (700 + Math.random() * 400).toFixed(1);
+    const down = (750 + Math.random() * 450).toFixed(1);
+    $('#speedUp').textContent = up;
+    $('#speedDown').textContent = down;
+    $('#speedResults').classList.add('visible');
+    $('#speedProgress').classList.remove('visible');
+    $('#speedStatus').textContent = 'Test complete — file auto-deleted';
+    btn.disabled = false;
+    btn.textContent = 'Run Speed Test';
+    $('#stateLat').textContent = Math.floor(1 + Math.random() * 3) + 'ms';
+  }, 3200);
+}
+
+// Latency sim
+setInterval(() => { if (recording) { $('#stateLat').textContent = Math.floor(1 + Math.random() * 4) + 'ms'; } }, 2000);
+
+// ─── On-device settings persistence (localStorage — no server, plain text is tiny) ───
+const STORAGE_KEY = 'phonecam_settings_v1';
+const TOGGLE_KEYS = ['hdr', 'stab', 'audio', 'nr', 'wind', 'audioMeter', 'grid', 'mirror', 'lowlat', 'reconn', 'syncObs', 'overlay-show', 'ts'];
+let settingsLoaded = false;
+
+function saveSettings() {
+  if (!settingsLoaded) return; // don't overwrite storage while still applying a load
+  const toggles = {};
+  TOGGLE_KEYS.forEach(key => {
+    const el = document.querySelector(`.toggle[data-key="${key}"]`);
+    if (el) toggles[key] = el.classList.contains('on');
+  });
+  const data = {
+    isPro,
+    proExpiresAt,
+    adsWatchedInBatch,
+    resolution: $('#selResolution').value,
+    customWidth: $('#customWidthInput').value,
+    customHeight: $('#customHeightInput').value,
+    aspectRatio: $('#selAspectRatio').value,
+    codec: $('#selCodec').value,
+    bitrate: $('#selBitrate').value,
+    customBitrate: $('#customBitrateInput').value,
+    fps: $('#selFps').value,
+    customFps: $('#customFpsInput').value,
+    af: $('#selAf').value,
+    afSpeed: $('#selAfSpeed').value,
+    sampleRate: $('#selSampleRate').value,
+    audioBitrate: $('#selAudioBitrate').value,
+    audioCodec: $('#selAudioCodec').value,
+    wb: $('#selWb').value,
+    lens: $('#selLens').value,
+    pcIp: $('#inputPcIp').value,
+    conn: $('#selConn').value,
+    protocol: $('#selProtocol').value,
+    overlayPos: $('#selOverlayPos').value,
+    overlayMode,
+    overlayText: $('#overlayTextInput').value,
+    overlayImageSrc: overlayImage ? overlayImage.src : null,
+    iso: $('#isoSlider').value,
+    ss: $('#ssSlider').value,
+    aeOn,
+    ev: $('#evSlider').value,
+    streamBrightness: $('#selStreamBrightness').value,
+    toggles,
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('PhoneCam: could not persist settings (storage full?)', err);
+  }
+}
+
+function setSelectIfPresent(select, value) {
+  if (value == null) return;
+  const has = Array.from(select.options).some(o => o.value === value);
+  if (has) select.value = value;
+}
+
+function loadSettings() {
+  let saved;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) { settingsLoaded = true; return; }
+    saved = JSON.parse(raw);
+  } catch (err) {
+    settingsLoaded = true;
+    return;
+  }
+
+  proExpiresAt = saved.proExpiresAt || 0;
+  adsWatchedInBatch = saved.adsWatchedInBatch || 0;
+  updateAdBadge();
+  updateProTimeRemaining();
+  if (saved.isPro) toggleTier();
+
+  setSelectIfPresent($('#selResolution'), saved.resolution);
+  lastResolution = $('#selResolution').value;
+  setSelectIfPresent($('#selAspectRatio'), saved.aspectRatio);
+  setSelectIfPresent($('#selCodec'), saved.codec);
+  setSelectIfPresent($('#selBitrate'), saved.bitrate);
+  lastBitrate = $('#selBitrate').value;
+  setSelectIfPresent($('#selFps'), saved.fps);
+  lastFps = $('#selFps').value;
+  setSelectIfPresent($('#selAf'), saved.af);
+  setSelectIfPresent($('#selAfSpeed'), saved.afSpeed);
+  $('#mfGroup').style.display = $('#selAf').value === 'Manual' ? 'flex' : 'none';
+  setSelectIfPresent($('#selSampleRate'), saved.sampleRate);
+  setSelectIfPresent($('#selAudioBitrate'), saved.audioBitrate);
+  setSelectIfPresent($('#selAudioCodec'), saved.audioCodec);
+  setSelectIfPresent($('#selWb'), saved.wb);
+  setSelectIfPresent($('#selLens'), saved.lens);
+  setSelectIfPresent($('#selConn'), saved.conn);
+  setSelectIfPresent($('#selProtocol'), saved.protocol);
+  setSelectIfPresent($('#selOverlayPos'), saved.overlayPos);
+
+  if (saved.customBitrate) { $('#customBitrateInput').value = saved.customBitrate; }
+  if ($('#selBitrate').value === 'custom') $('#customBitrateRow').classList.add('open');
+  if (saved.customFps) { $('#customFpsInput').value = saved.customFps; }
+  if ($('#selFps').value === 'custom') $('#customFpsRow').classList.add('open');
+  if (saved.customWidth) { $('#customWidthInput').value = saved.customWidth; }
+  if (saved.customHeight) { $('#customHeightInput').value = saved.customHeight; }
+  if ($('#selResolution').value === 'custom') $('#customResolutionRow').classList.add('open');
+
+  if (saved.pcIp) { $('#inputPcIp').value = saved.pcIp; $('#panelIp').textContent = saved.pcIp; }
+  if (saved.iso != null) {
+    // iso is stored as 0..100 slider progress (log-ISO), not a raw ISO number
+    $('#isoSlider').value = Math.min(100, Math.max(0, saved.iso));
+    $('#isoVal').textContent = simIsoValue();
+    $('#stateIso').textContent = simIsoValue();
+  }
+  if (saved.ss != null) { $('#ssSlider').value = saved.ss; $('#ssVal').textContent = simShutterLabel(); }
+  if (saved.aeOn === false) { aeOn = false; }
+  updateExposureUi();
+  setSelectIfPresent($('#selStreamBrightness'), saved.streamBrightness);
+  if (saved.ev) { $('#evSlider').value = saved.ev; const v = (saved.ev / 10).toFixed(1); $('#evVal').textContent = v; $('#stateEv').textContent = v; }
+
+  if (saved.toggles) {
+    Object.entries(saved.toggles).forEach(([key, on]) => {
+      const el = document.querySelector(`.toggle[data-key="${key}"]`);
+      if (el) el.classList.toggle('on', !!on);
+    });
+    setAudioMeterVisible(!!saved.toggles.audioMeter);
+  }
+
+  setOverlayMode(saved.overlayMode === 'image' ? 'image' : 'text');
+  if (saved.overlayText != null) $('#overlayTextInput').value = saved.overlayText;
+  if (saved.overlayImageSrc) setOverlayImage(saved.overlayImageSrc);
+
+  // Reflect loaded values in the side panel
+  $('#stateRes').textContent = $('#selResolution').value === 'custom'
+    ? `${$('#customWidthInput').value || 1920}x${$('#customHeightInput').value || 1080} (custom)`
+    : $('#selResolution').value.replace(' ⟐ Pro', '');
+  updateFpsHint();
+  $('#stateBitrate').textContent = $('#selBitrate').value === 'custom'
+    ? `${$('#customBitrateInput').value || FREE_MAX_BITRATE} Mbps (custom)`
+    : $('#selBitrate').value.replace(' ⟐ Pro', '');
+  $('#stateFps').textContent = $('#selFps').value === 'custom'
+    ? `${$('#customFpsInput').value || FREE_MAX_FPS} fps (custom)`
+    : $('#selFps').value.replace(' ⟐ Pro', '');
+  $('#panelConn').textContent = $('#selConn').value;
+  $('#panelProto').textContent = $('#selProtocol').value;
+
+  settingsLoaded = true;
+}
+
+// Persist on every settings change (selects, text inputs, toggles, ISO/EV sliders)
+const settingsScreenEl = $('#settingsScreen');
+settingsScreenEl.addEventListener('change', saveSettings);
+settingsScreenEl.addEventListener('input', saveSettings);
+settingsScreenEl.addEventListener('click', e => {
+  if (e.target.closest('.toggle')) saveSettings();
+});
+$('#isoSlider').addEventListener('change', saveSettings);
+$('#evSlider').addEventListener('change', saveSettings);
+$('#btnToggleTier').addEventListener('click', saveSettings);
+
+// ── Custom minimalist dropdown, replacing the native OS <select> popup ──
+let openCsel = null;
+
+function closeCselPopover() {
+  if (!openCsel) return;
+  const { popover } = openCsel;
+  popover.classList.remove('open');
+  document.removeEventListener('mousedown', onCselOutsideClick, true);
+  document.removeEventListener('keydown', onCselKeydown, true);
+  window.removeEventListener('resize', closeCselPopover);
+  $('#settingsScreen').removeEventListener('scroll', closeCselPopover);
+  setTimeout(() => popover.remove(), 160);
+  openCsel = null;
+}
+
+function onCselOutsideClick(e) {
+  if (openCsel && !openCsel.popover.contains(e.target) && e.target !== openCsel.select) closeCselPopover();
+}
+
+function onCselKeydown(e) {
+  if (e.key === 'Escape') closeCselPopover();
+}
+
+function openCselPopover(select) {
+  if (openCsel && openCsel.select === select) { closeCselPopover(); return; }
+  closeCselPopover();
+
+  const popover = document.createElement('div');
+  popover.className = 'csel-popover';
+
+  Array.from(select.options).forEach(opt => {
+    const item = document.createElement('div');
+    item.className = 'csel-item';
+    const isPro = opt.text.includes('⟐ Pro');
+    const isSelected = opt.value === select.value;
+    if (isSelected) item.classList.add('selected');
+    const label = document.createElement('span');
+    label.textContent = opt.text.replace(' ⟐ Pro', '');
+    item.appendChild(label);
+    if (isPro) {
+      const badge = document.createElement('span');
+      badge.className = 'csel-pro';
+      badge.textContent = '⟐ PRO';
+      item.appendChild(badge);
+    } else if (isSelected) {
+      const check = document.createElement('span');
+      check.className = 'csel-check';
+      check.textContent = '✓';
+      item.appendChild(check);
+    }
+    item.addEventListener('click', () => {
+      if (select.value !== opt.value) {
+        select.value = opt.value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      closeCselPopover();
+    });
+    popover.appendChild(item);
+  });
+
+  document.body.appendChild(popover);
+
+  const rowRect = select.closest('.setting-row').getBoundingClientRect();
+  const popW = popover.offsetWidth;
+  const popH = popover.offsetHeight;
+  let left = rowRect.right - popW;
+  let top = rowRect.bottom + 6;
+  left = Math.max(8, Math.min(left, window.innerWidth - popW - 8));
+  if (top + popH > window.innerHeight - 8) top = rowRect.top - popH - 6;
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+
+  requestAnimationFrame(() => popover.classList.add('open'));
+  openCsel = { select, popover };
+  document.addEventListener('mousedown', onCselOutsideClick, true);
+  document.addEventListener('keydown', onCselKeydown, true);
+  window.addEventListener('resize', closeCselPopover);
+  $('#settingsScreen').addEventListener('scroll', closeCselPopover);
+}
+
+$$('.setting-select').forEach(select => {
+  select.addEventListener('mousedown', e => {
+    e.preventDefault();
+    select.focus();
+    openCselPopover(select);
+  });
+});
+
+loadSettings();
+</script>

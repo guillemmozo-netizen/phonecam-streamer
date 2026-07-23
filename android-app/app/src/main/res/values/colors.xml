@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FFFFFF</color>
+    <color name="on_primary">#000000</color>
+    <color name="primary_container">#F2F2F7</color>
+    <color name="on_primary_container">#000000</color>
+
+    <!-- iOS-style dark palette: true-black ground, inset-grouped cells,
+         system-blue accent, muted gray label hierarchy. -->
+    <color name="surface_dark">#000000</color>
+    <color name="surface_secondary">#1C1C1E</color>
+    <color name="surface_tertiary">#2C2C2E</color>
+    <color name="surface_elevated">#3A3A3C</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#AEAEB2</color>
+    <color name="text_tertiary">#8E8E93</color>
+    <color name="accent">#0A84FF</color>
+    <color name="accent_dim">#0A5AC2</color>
+    <color name="readout">#98989E</color>
+    <color name="accent_green">#30D158</color>
+    <color name="accent_red">#FF453A</color>
+    <color name="separator">#38383A</color>
+    <color name="focus_ring">#FFD60A</color>
+    <color name="subscription_gradient_start">#0A84FF</color>
+    <color name="subscription_gradient_end">#5E5CE6</color>
+</resources>

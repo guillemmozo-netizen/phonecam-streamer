@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="SettingRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">12dp</item>
+    </style>
+
+    <style name="Separator">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0.5dp</item>
+        <item name="android:background">@color/separator</item>
+        <item name="android:layout_marginStart">16dp</item>
+    </style>
+
+    <!-- Pill toggle with a squircle knob, accent-blue when on -->
+    <style name="Widget.PhoneCam.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="track">@drawable/switch_track</item>
+        <item name="android:thumb">@drawable/switch_thumb</item>
+        <item name="trackTint">@null</item>
+        <item name="thumbTint">@null</item>
+        <item name="trackDecoration">@null</item>
+        <item name="trackDecorationTint">@null</item>
+        <item name="showText">false</item>
+    </style>
+
+    <!-- iOS-style grouped-list section header: quiet uppercase gray, no ornament -->
+    <style name="SectionLabelTick">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="SectionLabelText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_tertiary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <!-- Setting value spinner: mono readout instead of a plain grey chevron-less text -->
+    <style name="SettingSpinner">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">32dp</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:popupBackground">@color/surface_elevated</item>
+    </style>
+
+    <!-- Continuous-corner card, iOS inset-grouped style -->
+    <style name="ShapeAppearance.PhoneCam.ProCard" parent="">
+        <item name="cornerSize">14dp</item>
+    </style>
+</resources>

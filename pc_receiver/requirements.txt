@@ -1,0 +1,6 @@
+numpy
+opencv-python-headless
+pyvirtualcam
+av
+websocket-client
+pytest

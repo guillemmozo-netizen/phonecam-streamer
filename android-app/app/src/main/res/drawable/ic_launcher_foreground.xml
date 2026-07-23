@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Minimal camera-lens icon for the alpha launcher icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer ring -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,27 A27,27 0 1,1 54,81 A27,27 0 1,1 54,27Z
+                          M54,33 A21,21 0 1,0 54,75 A21,21 0 1,0 54,33Z" />
+    <!-- Inner circle (lens) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,42 A12,12 0 1,1 54,66 A12,12 0 1,1 54,42Z" />
+    <!-- Highlight dot -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M48,47 A4,4 0 1,1 48,55 A4,4 0 1,1 48,47Z" />
+</vector>

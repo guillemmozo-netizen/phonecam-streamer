@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- Required for AdMob rewarded ads (+1h Pro). Used only for ad personalization,
+         gated behind the UMP consent flow in ConsentManager — not for analytics. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"
+        tools:ignore="AdvertisingId" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="true" />
+
+    <!-- PcControl.kt talks to the PC's control_server over plain http:// on the
+         local network (dynamic IP, so a per-domain network-security-config isn't
+         practical) — API 28+ blocks cleartext by default, which was silently
+         failing every getStatus/start/stop call (caught by a blanket try/catch),
+         always showing "PC not reachable" even when the PC was reachable fine —
+         confirmed by the raw-socket speed test working against the exact same
+         host. usesCleartextTraffic doesn't change the app's actual exposure: the
+         video stream and speed test already send everything in the clear over
+         raw sockets, which this attribute doesn't touch either way. -->
+    <application
+        android:name=".PhoneCamApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.PhoneCamStreamer">
+
+        <!--
+          AdMob requires this meta-data or the SDK throws at init time.
+          This is GOOGLE'S PUBLIC TEST APP ID (ca-app-pub-3940256099942544~3347511713),
+          safe to ship in a debug/alpha build. Replace it with your own AdMob
+          App ID (from admob.google.com, once you've created an account and
+          registered the app) before any real release build — see
+          docs/ADS_SETUP.md.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.PhoneCamStreamer"
+            tools:ignore="LockedOrientationActivity" />
+    </application>
+
+</manifest>

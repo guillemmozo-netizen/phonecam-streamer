@@ -1,0 +1,2 @@
+[tool.pytest.ini_options]
+testpaths = ["reward_engine/tests", "pc_receiver/tests"]

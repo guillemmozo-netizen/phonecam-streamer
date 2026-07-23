@@ -1,0 +1,1130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_dark"
+    android:overScrollMode="never"
+    android:scrollbars="none"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:id="@+id/settingsRoot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="56dp"
+        android:paddingBottom="40dp">
+
+        <!-- ══════ HEADER ══════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="28dp">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_chevron_left"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/back" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:text="@string/settings"
+                android:textColor="@color/text_primary"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+
+        <!-- ══════ SUBSCRIPTION — "Pro Mode" panel, not a payment-sheet gradient card ══════ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/subscriptionCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface_secondary"
+                
+                
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.PhoneCam.ProCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="22dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/sub_title"
+                            android:textColor="@color/text_primary"
+                            android:textSize="17sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif" />
+
+                        <TextView
+                            android:id="@+id/subBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="9dp"
+                            android:paddingVertical="3dp"
+                            android:background="@drawable/badge_free"
+                            android:text="@string/sub_free"
+                            android:textColor="@color/text_tertiary"
+                            android:textSize="10sp"
+                            android:letterSpacing="0.05"
+                            android:fontFamily="sans-serif" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/sub_description"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:lineSpacingExtra="3dp" />
+
+                    <TextView
+                        android:id="@+id/subPrice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:text="@string/sub_price"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/upgradeButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/sub_upgrade"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textAllCaps="false"
+                        app:backgroundTint="@color/accent"
+                        app:cornerRadius="12dp"
+                        app:elevation="0dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+
+        <!-- Ad-earned Pro time remaining -->
+        <TextView
+            android:id="@+id/proTimeRemainingText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-18dp"
+            android:layout_marginBottom="28dp"
+            android:gravity="center"
+            android:text="—"
+            android:textColor="@color/text_tertiary"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- ══════ DEVICE ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="DEVICE" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/deviceModelText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.02" />
+
+                <TextView
+                    android:id="@+id/deviceOsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="—"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginVertical="12dp"
+                    android:background="@color/separator" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="RAM" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:letterSpacing="0.12" android:textAllCaps="true" />
+                        <TextView android:id="@+id/deviceRamText"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp" android:text="—"
+                            android:textColor="@color/readout" android:textSize="14sp"
+                            android:fontFamily="sans-serif" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="STORAGE" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:letterSpacing="0.12" android:textAllCaps="true" />
+                        <TextView android:id="@+id/deviceStorageText"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp" android:text="—"
+                            android:textColor="@color/readout" android:textSize="14sp"
+                            android:fontFamily="sans-serif" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="CODECS" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:letterSpacing="0.12" android:textAllCaps="true" />
+                        <TextView android:id="@+id/deviceCodecsText"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp" android:text="—"
+                            android:textColor="@color/readout" android:textSize="14sp"
+                            android:fontFamily="sans-serif" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginVertical="12dp"
+                    android:background="@color/separator" />
+
+                <TextView
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="CAMERAS" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                    android:letterSpacing="0.12" android:textAllCaps="true"
+                    android:layout_marginBottom="6dp" />
+
+                <LinearLayout
+                    android:id="@+id/deviceCamerasList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/deviceNotesText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="—"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ VIDEO ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_video" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 1. Resolution -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerResolution"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_resolution" />
+
+                <LinearLayout
+                    android:id="@+id/rowCustomResolution"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone">
+                    <EditText
+                        android:id="@+id/inputCustomWidth"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_tertiary"
+                        android:textColor="@color/readout"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:hint="width"
+                        android:textColorHint="@color/text_tertiary"
+                        android:inputType="number"
+                        android:singleLine="true"
+                        android:paddingHorizontal="12dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="8dp"
+                        android:text="x"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif" />
+                    <EditText
+                        android:id="@+id/inputCustomHeight"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_tertiary"
+                        android:textColor="@color/readout"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:hint="height"
+                        android:textColorHint="@color/text_tertiary"
+                        android:inputType="number"
+                        android:singleLine="true"
+                        android:paddingHorizontal="12dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="px"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif" />
+                </LinearLayout>
+
+                <View style="@style/Separator" />
+
+                <!-- 1b. Aspect ratio / composition -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerAspectRatio"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_aspect_ratio" />
+                <View style="@style/Separator" />
+
+                <!-- 2. Codec -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerVideoCodec"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_video_codec" />
+                <View style="@style/Separator" />
+
+                <!-- 3. Bitrate -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerVideoBitrate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_video_bitrate" />
+
+                <LinearLayout
+                    android:id="@+id/rowCustomBitrate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone">
+                    <EditText
+                        android:id="@+id/inputCustomBitrate"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_tertiary"
+                        android:textColor="@color/readout"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:hint="e.g. 75"
+                        android:textColorHint="@color/text_tertiary"
+                        android:inputType="number"
+                        android:singleLine="true"
+                        android:paddingHorizontal="12dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Mbps"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif" />
+                </LinearLayout>
+
+                <View style="@style/Separator" />
+
+                <!-- 4. FPS -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerFps"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_fps" />
+
+                <LinearLayout
+                    android:id="@+id/rowCustomFps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone">
+                    <EditText
+                        android:id="@+id/inputCustomFps"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@color/surface_tertiary"
+                        android:textColor="@color/readout"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:hint="e.g. 90"
+                        android:textColorHint="@color/text_tertiary"
+                        android:inputType="number"
+                        android:singleLine="true"
+                        android:paddingHorizontal="12dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="fps"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif" />
+                </LinearLayout>
+
+                <!-- Live device-capability hint for the chosen resolution -->
+                <TextView
+                    android:id="@+id/fpsHintText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="10dp"
+                    android:text="@string/fps_hint_placeholder"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <View style="@style/Separator" />
+
+                <!-- 5. HDR -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_hdr"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchHdr"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 6. Stabilization -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_stabilization"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchStabilization"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 7. Autofocus -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerAutofocus"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_autofocus" />
+                <View style="@style/Separator" />
+
+                <!-- 7b. Autofocus speed preset -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerAfSpeed"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_af_speed" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ AUDIO ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_audio" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 8. Audio enabled -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_audio_enabled"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAudio"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 9. Sample rate -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerSampleRate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_sample_rate" />
+                <View style="@style/Separator" />
+
+                <!-- 10. Audio bitrate -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerAudioBitrate"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_audio_bitrate" />
+                <View style="@style/Separator" />
+
+                <!-- 11. Audio codec -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerAudioCodec"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_audio_codec" />
+                <View style="@style/Separator" />
+
+                <!-- 12. Noise reduction -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_noise_reduction"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchNoiseReduction"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 13. Wind filter -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_wind_filter"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchWindFilter"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 13b. Audio level meter (2 bars) on the camera screen -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_audio_meter"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAudioMeter"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ CAMERA ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_camera" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 14. White balance -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerWhiteBalance"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_white_balance" />
+                <View style="@style/Separator" />
+
+                <!-- 15. Lens -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerLens"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_lens" />
+                <View style="@style/Separator" />
+
+                <!-- 16. Grid -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_grid"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchGrid"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 17. Mirror -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_mirror"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMirror"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ STREAM ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_network" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- PC IP address -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_pc_ip"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <EditText
+                        android:id="@+id/inputPcIp"
+                        android:layout_width="150dp"
+                        android:layout_height="32dp"
+                        android:background="@android:color/transparent"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:gravity="end|center_vertical"
+                        android:hint="@string/settings_pc_ip_hint"
+                        android:textColorHint="@color/text_tertiary"
+                        android:singleLine="true"
+                        android:inputType="text"
+                        android:imeOptions="actionDone" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- Auto-discover button -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_discover_pc"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/discoverButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:text="@string/settings_discover_scan"
+                        android:textColor="@color/accent"
+                        android:textSize="13sp"
+                        android:textAllCaps="false"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="0dp" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- Connection mode -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerConnectionMode"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_connection_mode" />
+                <View style="@style/Separator" />
+
+                <!-- 18. Protocol -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerProtocol"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_protocol" />
+                <View style="@style/Separator" />
+
+                <!-- 19. Low latency -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_low_latency"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchLowLatency"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 20. Auto reconnect -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_auto_reconnect"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAutoReconnect"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_sync_obs"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchSyncObs"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:paddingTop="6dp"
+                    android:text="@string/settings_sync_obs_desc"
+                    android:textColor="@color/text_tertiary" android:textSize="12sp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ PC CONTROL ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="PC CONTROL" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Status indicator -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <View
+                        android:id="@+id/pcStatusDot"
+                        android:layout_width="8dp"
+                        android:layout_height="8dp"
+                        android:background="@drawable/dot_idle" />
+
+                    <TextView
+                        android:id="@+id/pcStatusText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Not connected"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRefreshPcStatus"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="28dp"
+                        android:text="Check"
+                        android:textColor="@color/accent"
+                        android:textSize="12sp"
+                        android:textAllCaps="false"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="0dp" />
+                </LinearLayout>
+
+                <!-- Start / Stop buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartPc"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:text="Start PC"
+                        android:textColor="@color/surface_dark"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textAllCaps="false"
+                        app:backgroundTint="@color/accent_green"
+                        app:cornerRadius="8dp"
+                        app:elevation="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStopPc"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:text="Stop PC"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textAllCaps="false"
+                        app:backgroundTint="@color/surface_tertiary"
+                        app:cornerRadius="8dp"
+                        app:elevation="0dp" />
+                </LinearLayout>
+
+                <!-- ADB reverse button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdbReverse"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="8dp"
+                    android:text="Setup USB (adb reverse)"
+                    android:textColor="@color/readout"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <View style="@style/Separator" android:layout_marginTop="8dp" />
+
+                <!-- Speed test -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSpeedTest"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/speedtest_run"
+                    android:textColor="@color/accent"
+                    android:textSize="14sp"
+                    android:textAllCaps="false"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minHeight="0dp" />
+
+                <TextView
+                    android:id="@+id/speedTestResult"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="8dp"
+                    android:gravity="center"
+                    android:text="@string/fps_hint_placeholder"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ DISPLAY ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_display" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_keep_awake"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchKeepAwake"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:checked="true" />
+                </LinearLayout>
+
+                <View style="@style/Separator" />
+
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerStreamBrightness"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_stream_brightness" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ══════ OVERLAY ══════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="9dp">
+            <View style="@style/SectionLabelTick" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_overlay" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface_secondary"
+            
+            >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 21. Show copyright -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_copyright"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchCopyright"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 22. Copyright mode (Text / Image) -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerCopyrightMode"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_copyright_mode" />
+                <View style="@style/Separator" />
+
+                <!-- 22b. Copyright text -->
+                <LinearLayout
+                    android:id="@+id/rowCopyrightText"
+                    style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_copyright_text"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <EditText
+                        android:id="@+id/inputCopyright"
+                        android:layout_width="160dp"
+                        android:layout_height="32dp"
+                        android:background="@android:color/transparent"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:gravity="end|center_vertical"
+                        android:hint="@string/settings_copyright_hint"
+                        android:textColorHint="@color/text_tertiary"
+                        android:singleLine="true"
+                        android:imeOptions="actionDone"
+                        android:inputType="text" />
+                </LinearLayout>
+                <View android:id="@+id/sepCopyrightText" style="@style/Separator" />
+
+                <!-- 22c. Copyright image -->
+                <LinearLayout
+                    android:id="@+id/rowCopyrightImage"
+                    style="@style/SettingRow"
+                    android:visibility="gone">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_copyright_image"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <ImageView
+                        android:id="@+id/imgCopyrightPreview"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:scaleType="centerCrop"
+                        android:layout_marginEnd="8dp"
+                        android:visibility="gone" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPickCopyrightImage"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:text="@string/settings_choose_image"
+                        android:textSize="12sp"
+                        android:paddingHorizontal="12dp" />
+                </LinearLayout>
+                <View android:id="@+id/sepCopyrightImage" style="@style/Separator" android:visibility="gone" />
+
+                <!-- 23. Timestamp -->
+                <LinearLayout style="@style/SettingRow">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/settings_timestamp"
+                        android:textColor="@color/text_primary" android:textSize="16sp" />
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchTimestamp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <View style="@style/Separator" />
+
+                <!-- 24. Watermark position -->
+                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerWatermarkPos"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_watermark_position" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Version footer -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/app_version"
+            android:textColor="@color/text_tertiary"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+</ScrollView>
