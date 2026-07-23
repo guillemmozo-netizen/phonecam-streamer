@@ -14,7 +14,9 @@ import android.graphics.Paint
 object WatermarkOverlay {
 
     fun apply(source: Bitmap, text: String = "PhoneCam Streamer - FREE"): Bitmap {
-        val out = source.copy(source.config, true)
+        // Bitmap.getConfig() is nullable (hardware bitmaps can report null) —
+        // ARGB_8888 is a safe, universally-supported fallback for a fresh copy.
+        val out = source.copy(source.config ?: Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(out)
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
