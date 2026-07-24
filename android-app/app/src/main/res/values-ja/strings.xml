@@ -151,4 +151,68 @@
     <string name="pc_services_stopped">PCサービスを停止しました</string>
     <string name="pc_usb_forwarded">USBポートを転送しました</string>
     <string name="pc_usb_failed">失敗しました — USB接続を確認してください</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">カスタム…</string>
+    <string name="af_continuous">連続</string>
+    <string name="af_tap_to_focus">タップしてフォーカス</string>
+    <string name="af_manual">マニュアル</string>
+    <string name="af_speed_standard">標準</string>
+    <string name="af_speed_cinematic">シネマティック</string>
+    <string name="af_speed_action">アクション</string>
+    <string name="af_speed_macro">マクロ</string>
+    <string name="wb_auto">オート</string>
+    <string name="wb_daylight">昼光</string>
+    <string name="wb_cloudy">曇天</string>
+    <string name="wb_tungsten">白熱電球</string>
+    <string name="wb_fluorescent">蛍光灯</string>
+    <string name="lens_wide">広角</string>
+    <string name="lens_ultrawide">超広角</string>
+    <string name="lens_telephoto">望遠</string>
+    <string name="lens_supertelephoto">超望遠</string>
+    <string name="watermark_bottom_left">左下</string>
+    <string name="watermark_bottom_right">右下</string>
+    <string name="watermark_top_left">左上</string>
+    <string name="watermark_top_right">右上</string>
+    <string name="brightness_normal">標準</string>
+    <string name="brightness_full">最大輝度</string>
+    <string name="brightness_dimmed">暗め</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">デバイス</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">ストレージ</string>
+    <string name="device_label_codecs">コーデック</string>
+    <string name="device_label_cameras">カメラ</string>
+    <string name="device_capabilities_unavailable">⚠ デバイスの性能を完全に読み取れませんでした</string>
+    <string name="device_camera_info_unavailable">⚠ このデバイスのカメラ情報を読み取れませんでした</string>
+    <string name="device_note_camera_specs_db">カメラ仕様はデバイスデータベースから取得</string>
+    <string name="device_note_ram_estimated">RAMはデバイスモデルから推定</string>
+    <string name="device_note_camera_limits_estimated">カメラの制限は推定値です</string>
+    <string name="camera_facing_back">背面</string>
+    <string name="camera_facing_front">前面</string>
+    <string name="camera_facing_external">外部</string>
+    <string name="label_unknown">不明</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">カスタム解像度 — デバイスの対応状況は事前確認されていません</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s はこのカメラでサポートされていません</string>
+    <string name="toast_resolution_unavailable">%1$s はこのデバイスでは利用できません — 1080pを使用します</string>
+    <string name="fps_hint_max_fps">このデバイス：%2$s で最大%1$d fps</string>
+    <string name="toast_resolution_maxes_out">%1$s はこのデバイスで最大%2$dfpsまでです</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">この画像を読み込めませんでした</string>
+    <string name="toast_mic_permission_needed">音声メーターにはマイクの権限が必要です</string>
+    <string name="toast_camera_permission_required">カメラの権限が必要です</string>
+    <string name="toast_loading">読み込み中…</string>
+    <string name="toast_watch_full_ad">クレジットを獲得するには広告を最後まで視聴してください</string>
+    <string name="toast_mic_open_failed">音声メーター用のマイクを開けませんでした</string>
+    <string name="toast_lens_not_available">%1$sレンズはこのデバイスでは利用できません</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">テストファイルを生成中…</string>
+    <string name="speedtest_uploading">PCへアップロード中…</string>
+    <string name="speedtest_downloading">PCからダウンロード中…</string>
+    <string name="speedtest_cleaning_up">クリーンアップ中…</string>
 </resources>

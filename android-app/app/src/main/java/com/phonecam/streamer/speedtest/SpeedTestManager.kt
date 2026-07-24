@@ -21,17 +21,28 @@ data class SpeedTestResult(
     val downloadTimeMs: Long,
 )
 
+/** This class has no Android Context (it's plain java.net socket code, kept
+ * that way on purpose so it doesn't need one) — reports progress as one of
+ * these instead of a literal string, so the caller (which does have a
+ * Context) can map each phase to a localized string. */
+enum class SpeedTestPhase {
+    GENERATING_FILE,
+    UPLOADING,
+    DOWNLOADING,
+    CLEANING_UP,
+}
+
 class SpeedTestManager(
     private val host: String,
     private val port: Int,
 ) {
 
-    fun runTest(cacheDir: File, onProgress: (String) -> Unit): SpeedTestResult {
+    fun runTest(cacheDir: File, onProgress: (SpeedTestPhase) -> Unit): SpeedTestResult {
         val testFile = File(cacheDir, "speedtest_${System.currentTimeMillis()}.bin")
 
         try {
             // 1. Generate random file
-            onProgress("Generating test file...")
+            onProgress(SpeedTestPhase.GENERATING_FILE)
             generateRandomFile(testFile)
             val fileSizeBytes = testFile.length()
             val fileSizeMB = fileSizeBytes / (1024.0 * 1024.0)
@@ -41,7 +52,7 @@ class SpeedTestManager(
                 val input = DataInputStream(socket.getInputStream())
 
                 // 2. Upload: phone → PC
-                onProgress("Uploading to PC...")
+                onProgress(SpeedTestPhase.UPLOADING)
                 val uploadStart = System.currentTimeMillis()
 
                 output.writeInt(COMMAND_UPLOAD)
@@ -59,7 +70,7 @@ class SpeedTestManager(
                 Log.i(TAG, "Upload complete: ${uploadTimeMs}ms, ack=$uploadAck")
 
                 // 3. Download: PC → phone
-                onProgress("Downloading from PC...")
+                onProgress(SpeedTestPhase.DOWNLOADING)
                 val downloadStart = System.currentTimeMillis()
 
                 output.writeInt(COMMAND_DOWNLOAD)
@@ -75,7 +86,7 @@ class SpeedTestManager(
                 Log.i(TAG, "Download complete: ${downloadTimeMs}ms, size=$downloadSize")
 
                 // 4. Tell PC to clean up
-                onProgress("Cleaning up...")
+                onProgress(SpeedTestPhase.CLEANING_UP)
                 output.writeInt(COMMAND_CLEANUP)
                 output.flush()
 

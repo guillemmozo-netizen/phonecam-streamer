@@ -18,6 +18,7 @@ import com.phonecam.streamer.network.PcControl
 import com.phonecam.streamer.network.PcDiscovery
 import com.phonecam.streamer.rewards.RewardManager
 import com.phonecam.streamer.speedtest.SpeedTestManager
+import com.phonecam.streamer.speedtest.SpeedTestPhase
 import com.phonecam.streamer.ui.ExpandableChoiceRow
 import com.phonecam.streamer.ui.AppToast
 import java.util.concurrent.Executors
@@ -43,7 +44,7 @@ class SettingsActivity : AppCompatActivity() {
                         binding.imgCopyrightPreview.setImageURI(localUri)
                         binding.imgCopyrightPreview.visibility = View.VISIBLE
                     } else {
-                        AppToast.error(this, "Couldn't load that image")
+                        AppToast.error(this, getString(R.string.toast_image_load_failed))
                     }
                 }
             }
@@ -155,26 +156,54 @@ class SettingsActivity : AppCompatActivity() {
     private val proFps = setOf(3)
 
     private fun setupSpinners() {
+        val custom = getString(R.string.option_custom)
         setupSpinner(
             binding.spinnerResolution,
-            listOf("360p", "480p", "720p", "1080p", "1440p ⟐ Pro", "2160p 4K ⟐ Pro", "4320p 8K ⟐ Pro", "Custom…"),
+            listOf("360p", "480p", "720p", "1080p", "1440p ⟐ Pro", "2160p 4K ⟐ Pro", "4320p 8K ⟐ Pro", custom),
         )
         setupSpinner(binding.spinnerAspectRatio, listOf("4:3", "16:9", "1:1", "9:16", "3:4"))
         setupSpinner(binding.spinnerVideoCodec, listOf("H.264", "H.265 (HEVC)", "AV1"))
-        setupSpinner(binding.spinnerVideoBitrate, listOf("10 Mbps", "20 Mbps", "35 Mbps", "50 Mbps", "100 Mbps ⟐ Pro", "Custom…"))
-        setupSpinner(binding.spinnerFps, listOf("24 fps", "30 fps", "60 fps", "120 fps ⟐ Pro", "Custom…"))
-        setupSpinner(binding.spinnerAutofocus, listOf("Continuous", "Tap to focus", "Manual"))
-        setupSpinner(binding.spinnerAfSpeed, listOf("Standard", "Cinematic", "Action", "Macro"))
+        setupSpinner(binding.spinnerVideoBitrate, listOf("10 Mbps", "20 Mbps", "35 Mbps", "50 Mbps", "100 Mbps ⟐ Pro", custom))
+        setupSpinner(binding.spinnerFps, listOf("24 fps", "30 fps", "60 fps", "120 fps ⟐ Pro", custom))
+        setupSpinner(
+            binding.spinnerAutofocus,
+            listOf(getString(R.string.af_continuous), getString(R.string.af_tap_to_focus), getString(R.string.af_manual)),
+        )
+        setupSpinner(
+            binding.spinnerAfSpeed,
+            listOf(
+                getString(R.string.af_speed_standard), getString(R.string.af_speed_cinematic),
+                getString(R.string.af_speed_action), getString(R.string.af_speed_macro),
+            ),
+        )
         setupSpinner(binding.spinnerSampleRate, listOf("44.1 kHz", "48 kHz", "96 kHz"))
         setupSpinner(binding.spinnerAudioBitrate, listOf("128 kbps", "192 kbps", "256 kbps", "320 kbps"))
         setupSpinner(binding.spinnerAudioCodec, listOf("AAC", "OPUS", "FLAC"))
-        setupSpinner(binding.spinnerWhiteBalance, listOf("Auto", "Daylight", "Cloudy", "Tungsten", "Fluorescent"))
-        setupSpinner(binding.spinnerLens, listOf("Wide", "Ultra-wide", "Telephoto"))
-        setupSpinner(binding.spinnerConnectionMode, listOf("WiFi", "USB (adb)", "Auto"))
+        setupSpinner(
+            binding.spinnerWhiteBalance,
+            listOf(
+                getString(R.string.wb_auto), getString(R.string.wb_daylight), getString(R.string.wb_cloudy),
+                getString(R.string.wb_tungsten), getString(R.string.wb_fluorescent),
+            ),
+        )
+        setupSpinner(
+            binding.spinnerLens,
+            listOf(getString(R.string.lens_wide), getString(R.string.lens_ultrawide), getString(R.string.lens_telephoto)),
+        )
+        setupSpinner(binding.spinnerConnectionMode, listOf("WiFi", "USB (adb)", getString(R.string.wb_auto)))
         setupSpinner(binding.spinnerProtocol, listOf("TCP", "UDP", "WebRTC"))
-        setupSpinner(binding.spinnerWatermarkPos, listOf("Bottom-left", "Bottom-right", "Top-left", "Top-right"))
-        setupSpinner(binding.spinnerCopyrightMode, listOf("Text", "Image"))
-        setupSpinner(binding.spinnerStreamBrightness, listOf("Normal", "Full brightness", "Dimmed"))
+        setupSpinner(
+            binding.spinnerWatermarkPos,
+            listOf(
+                getString(R.string.watermark_bottom_left), getString(R.string.watermark_bottom_right),
+                getString(R.string.watermark_top_left), getString(R.string.watermark_top_right),
+            ),
+        )
+        setupSpinner(binding.spinnerCopyrightMode, listOf(getString(R.string.settings_copyright_text), getString(R.string.settings_copyright_image)))
+        setupSpinner(
+            binding.spinnerStreamBrightness,
+            listOf(getString(R.string.brightness_normal), getString(R.string.brightness_full), getString(R.string.brightness_dimmed)),
+        )
 
         guardProSpinner(binding.spinnerResolution, proResolutions, 3)
         guardProSpinner(binding.spinnerVideoBitrate, proBitrates, 3)
@@ -363,7 +392,7 @@ class SettingsActivity : AppCompatActivity() {
                 Log.e("SettingsActivity", "device probe failed", e)
                 runOnUiThread {
                     binding.deviceModelText.text = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
-                    binding.deviceOsText.text = "⚠ Could not read full device capabilities"
+                    binding.deviceOsText.text = getString(R.string.device_capabilities_unavailable)
                 }
                 null
             } ?: return@execute
@@ -388,7 +417,7 @@ class SettingsActivity : AppCompatActivity() {
                 list.removeAllViews()
                 if (info.cameras.isEmpty()) {
                     val empty = TextView(this).apply {
-                        text = "⚠ Could not read camera info on this device"
+                        text = getString(R.string.device_camera_info_unavailable)
                         setTextColor(getColor(R.color.text_tertiary))
                         textSize = 12f
                     }
@@ -423,27 +452,32 @@ class SettingsActivity : AppCompatActivity() {
         val hasSuperTele = info.cameras.any { it.facing == "back" && it.lens == "supertelephoto" }
         if (!hasSuperTele) return
         if (binding.spinnerLens.itemCount >= 4) return
-        binding.spinnerLens.addItem("Super-telephoto")
+        binding.spinnerLens.addItem(getString(R.string.lens_supertelephoto))
 
         val savedLensIdx = getSharedPreferences("stream_settings", MODE_PRIVATE).getInt("lens", 0)
         if (savedLensIdx == 3) binding.spinnerLens.setSelection(3)
     }
 
     private fun buildCameraRow(cam: DeviceCapabilities.CameraInfo): View {
+        // Stacked (not side-by-side): localized labels can run long enough in some
+        // languages that a shared horizontal row squeezes the label into narrow,
+        // ugly multi-line wrapping on narrower phone screens.
         val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.VERTICAL
             setPadding(0, dp(4), 0, dp(4))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
 
         val zoomTag = cam.zoomFactor?.let { z ->
             " · " + (if (z == z.toInt().toFloat()) "${z.toInt()}x" else "%.1fx".format(z))
         } ?: ""
         val label = TextView(this).apply {
-            text = "${cam.facing} · ${cam.lens}$zoomTag"
+            text = "${localizedFacing(cam.facing)} · ${localizedLens(cam.lens)}$zoomTag"
             setTextColor(getColor(R.color.text_primary))
             textSize = 13f
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
         val topRes = cam.supportedResolutions.maxByOrNull { it.size.width.toLong() * it.size.height }
@@ -453,12 +487,37 @@ class SettingsActivity : AppCompatActivity() {
                 "$mpTag${it.size.width}×${it.size.height} · ${it.maxFps}fps"
             } ?: "$mpTag${cam.maxResolution.width}×${cam.maxResolution.height}"
             setTextColor(getColor(R.color.readout))
-            textSize = 13f
+            textSize = 12f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(1) }
         }
 
         row.addView(label)
         row.addView(readout)
         return row
+    }
+
+    /** [DeviceCapabilities.CameraInfo.facing]/[.lens] are internal identifier
+     * strings ("back", "ultra-wide", ...), not display text — this maps them
+     * to the same localized strings used elsewhere (e.g. the lens spinner),
+     * so the CAMERAS list in device info isn't stuck in English regardless
+     * of app language. */
+    private fun localizedFacing(facing: String): String = when (facing) {
+        "back" -> getString(R.string.camera_facing_back)
+        "front" -> getString(R.string.camera_facing_front)
+        "external" -> getString(R.string.camera_facing_external)
+        else -> getString(R.string.label_unknown)
+    }
+
+    private fun localizedLens(lens: String): String = when (lens) {
+        "wide" -> getString(R.string.lens_wide)
+        "ultra-wide" -> getString(R.string.lens_ultrawide)
+        "telephoto" -> getString(R.string.lens_telephoto)
+        "supertelephoto" -> getString(R.string.lens_supertelephoto)
+        "front" -> getString(R.string.camera_facing_front)
+        else -> getString(R.string.label_unknown)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -481,7 +540,7 @@ class SettingsActivity : AppCompatActivity() {
         // about (or snapping back from) a resolution the user didn't pick.
         if (binding.spinnerResolution.selectedItemPosition == 7) {
             binding.fpsHintText.visibility = View.VISIBLE
-            binding.fpsHintText.text = "Custom resolution — device support isn't pre-checked"
+            binding.fpsHintText.text = getString(R.string.fps_hint_custom_resolution)
             binding.fpsHintText.setTextColor(getColor(R.color.text_tertiary))
             return
         }
@@ -493,21 +552,21 @@ class SettingsActivity : AppCompatActivity() {
         val support = backCam.supportedResolutions.firstOrNull { it.label == resLabel }
         binding.fpsHintText.visibility = View.VISIBLE
         if (support == null) {
-            binding.fpsHintText.text = "⚠ $resLabel is not supported by this camera"
+            binding.fpsHintText.text = getString(R.string.fps_hint_unsupported_resolution, resLabel)
             binding.fpsHintText.setTextColor(getColor(R.color.accent_red))
             // Don't let an impossible resolution be saved — snap back to 1080p
             if (resIdx != 3) {
                 binding.spinnerResolution.setSelection(3)
-                AppToast.warning(this, "$resLabel not available on this device — using 1080p")
+                AppToast.warning(this, getString(R.string.toast_resolution_unavailable, resLabel))
             }
         } else {
-            binding.fpsHintText.text = "This device: up to ${support.maxFps} fps at $resLabel"
+            binding.fpsHintText.text = getString(R.string.fps_hint_max_fps, support.maxFps, resLabel)
             binding.fpsHintText.setTextColor(getColor(R.color.text_tertiary))
         }
 
         val supported = DeviceCapabilities.isCombinationSupported(backCam, resLabel, fps)
         if (!supported && support != null) {
-            AppToast.warning(this, "$resLabel maxes out at ${support.maxFps}fps on this device")
+            AppToast.warning(this, getString(R.string.toast_resolution_maxes_out, resLabel, support.maxFps))
         }
     }
 
@@ -519,8 +578,14 @@ class SettingsActivity : AppCompatActivity() {
         testExecutor.execute {
             try {
                 val manager = SpeedTestManager(getPcHost(), 8788)
-                val result = manager.runTest(cacheDir) { progress ->
-                    runOnUiThread { binding.speedTestResult.text = progress }
+                val result = manager.runTest(cacheDir) { phase ->
+                    val textRes = when (phase) {
+                        SpeedTestPhase.GENERATING_FILE -> R.string.speedtest_generating
+                        SpeedTestPhase.UPLOADING -> R.string.speedtest_uploading
+                        SpeedTestPhase.DOWNLOADING -> R.string.speedtest_downloading
+                        SpeedTestPhase.CLEANING_UP -> R.string.speedtest_cleaning_up
+                    }
+                    runOnUiThread { binding.speedTestResult.text = getString(textRes) }
                 }
                 runOnUiThread {
                     binding.btnSpeedTest.isEnabled = true

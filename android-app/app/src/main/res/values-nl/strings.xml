@@ -152,4 +152,68 @@
     <string name="pc_services_stopped">PC-services gestopt</string>
     <string name="pc_usb_forwarded">USB-poorten doorgestuurd</string>
     <string name="pc_usb_failed">Mislukt — controleer de USB-verbinding</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Aangepast…</string>
+    <string name="af_continuous">Continu</string>
+    <string name="af_tap_to_focus">Tik om te focussen</string>
+    <string name="af_manual">Handmatig</string>
+    <string name="af_speed_standard">Standaard</string>
+    <string name="af_speed_cinematic">Filmisch</string>
+    <string name="af_speed_action">Actie</string>
+    <string name="af_speed_macro">Macro</string>
+    <string name="wb_auto">Automatisch</string>
+    <string name="wb_daylight">Daglicht</string>
+    <string name="wb_cloudy">Bewolkt</string>
+    <string name="wb_tungsten">Gloeilamp</string>
+    <string name="wb_fluorescent">TL-licht</string>
+    <string name="lens_wide">Groothoek</string>
+    <string name="lens_ultrawide">Ultragroothoek</string>
+    <string name="lens_telephoto">Telelens</string>
+    <string name="lens_supertelephoto">Supertelelens</string>
+    <string name="watermark_bottom_left">Linksonder</string>
+    <string name="watermark_bottom_right">Rechtsonder</string>
+    <string name="watermark_top_left">Linksboven</string>
+    <string name="watermark_top_right">Rechtsboven</string>
+    <string name="brightness_normal">Normaal</string>
+    <string name="brightness_full">Volledige helderheid</string>
+    <string name="brightness_dimmed">Gedimd</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">APPARAAT</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">OPSLAG</string>
+    <string name="device_label_codecs">CODECS</string>
+    <string name="device_label_cameras">CAMERA\'S</string>
+    <string name="device_capabilities_unavailable">⚠ Kan niet alle apparaatmogelijkheden lezen</string>
+    <string name="device_camera_info_unavailable">⚠ Kan camera-informatie op dit apparaat niet lezen</string>
+    <string name="device_note_camera_specs_db">Camera-specificaties uit apparaatdatabase</string>
+    <string name="device_note_ram_estimated">RAM geschat op basis van apparaatmodel</string>
+    <string name="device_note_camera_limits_estimated">Cameralimieten geschat</string>
+    <string name="camera_facing_back">Achterzijde</string>
+    <string name="camera_facing_front">Voorzijde</string>
+    <string name="camera_facing_external">Extern</string>
+    <string name="label_unknown">Onbekend</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Aangepaste resolutie — apparaatondersteuning niet vooraf gecontroleerd</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s wordt niet ondersteund door deze camera</string>
+    <string name="toast_resolution_unavailable">%1$s niet beschikbaar op dit apparaat — 1080p wordt gebruikt</string>
+    <string name="fps_hint_max_fps">Dit apparaat: tot %1$d fps bij %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s haalt maximaal %2$dfps op dit apparaat</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Kan die afbeelding niet laden</string>
+    <string name="toast_mic_permission_needed">Microfoontoestemming nodig voor de audioniveaumeter</string>
+    <string name="toast_camera_permission_required">Cameratoestemming is vereist</string>
+    <string name="toast_loading">Bezig met laden…</string>
+    <string name="toast_watch_full_ad">Bekijk de hele advertentie om het tegoed te verdienen</string>
+    <string name="toast_mic_open_failed">Kan de microfoon niet openen voor de audioniveaumeter</string>
+    <string name="toast_lens_not_available">%1$s-lens niet beschikbaar op dit apparaat</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Testbestand wordt gemaakt…</string>
+    <string name="speedtest_uploading">Uploaden naar pc…</string>
+    <string name="speedtest_downloading">Downloaden van pc…</string>
+    <string name="speedtest_cleaning_up">Opschonen…</string>
 </resources>

@@ -152,4 +152,68 @@
     <string name="pc_services_stopped">Servizi PC fermati</string>
     <string name="pc_usb_forwarded">Porte USB inoltrate</string>
     <string name="pc_usb_failed">Errore — verifica la connessione USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Personalizzato…</string>
+    <string name="af_continuous">Continuo</string>
+    <string name="af_tap_to_focus">Tocca per mettere a fuoco</string>
+    <string name="af_manual">Manuale</string>
+    <string name="af_speed_standard">Standard</string>
+    <string name="af_speed_cinematic">Cinematico</string>
+    <string name="af_speed_action">Azione</string>
+    <string name="af_speed_macro">Macro</string>
+    <string name="wb_auto">Automatico</string>
+    <string name="wb_daylight">Luce diurna</string>
+    <string name="wb_cloudy">Nuvoloso</string>
+    <string name="wb_tungsten">Tungsteno</string>
+    <string name="wb_fluorescent">Fluorescente</string>
+    <string name="lens_wide">Grandangolo</string>
+    <string name="lens_ultrawide">Ultra grandangolo</string>
+    <string name="lens_telephoto">Teleobiettivo</string>
+    <string name="lens_supertelephoto">Super teleobiettivo</string>
+    <string name="watermark_bottom_left">In basso a sinistra</string>
+    <string name="watermark_bottom_right">In basso a destra</string>
+    <string name="watermark_top_left">In alto a sinistra</string>
+    <string name="watermark_top_right">In alto a destra</string>
+    <string name="brightness_normal">Normale</string>
+    <string name="brightness_full">Luminosità massima</string>
+    <string name="brightness_dimmed">Attenuata</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">DISPOSITIVO</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">ARCHIVIAZIONE</string>
+    <string name="device_label_codecs">CODEC</string>
+    <string name="device_label_cameras">FOTOCAMERE</string>
+    <string name="device_capabilities_unavailable">⚠ Impossibile leggere tutte le funzionalità del dispositivo</string>
+    <string name="device_camera_info_unavailable">⚠ Impossibile leggere le informazioni della fotocamera su questo dispositivo</string>
+    <string name="device_note_camera_specs_db">Specifiche fotocamera dal database dei dispositivi</string>
+    <string name="device_note_ram_estimated">RAM stimata in base al modello del dispositivo</string>
+    <string name="device_note_camera_limits_estimated">Limiti della fotocamera stimati</string>
+    <string name="camera_facing_back">Posteriore</string>
+    <string name="camera_facing_front">Anteriore</string>
+    <string name="camera_facing_external">Esterna</string>
+    <string name="label_unknown">Sconosciuto</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Risoluzione personalizzata — compatibilità del dispositivo non verificata</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s non è supportata da questa fotocamera</string>
+    <string name="toast_resolution_unavailable">%1$s non disponibile su questo dispositivo — verrà usato 1080p</string>
+    <string name="fps_hint_max_fps">Questo dispositivo: fino a %1$d fps a %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s arriva al massimo a %2$dfps su questo dispositivo</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Impossibile caricare questa immagine</string>
+    <string name="toast_mic_permission_needed">Permesso del microfono necessario per il misuratore di livello audio</string>
+    <string name="toast_camera_permission_required">È richiesto il permesso della fotocamera</string>
+    <string name="toast_loading">Caricamento…</string>
+    <string name="toast_watch_full_ad">Guarda l\'annuncio per intero per ottenere il credito</string>
+    <string name="toast_mic_open_failed">Impossibile aprire il microfono per il misuratore di livello audio</string>
+    <string name="toast_lens_not_available">L\'obiettivo %1$s non è disponibile su questo dispositivo</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Creazione del file di test…</string>
+    <string name="speedtest_uploading">Caricamento sul PC…</string>
+    <string name="speedtest_downloading">Download dal PC…</string>
+    <string name="speedtest_cleaning_up">Pulizia…</string>
 </resources>

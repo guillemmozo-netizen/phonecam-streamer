@@ -152,4 +152,68 @@
     <string name="pc_services_stopped">पीसी सेवाएं रोक दी गईं</string>
     <string name="pc_usb_forwarded">USB पोर्ट फॉरवर्ड किए गए</string>
     <string name="pc_usb_failed">विफल — USB कनेक्शन जांचें</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">कस्टम…</string>
+    <string name="af_continuous">सतत</string>
+    <string name="af_tap_to_focus">फोकस के लिए टैप करें</string>
+    <string name="af_manual">मैनुअल</string>
+    <string name="af_speed_standard">मानक</string>
+    <string name="af_speed_cinematic">सिनेमैटिक</string>
+    <string name="af_speed_action">एक्शन</string>
+    <string name="af_speed_macro">मैक्रो</string>
+    <string name="wb_auto">ऑटो</string>
+    <string name="wb_daylight">दिन का प्रकाश</string>
+    <string name="wb_cloudy">बादलयुक्त</string>
+    <string name="wb_tungsten">टंगस्टन</string>
+    <string name="wb_fluorescent">फ्लोरोसेंट</string>
+    <string name="lens_wide">वाइड</string>
+    <string name="lens_ultrawide">अल्ट्रा-वाइड</string>
+    <string name="lens_telephoto">टेलीफोटो</string>
+    <string name="lens_supertelephoto">सुपर-टेलीफोटो</string>
+    <string name="watermark_bottom_left">नीचे-बाएं</string>
+    <string name="watermark_bottom_right">नीचे-दाएं</string>
+    <string name="watermark_top_left">ऊपर-बाएं</string>
+    <string name="watermark_top_right">ऊपर-दाएं</string>
+    <string name="brightness_normal">सामान्य</string>
+    <string name="brightness_full">पूर्ण चमक</string>
+    <string name="brightness_dimmed">मंद</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">डिवाइस</string>
+    <string name="device_label_ram">रैम</string>
+    <string name="device_label_storage">स्टोरेज</string>
+    <string name="device_label_codecs">कोडेक</string>
+    <string name="device_label_cameras">कैमरे</string>
+    <string name="device_capabilities_unavailable">⚠ डिवाइस क्षमताएं पूरी तरह से पढ़ी नहीं जा सकीं</string>
+    <string name="device_camera_info_unavailable">⚠ इस डिवाइस पर कैमरा जानकारी नहीं पढ़ी जा सकी</string>
+    <string name="device_note_camera_specs_db">कैमरा स्पेक्स डिवाइस डेटाबेस से</string>
+    <string name="device_note_ram_estimated">RAM का अनुमान डिवाइस मॉडल से लगाया गया</string>
+    <string name="device_note_camera_limits_estimated">कैमरा सीमाओं का अनुमान लगाया गया</string>
+    <string name="camera_facing_back">पीछे</string>
+    <string name="camera_facing_front">आगे</string>
+    <string name="camera_facing_external">बाहरी</string>
+    <string name="label_unknown">अज्ञात</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">कस्टम रिज़ॉल्यूशन — डिवाइस समर्थन की पूर्व-जांच नहीं की गई है</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s इस कैमरे द्वारा समर्थित नहीं है</string>
+    <string name="toast_resolution_unavailable">%1$s इस डिवाइस पर उपलब्ध नहीं — 1080p का उपयोग किया जा रहा है</string>
+    <string name="fps_hint_max_fps">इस डिवाइस पर: %2$s पर अधिकतम %1$d fps</string>
+    <string name="toast_resolution_maxes_out">%1$s इस डिवाइस पर अधिकतम %2$dfps तक सीमित है</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">यह छवि लोड नहीं हो सकी</string>
+    <string name="toast_mic_permission_needed">ऑडियो मीटर के लिए माइक्रोफ़ोन अनुमति आवश्यक है</string>
+    <string name="toast_camera_permission_required">कैमरा अनुमति आवश्यक है</string>
+    <string name="toast_loading">लोड हो रहा है…</string>
+    <string name="toast_watch_full_ad">क्रेडिट पाने के लिए पूरा विज्ञापन देखें</string>
+    <string name="toast_mic_open_failed">ऑडियो मीटर के लिए माइक्रोफ़ोन नहीं खोला जा सका</string>
+    <string name="toast_lens_not_available">%1$s लेंस इस डिवाइस पर उपलब्ध नहीं है</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">टेस्ट फ़ाइल बनाई जा रही है…</string>
+    <string name="speedtest_uploading">पीसी पर अपलोड हो रहा है…</string>
+    <string name="speedtest_downloading">पीसी से डाउनलोड हो रहा है…</string>
+    <string name="speedtest_cleaning_up">सफ़ाई हो रही है…</string>
 </resources>

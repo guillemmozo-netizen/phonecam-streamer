@@ -154,4 +154,68 @@
     <string name="pc_services_stopped">تم إيقاف خدمات الكمبيوتر</string>
     <string name="pc_usb_forwarded">تم توجيه منافذ USB</string>
     <string name="pc_usb_failed">فشل — تحقق من اتصال USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">مخصص…</string>
+    <string name="af_continuous">مستمر</string>
+    <string name="af_tap_to_focus">اضغط للتركيز</string>
+    <string name="af_manual">يدوي</string>
+    <string name="af_speed_standard">قياسي</string>
+    <string name="af_speed_cinematic">سينمائي</string>
+    <string name="af_speed_action">حركة</string>
+    <string name="af_speed_macro">ماكرو</string>
+    <string name="wb_auto">تلقائي</string>
+    <string name="wb_daylight">ضوء النهار</string>
+    <string name="wb_cloudy">غائم</string>
+    <string name="wb_tungsten">تنجستن</string>
+    <string name="wb_fluorescent">فلوري</string>
+    <string name="lens_wide">عريضة</string>
+    <string name="lens_ultrawide">فائقة الاتساع</string>
+    <string name="lens_telephoto">تقريب</string>
+    <string name="lens_supertelephoto">تقريب فائق</string>
+    <string name="watermark_bottom_left">أسفل اليسار</string>
+    <string name="watermark_bottom_right">أسفل اليمين</string>
+    <string name="watermark_top_left">أعلى اليسار</string>
+    <string name="watermark_top_right">أعلى اليمين</string>
+    <string name="brightness_normal">عادية</string>
+    <string name="brightness_full">سطوع كامل</string>
+    <string name="brightness_dimmed">خافتة</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">الجهاز</string>
+    <string name="device_label_ram">الذاكرة</string>
+    <string name="device_label_storage">التخزين</string>
+    <string name="device_label_codecs">الترميز</string>
+    <string name="device_label_cameras">الكاميرات</string>
+    <string name="device_capabilities_unavailable">⚠ تعذّرت قراءة إمكانات الجهاز بالكامل</string>
+    <string name="device_camera_info_unavailable">⚠ تعذّرت قراءة معلومات الكاميرا على هذا الجهاز</string>
+    <string name="device_note_camera_specs_db">مواصفات الكاميرا من قاعدة بيانات الأجهزة</string>
+    <string name="device_note_ram_estimated">تم تقدير الذاكرة العشوائية استنادًا إلى طراز الجهاز</string>
+    <string name="device_note_camera_limits_estimated">تم تقدير حدود الكاميرا</string>
+    <string name="camera_facing_back">خلفية</string>
+    <string name="camera_facing_front">أمامية</string>
+    <string name="camera_facing_external">خارجية</string>
+    <string name="label_unknown">غير معروف</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">دقة مخصصة — لم يتم التحقق من دعم الجهاز لها مسبقًا</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s غير مدعومة بواسطة هذه الكاميرا</string>
+    <string name="toast_resolution_unavailable">%1$s غير متاحة على هذا الجهاز — سيتم استخدام 1080p</string>
+    <string name="fps_hint_max_fps">هذا الجهاز: حتى %1$d fps عند %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s يصل بحد أقصى إلى %2$dfps على هذا الجهاز</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">تعذّر تحميل هذه الصورة</string>
+    <string name="toast_mic_permission_needed">يلزم إذن الميكروفون لمقياس مستوى الصوت</string>
+    <string name="toast_camera_permission_required">إذن الكاميرا مطلوب</string>
+    <string name="toast_loading">جارٍ التحميل…</string>
+    <string name="toast_watch_full_ad">شاهد الإعلان كاملاً للحصول على الرصيد</string>
+    <string name="toast_mic_open_failed">تعذّر فتح الميكروفون لمقياس مستوى الصوت</string>
+    <string name="toast_lens_not_available">عدسة %1$s غير متاحة على هذا الجهاز</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">جارٍ إنشاء ملف الاختبار…</string>
+    <string name="speedtest_uploading">جارٍ الرفع إلى الكمبيوتر…</string>
+    <string name="speedtest_downloading">جارٍ التنزيل من الكمبيوتر…</string>
+    <string name="speedtest_cleaning_up">جارٍ التنظيف…</string>
 </resources>

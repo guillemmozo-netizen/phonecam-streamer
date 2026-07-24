@@ -177,7 +177,7 @@
             android:layout_marginStart="4dp"
             android:layout_marginBottom="9dp">
             <View style="@style/SectionLabelTick" />
-            <TextView style="@style/SectionLabelText" android:text="DEVICE" />
+            <TextView style="@style/SectionLabelText" android:text="@string/device_section_title" />
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
@@ -233,7 +233,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="RAM" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:text="@string/device_label_ram" android:textColor="@color/text_tertiary" android:textSize="10sp"
                             android:letterSpacing="0.12" android:textAllCaps="true" />
                         <TextView android:id="@+id/deviceRamText"
                             android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -248,7 +248,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="STORAGE" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:text="@string/device_label_storage" android:textColor="@color/text_tertiary" android:textSize="10sp"
                             android:letterSpacing="0.12" android:textAllCaps="true" />
                         <TextView android:id="@+id/deviceStorageText"
                             android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -263,7 +263,7 @@
                         android:layout_weight="1"
                         android:orientation="vertical">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="CODECS" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                            android:text="@string/device_label_codecs" android:textColor="@color/text_tertiary" android:textSize="10sp"
                             android:letterSpacing="0.12" android:textAllCaps="true" />
                         <TextView android:id="@+id/deviceCodecsText"
                             android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -281,7 +281,7 @@
 
                 <TextView
                     android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="CAMERAS" android:textColor="@color/text_tertiary" android:textSize="10sp"
+                    android:text="@string/device_label_cameras" android:textColor="@color/text_tertiary" android:textSize="10sp"
                     android:letterSpacing="0.12" android:textAllCaps="true"
                     android:layout_marginBottom="6dp" />
 

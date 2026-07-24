@@ -84,7 +84,7 @@ object DeviceCapabilities {
 
         if (known != null) {
             cameras = camerasFromSpec(known)
-            notes += "Camera specs from device database"
+            notes += context.getString(com.phonecam.streamer.R.string.device_note_camera_specs_db)
             if (!ramValid) ramMb = known.ramGb * 1024L
         } else {
             cameras = probeCameras(context)
@@ -95,11 +95,11 @@ object DeviceCapabilities {
                 )
                 if (!ramValid) {
                     ramMb = fallback.ramGb * 1024L
-                    notes += "RAM estimated from device model"
+                    notes += context.getString(com.phonecam.streamer.R.string.device_note_ram_estimated)
                 }
                 if (!camerasValid) {
                     cameras = camerasFromSpec(fallback)
-                    notes += "Camera limits estimated"
+                    notes += context.getString(com.phonecam.streamer.R.string.device_note_camera_limits_estimated)
                 }
             }
         }

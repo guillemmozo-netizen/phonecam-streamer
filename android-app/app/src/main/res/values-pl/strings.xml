@@ -154,4 +154,68 @@
     <string name="pc_services_stopped">Usługi PC zatrzymane</string>
     <string name="pc_usb_forwarded">Porty USB przekierowane</string>
     <string name="pc_usb_failed">Błąd — sprawdź połączenie USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Niestandardowa…</string>
+    <string name="af_continuous">Ciągły</string>
+    <string name="af_tap_to_focus">Dotknij, aby ustawić ostrość</string>
+    <string name="af_manual">Ręczny</string>
+    <string name="af_speed_standard">Standardowy</string>
+    <string name="af_speed_cinematic">Filmowy</string>
+    <string name="af_speed_action">Akcja</string>
+    <string name="af_speed_macro">Makro</string>
+    <string name="wb_auto">Automatyczny</string>
+    <string name="wb_daylight">Światło dzienne</string>
+    <string name="wb_cloudy">Pochmurno</string>
+    <string name="wb_tungsten">Żarówka</string>
+    <string name="wb_fluorescent">Świetlówka</string>
+    <string name="lens_wide">Szerokokątny</string>
+    <string name="lens_ultrawide">Ultraszerokokątny</string>
+    <string name="lens_telephoto">Teleobiektyw</string>
+    <string name="lens_supertelephoto">Superteleobiektyw</string>
+    <string name="watermark_bottom_left">Lewy dolny róg</string>
+    <string name="watermark_bottom_right">Prawy dolny róg</string>
+    <string name="watermark_top_left">Lewy górny róg</string>
+    <string name="watermark_top_right">Prawy górny róg</string>
+    <string name="brightness_normal">Normalna</string>
+    <string name="brightness_full">Pełna jasność</string>
+    <string name="brightness_dimmed">Przyciemniona</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">URZĄDZENIE</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">PAMIĘĆ</string>
+    <string name="device_label_codecs">KODEKI</string>
+    <string name="device_label_cameras">APARATY</string>
+    <string name="device_capabilities_unavailable">⚠ Nie udało się odczytać wszystkich możliwości urządzenia</string>
+    <string name="device_camera_info_unavailable">⚠ Nie udało się odczytać informacji o aparacie na tym urządzeniu</string>
+    <string name="device_note_camera_specs_db">Dane aparatu z bazy urządzeń</string>
+    <string name="device_note_ram_estimated">RAM oszacowany na podstawie modelu urządzenia</string>
+    <string name="device_note_camera_limits_estimated">Limity aparatu oszacowane</string>
+    <string name="camera_facing_back">Tylny</string>
+    <string name="camera_facing_front">Przedni</string>
+    <string name="camera_facing_external">Zewnętrzny</string>
+    <string name="label_unknown">Nieznany</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Niestandardowa rozdzielczość — zgodność urządzenia niesprawdzona</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s nie jest obsługiwana przez ten aparat</string>
+    <string name="toast_resolution_unavailable">%1$s niedostępna na tym urządzeniu — używam 1080p</string>
+    <string name="fps_hint_max_fps">To urządzenie: do %1$d kl./s przy %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s osiąga maksymalnie %2$d kl./s na tym urządzeniu</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Nie udało się wczytać tego obrazu</string>
+    <string name="toast_mic_permission_needed">Wymagane uprawnienie mikrofonu dla wskaźnika poziomu dźwięku</string>
+    <string name="toast_camera_permission_required">Wymagane uprawnienie aparatu</string>
+    <string name="toast_loading">Wczytywanie…</string>
+    <string name="toast_watch_full_ad">Obejrzyj cały film, aby otrzymać nagrodę</string>
+    <string name="toast_mic_open_failed">Nie udało się otworzyć mikrofonu dla wskaźnika poziomu dźwięku</string>
+    <string name="toast_lens_not_available">Obiektyw %1$s niedostępny na tym urządzeniu</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Tworzenie pliku testowego…</string>
+    <string name="speedtest_uploading">Wysyłanie do komputera…</string>
+    <string name="speedtest_downloading">Pobieranie z komputera…</string>
+    <string name="speedtest_cleaning_up">Czyszczenie…</string>
 </resources>

@@ -152,4 +152,68 @@
     <string name="pc_services_stopped">Servicios del PC detenidos</string>
     <string name="pc_usb_forwarded">Puertos USB redirigidos</string>
     <string name="pc_usb_failed">Error — comprueba la conexión USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Personalizado…</string>
+    <string name="af_continuous">Continuo</string>
+    <string name="af_tap_to_focus">Toca para enfocar</string>
+    <string name="af_manual">Manual</string>
+    <string name="af_speed_standard">Estándar</string>
+    <string name="af_speed_cinematic">Cinemático</string>
+    <string name="af_speed_action">Acción</string>
+    <string name="af_speed_macro">Macro</string>
+    <string name="wb_auto">Automático</string>
+    <string name="wb_daylight">Luz diurna</string>
+    <string name="wb_cloudy">Nublado</string>
+    <string name="wb_tungsten">Tungsteno</string>
+    <string name="wb_fluorescent">Fluorescente</string>
+    <string name="lens_wide">Gran angular</string>
+    <string name="lens_ultrawide">Ultra gran angular</string>
+    <string name="lens_telephoto">Teleobjetivo</string>
+    <string name="lens_supertelephoto">Superteleobjetivo</string>
+    <string name="watermark_bottom_left">Abajo a la izquierda</string>
+    <string name="watermark_bottom_right">Abajo a la derecha</string>
+    <string name="watermark_top_left">Arriba a la izquierda</string>
+    <string name="watermark_top_right">Arriba a la derecha</string>
+    <string name="brightness_normal">Normal</string>
+    <string name="brightness_full">Brillo máximo</string>
+    <string name="brightness_dimmed">Atenuado</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">DISPOSITIVO</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">ALMACENAMIENTO</string>
+    <string name="device_label_codecs">CÓDECS</string>
+    <string name="device_label_cameras">CÁMARAS</string>
+    <string name="device_capabilities_unavailable">⚠ No se han podido leer todas las capacidades del dispositivo</string>
+    <string name="device_camera_info_unavailable">⚠ No se ha podido leer la información de la cámara en este dispositivo</string>
+    <string name="device_note_camera_specs_db">Especificaciones de cámara de la base de datos del dispositivo</string>
+    <string name="device_note_ram_estimated">RAM estimada según el modelo del dispositivo</string>
+    <string name="device_note_camera_limits_estimated">Límites de cámara estimados</string>
+    <string name="camera_facing_back">Trasera</string>
+    <string name="camera_facing_front">Frontal</string>
+    <string name="camera_facing_external">Externa</string>
+    <string name="label_unknown">Desconocido</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Resolución personalizada — no se comprueba la compatibilidad del dispositivo</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s no es compatible con esta cámara</string>
+    <string name="toast_resolution_unavailable">%1$s no disponible en este dispositivo — usando 1080p</string>
+    <string name="fps_hint_max_fps">Este dispositivo: hasta %1$d fps a %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s llega como máximo a %2$dfps en este dispositivo</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">No se ha podido cargar esa imagen</string>
+    <string name="toast_mic_permission_needed">Se necesita permiso de micrófono para el medidor de audio</string>
+    <string name="toast_camera_permission_required">Se requiere permiso de cámara</string>
+    <string name="toast_loading">Cargando…</string>
+    <string name="toast_watch_full_ad">Mira el anuncio completo para conseguir el crédito</string>
+    <string name="toast_mic_open_failed">No se ha podido abrir el micrófono para el medidor de audio</string>
+    <string name="toast_lens_not_available">La lente %1$s no está disponible en este dispositivo</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Generando archivo de prueba…</string>
+    <string name="speedtest_uploading">Subiendo al PC…</string>
+    <string name="speedtest_downloading">Descargando del PC…</string>
+    <string name="speedtest_cleaning_up">Limpiando…</string>
 </resources>

@@ -178,7 +178,7 @@ class MainActivity : AppCompatActivity() {
             if (granted) {
                 startAudioMeter()
             } else {
-                AppToast.warning(this, "Microphone permission needed for the audio meter")
+                AppToast.warning(this, getString(R.string.toast_mic_permission_needed))
             }
         }
 
@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
             if (granted) {
                 startCamera()
             } else {
-                AppToast.error(this, "Camera permission is required")
+                AppToast.error(this, getString(R.string.toast_camera_permission_required))
             }
         }
 
@@ -777,7 +777,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun onWatchAdClicked() {
         if (!adsReady || !adController.isReady()) {
-            AppToast.info(this, "Loading…")
+            AppToast.info(this, getString(R.string.toast_loading))
             adController.preload()
             return
         }
@@ -837,7 +837,7 @@ class MainActivity : AppCompatActivity() {
                 }
             },
             onDismissedWithoutReward = {
-                AppToast.warning(this, "Watch the full ad to earn credit")
+                AppToast.warning(this, getString(R.string.toast_watch_full_ad))
             },
             onFailedToShow = { reason ->
                 AppToast.error(this, "Error: $reason")
@@ -1050,7 +1050,7 @@ class MainActivity : AppCompatActivity() {
             audioLevelMeter = meter
             binding.audioMeterContainer.visibility = View.VISIBLE
         } else {
-            AppToast.warning(this, "Couldn't open the microphone for the audio meter")
+            AppToast.warning(this, getString(R.string.toast_mic_open_failed))
         }
     }
 
@@ -1316,8 +1316,14 @@ class MainActivity : AppCompatActivity() {
         val target = findLensTargetFor(cfg.lensType)
         if (target == null) {
             Log.w(TAG, "no ${cfg.lensType} camera on this device, using default back camera")
-            val displayName = cfg.lensType.replace("supertelephoto", "super-telephoto").replaceFirstChar { it.uppercase() }
-            AppToast.warning(this, "$displayName lens not available on this device")
+            val displayName = when (cfg.lensType) {
+                "wide" -> getString(R.string.lens_wide)
+                "ultra-wide" -> getString(R.string.lens_ultrawide)
+                "telephoto" -> getString(R.string.lens_telephoto)
+                "supertelephoto" -> getString(R.string.lens_supertelephoto)
+                else -> getString(R.string.label_unknown)
+            }
+            AppToast.warning(this, getString(R.string.toast_lens_not_available, displayName))
             return CameraBinding(plainSelector, defaultId, null)
         }
 

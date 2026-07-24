@@ -151,4 +151,68 @@
     <string name="pc_services_stopped">Layanan PC dihentikan</string>
     <string name="pc_usb_forwarded">Port USB diteruskan</string>
     <string name="pc_usb_failed">Gagal — periksa koneksi USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Kustom…</string>
+    <string name="af_continuous">Berkelanjutan</string>
+    <string name="af_tap_to_focus">Ketuk untuk fokus</string>
+    <string name="af_manual">Manual</string>
+    <string name="af_speed_standard">Standar</string>
+    <string name="af_speed_cinematic">Sinematik</string>
+    <string name="af_speed_action">Aksi</string>
+    <string name="af_speed_macro">Makro</string>
+    <string name="wb_auto">Otomatis</string>
+    <string name="wb_daylight">Cahaya siang</string>
+    <string name="wb_cloudy">Berawan</string>
+    <string name="wb_tungsten">Tungsten</string>
+    <string name="wb_fluorescent">Fluoresen</string>
+    <string name="lens_wide">Wide</string>
+    <string name="lens_ultrawide">Ultra-wide</string>
+    <string name="lens_telephoto">Telefoto</string>
+    <string name="lens_supertelephoto">Super-telefoto</string>
+    <string name="watermark_bottom_left">Kiri bawah</string>
+    <string name="watermark_bottom_right">Kanan bawah</string>
+    <string name="watermark_top_left">Kiri atas</string>
+    <string name="watermark_top_right">Kanan atas</string>
+    <string name="brightness_normal">Normal</string>
+    <string name="brightness_full">Kecerahan penuh</string>
+    <string name="brightness_dimmed">Diredupkan</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">PERANGKAT</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">PENYIMPANAN</string>
+    <string name="device_label_codecs">KODEK</string>
+    <string name="device_label_cameras">KAMERA</string>
+    <string name="device_capabilities_unavailable">⚠ Tidak dapat membaca kemampuan perangkat sepenuhnya</string>
+    <string name="device_camera_info_unavailable">⚠ Tidak dapat membaca info kamera di perangkat ini</string>
+    <string name="device_note_camera_specs_db">Spesifikasi kamera dari database perangkat</string>
+    <string name="device_note_ram_estimated">RAM diperkirakan dari model perangkat</string>
+    <string name="device_note_camera_limits_estimated">Batas kamera diperkirakan</string>
+    <string name="camera_facing_back">Belakang</string>
+    <string name="camera_facing_front">Depan</string>
+    <string name="camera_facing_external">Eksternal</string>
+    <string name="label_unknown">Tidak diketahui</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Resolusi kustom — dukungan perangkat belum diperiksa sebelumnya</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s tidak didukung oleh kamera ini</string>
+    <string name="toast_resolution_unavailable">%1$s tidak tersedia di perangkat ini — menggunakan 1080p</string>
+    <string name="fps_hint_max_fps">Perangkat ini: hingga %1$d fps pada %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s maksimal %2$dfps di perangkat ini</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Gambar ini tidak dapat dimuat</string>
+    <string name="toast_mic_permission_needed">Izin mikrofon diperlukan untuk meter audio</string>
+    <string name="toast_camera_permission_required">Izin kamera diperlukan</string>
+    <string name="toast_loading">Memuat…</string>
+    <string name="toast_watch_full_ad">Tonton iklan hingga selesai untuk mendapatkan kredit</string>
+    <string name="toast_mic_open_failed">Tidak dapat membuka mikrofon untuk meter audio</string>
+    <string name="toast_lens_not_available">Lensa %1$s tidak tersedia di perangkat ini</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Membuat file uji…</string>
+    <string name="speedtest_uploading">Mengunggah ke PC…</string>
+    <string name="speedtest_downloading">Mengunduh dari PC…</string>
+    <string name="speedtest_cleaning_up">Membersihkan…</string>
 </resources>

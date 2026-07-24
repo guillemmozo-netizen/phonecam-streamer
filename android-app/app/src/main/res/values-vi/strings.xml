@@ -151,4 +151,68 @@
     <string name="pc_services_stopped">Đã dừng dịch vụ PC</string>
     <string name="pc_usb_forwarded">Đã chuyển tiếp cổng USB</string>
     <string name="pc_usb_failed">Thất bại — kiểm tra kết nối USB</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Tùy chỉnh…</string>
+    <string name="af_continuous">Liên tục</string>
+    <string name="af_tap_to_focus">Chạm để lấy nét</string>
+    <string name="af_manual">Thủ công</string>
+    <string name="af_speed_standard">Tiêu chuẩn</string>
+    <string name="af_speed_cinematic">Điện ảnh</string>
+    <string name="af_speed_action">Hành động</string>
+    <string name="af_speed_macro">Macro</string>
+    <string name="wb_auto">Tự động</string>
+    <string name="wb_daylight">Ánh sáng ban ngày</string>
+    <string name="wb_cloudy">Nhiều mây</string>
+    <string name="wb_tungsten">Đèn dây tóc</string>
+    <string name="wb_fluorescent">Đèn huỳnh quang</string>
+    <string name="lens_wide">Góc rộng</string>
+    <string name="lens_ultrawide">Siêu rộng</string>
+    <string name="lens_telephoto">Tele</string>
+    <string name="lens_supertelephoto">Siêu tele</string>
+    <string name="watermark_bottom_left">Dưới bên trái</string>
+    <string name="watermark_bottom_right">Dưới bên phải</string>
+    <string name="watermark_top_left">Trên bên trái</string>
+    <string name="watermark_top_right">Trên bên phải</string>
+    <string name="brightness_normal">Bình thường</string>
+    <string name="brightness_full">Độ sáng tối đa</string>
+    <string name="brightness_dimmed">Làm mờ</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">THIẾT BỊ</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">BỘ NHỚ</string>
+    <string name="device_label_codecs">CODEC</string>
+    <string name="device_label_cameras">CAMERA</string>
+    <string name="device_capabilities_unavailable">⚠ Không thể đọc đầy đủ khả năng của thiết bị</string>
+    <string name="device_camera_info_unavailable">⚠ Không thể đọc thông tin camera trên thiết bị này</string>
+    <string name="device_note_camera_specs_db">Thông số camera từ cơ sở dữ liệu thiết bị</string>
+    <string name="device_note_ram_estimated">RAM được ước tính theo dòng máy</string>
+    <string name="device_note_camera_limits_estimated">Giới hạn camera được ước tính</string>
+    <string name="camera_facing_back">Sau</string>
+    <string name="camera_facing_front">Trước</string>
+    <string name="camera_facing_external">Ngoài</string>
+    <string name="label_unknown">Không xác định</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Độ phân giải tùy chỉnh — chưa kiểm tra trước khả năng hỗ trợ của thiết bị</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s không được camera này hỗ trợ</string>
+    <string name="toast_resolution_unavailable">%1$s không khả dụng trên thiết bị này — đang dùng 1080p</string>
+    <string name="fps_hint_max_fps">Thiết bị này: tối đa %1$d fps ở %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s chỉ đạt tối đa %2$dfps trên thiết bị này</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Không thể tải hình ảnh này</string>
+    <string name="toast_mic_permission_needed">Cần quyền micro để đo mức âm thanh</string>
+    <string name="toast_camera_permission_required">Cần quyền camera</string>
+    <string name="toast_loading">Đang tải…</string>
+    <string name="toast_watch_full_ad">Xem hết quảng cáo để nhận thưởng</string>
+    <string name="toast_mic_open_failed">Không thể mở micro để đo mức âm thanh</string>
+    <string name="toast_lens_not_available">Ống kính %1$s không khả dụng trên thiết bị này</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Đang tạo tệp thử nghiệm…</string>
+    <string name="speedtest_uploading">Đang tải lên PC…</string>
+    <string name="speedtest_downloading">Đang tải xuống từ PC…</string>
+    <string name="speedtest_cleaning_up">Đang dọn dẹp…</string>
 </resources>

@@ -151,4 +151,68 @@
     <string name="pc_services_stopped">PC 서비스가 중지되었습니다</string>
     <string name="pc_usb_forwarded">USB 포트가 전달되었습니다</string>
     <string name="pc_usb_failed">실패 — USB 연결을 확인하세요</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">사용자 지정…</string>
+    <string name="af_continuous">연속</string>
+    <string name="af_tap_to_focus">탭하여 초점</string>
+    <string name="af_manual">수동</string>
+    <string name="af_speed_standard">표준</string>
+    <string name="af_speed_cinematic">시네마틱</string>
+    <string name="af_speed_action">액션</string>
+    <string name="af_speed_macro">매크로</string>
+    <string name="wb_auto">자동</string>
+    <string name="wb_daylight">주광</string>
+    <string name="wb_cloudy">흐림</string>
+    <string name="wb_tungsten">텅스텐</string>
+    <string name="wb_fluorescent">형광등</string>
+    <string name="lens_wide">광각</string>
+    <string name="lens_ultrawide">초광각</string>
+    <string name="lens_telephoto">망원</string>
+    <string name="lens_supertelephoto">초망원</string>
+    <string name="watermark_bottom_left">왼쪽 하단</string>
+    <string name="watermark_bottom_right">오른쪽 하단</string>
+    <string name="watermark_top_left">왼쪽 상단</string>
+    <string name="watermark_top_right">오른쪽 상단</string>
+    <string name="brightness_normal">보통</string>
+    <string name="brightness_full">최대 밝기</string>
+    <string name="brightness_dimmed">어둡게</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">기기</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">저장공간</string>
+    <string name="device_label_codecs">코덱</string>
+    <string name="device_label_cameras">카메라</string>
+    <string name="device_capabilities_unavailable">⚠ 기기 사양을 완전히 읽을 수 없습니다</string>
+    <string name="device_camera_info_unavailable">⚠ 이 기기의 카메라 정보를 읽을 수 없습니다</string>
+    <string name="device_note_camera_specs_db">기기 데이터베이스의 카메라 사양</string>
+    <string name="device_note_ram_estimated">기기 모델을 기준으로 추정한 RAM</string>
+    <string name="device_note_camera_limits_estimated">추정된 카메라 한계</string>
+    <string name="camera_facing_back">후면</string>
+    <string name="camera_facing_front">전면</string>
+    <string name="camera_facing_external">외장</string>
+    <string name="label_unknown">알 수 없음</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">사용자 지정 해상도 — 기기 지원 여부가 사전에 확인되지 않았습니다</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s은(는) 이 카메라에서 지원되지 않습니다</string>
+    <string name="toast_resolution_unavailable">%1$s은(는) 이 기기에서 사용할 수 없습니다 — 1080p를 사용합니다</string>
+    <string name="fps_hint_max_fps">이 기기: %2$s에서 최대 %1$d fps</string>
+    <string name="toast_resolution_maxes_out">%1$s은(는) 이 기기에서 최대 %2$dfps까지입니다</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">이 이미지를 불러올 수 없습니다</string>
+    <string name="toast_mic_permission_needed">오디오 미터를 사용하려면 마이크 권한이 필요합니다</string>
+    <string name="toast_camera_permission_required">카메라 권한이 필요합니다</string>
+    <string name="toast_loading">로드 중…</string>
+    <string name="toast_watch_full_ad">크레딧을 받으려면 광고를 끝까지 시청하세요</string>
+    <string name="toast_mic_open_failed">오디오 미터용 마이크를 열 수 없습니다</string>
+    <string name="toast_lens_not_available">%1$s 렌즈는 이 기기에서 사용할 수 없습니다</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">테스트 파일 생성 중…</string>
+    <string name="speedtest_uploading">PC로 업로드 중…</string>
+    <string name="speedtest_downloading">PC에서 다운로드 중…</string>
+    <string name="speedtest_cleaning_up">정리 중…</string>
 </resources>

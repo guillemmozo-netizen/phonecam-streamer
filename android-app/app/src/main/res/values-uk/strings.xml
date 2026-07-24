@@ -154,4 +154,68 @@
     <string name="pc_services_stopped">Служби ПК зупинено</string>
     <string name="pc_usb_forwarded">USB-порти перенаправлено</string>
     <string name="pc_usb_failed">Помилка — перевірте USB-з\'єднання</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Власне…</string>
+    <string name="af_continuous">Безперервний</string>
+    <string name="af_tap_to_focus">Торкніться для фокусування</string>
+    <string name="af_manual">Ручний</string>
+    <string name="af_speed_standard">Стандартний</string>
+    <string name="af_speed_cinematic">Кінематографічний</string>
+    <string name="af_speed_action">Екшн</string>
+    <string name="af_speed_macro">Макро</string>
+    <string name="wb_auto">Авто</string>
+    <string name="wb_daylight">Денне світло</string>
+    <string name="wb_cloudy">Хмарно</string>
+    <string name="wb_tungsten">Лампа розжарювання</string>
+    <string name="wb_fluorescent">Флуоресцентне</string>
+    <string name="lens_wide">Широкий</string>
+    <string name="lens_ultrawide">Надширокий</string>
+    <string name="lens_telephoto">Телеоб\'єктив</string>
+    <string name="lens_supertelephoto">Супертелеоб\'єктив</string>
+    <string name="watermark_bottom_left">Знизу зліва</string>
+    <string name="watermark_bottom_right">Знизу справа</string>
+    <string name="watermark_top_left">Зверху зліва</string>
+    <string name="watermark_top_right">Зверху справа</string>
+    <string name="brightness_normal">Звичайна</string>
+    <string name="brightness_full">Повна яскравість</string>
+    <string name="brightness_dimmed">Приглушена</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">ПРИСТРІЙ</string>
+    <string name="device_label_ram">ОЗП</string>
+    <string name="device_label_storage">ПАМ\'ЯТЬ</string>
+    <string name="device_label_codecs">КОДЕКИ</string>
+    <string name="device_label_cameras">КАМЕРИ</string>
+    <string name="device_capabilities_unavailable">⚠ Не вдалося повністю зчитати характеристики пристрою</string>
+    <string name="device_camera_info_unavailable">⚠ Не вдалося зчитати дані камери на цьому пристрої</string>
+    <string name="device_note_camera_specs_db">Характеристики камери з бази даних пристроїв</string>
+    <string name="device_note_ram_estimated">Обсяг ОЗП оцінено за моделлю пристрою</string>
+    <string name="device_note_camera_limits_estimated">Обмеження камери оцінено приблизно</string>
+    <string name="camera_facing_back">Задня</string>
+    <string name="camera_facing_front">Передня</string>
+    <string name="camera_facing_external">Зовнішня</string>
+    <string name="label_unknown">Невідомо</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Власна роздільна здатність — підтримку пристроєм заздалегідь не перевірено</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s не підтримується цією камерою</string>
+    <string name="toast_resolution_unavailable">%1$s недоступно на цьому пристрої — використовується 1080p</string>
+    <string name="fps_hint_max_fps">Цей пристрій: до %1$d fps при %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s обмежено до %2$d fps на цьому пристрої</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Не вдалося завантажити це зображення</string>
+    <string name="toast_mic_permission_needed">Для індикатора рівня звуку потрібен доступ до мікрофона</string>
+    <string name="toast_camera_permission_required">Потрібен дозвіл на використання камери</string>
+    <string name="toast_loading">Завантаження…</string>
+    <string name="toast_watch_full_ad">Перегляньте рекламу повністю, щоб отримати нагороду</string>
+    <string name="toast_mic_open_failed">Не вдалося відкрити мікрофон для індикатора рівня звуку</string>
+    <string name="toast_lens_not_available">Об\'єктив %1$s недоступний на цьому пристрої</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Створення тестового файлу…</string>
+    <string name="speedtest_uploading">Надсилання на ПК…</string>
+    <string name="speedtest_downloading">Завантаження з ПК…</string>
+    <string name="speedtest_cleaning_up">Очищення…</string>
 </resources>

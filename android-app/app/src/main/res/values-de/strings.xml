@@ -152,4 +152,68 @@
     <string name="pc_services_stopped">PC-Dienste gestoppt</string>
     <string name="pc_usb_forwarded">USB-Ports weitergeleitet</string>
     <string name="pc_usb_failed">Fehlgeschlagen — USB-Verbindung prüfen</string>
+
+    <!-- Spinner option values -->
+    <string name="option_custom">Benutzerdefiniert…</string>
+    <string name="af_continuous">Kontinuierlich</string>
+    <string name="af_tap_to_focus">Tippen zum Fokussieren</string>
+    <string name="af_manual">Manuell</string>
+    <string name="af_speed_standard">Standard</string>
+    <string name="af_speed_cinematic">Filmisch</string>
+    <string name="af_speed_action">Action</string>
+    <string name="af_speed_macro">Makro</string>
+    <string name="wb_auto">Automatisch</string>
+    <string name="wb_daylight">Tageslicht</string>
+    <string name="wb_cloudy">Bewölkt</string>
+    <string name="wb_tungsten">Glühlampe</string>
+    <string name="wb_fluorescent">Leuchtstofflampe</string>
+    <string name="lens_wide">Weitwinkel</string>
+    <string name="lens_ultrawide">Ultraweitwinkel</string>
+    <string name="lens_telephoto">Tele</string>
+    <string name="lens_supertelephoto">Super-Tele</string>
+    <string name="watermark_bottom_left">Unten links</string>
+    <string name="watermark_bottom_right">Unten rechts</string>
+    <string name="watermark_top_left">Oben links</string>
+    <string name="watermark_top_right">Oben rechts</string>
+    <string name="brightness_normal">Normal</string>
+    <string name="brightness_full">Volle Helligkeit</string>
+    <string name="brightness_dimmed">Gedimmt</string>
+
+    <!-- Device info -->
+    <string name="device_section_title">GERÄT</string>
+    <string name="device_label_ram">RAM</string>
+    <string name="device_label_storage">SPEICHER</string>
+    <string name="device_label_codecs">CODECS</string>
+    <string name="device_label_cameras">KAMERAS</string>
+    <string name="device_capabilities_unavailable">⚠ Geräte-Fähigkeiten konnten nicht vollständig gelesen werden</string>
+    <string name="device_camera_info_unavailable">⚠ Kamerainformationen konnten auf diesem Gerät nicht gelesen werden</string>
+    <string name="device_note_camera_specs_db">Kameradaten aus der Gerätedatenbank</string>
+    <string name="device_note_ram_estimated">RAM anhand des Gerätemodells geschätzt</string>
+    <string name="device_note_camera_limits_estimated">Kameragrenzwerte geschätzt</string>
+    <string name="camera_facing_back">Rückseite</string>
+    <string name="camera_facing_front">Vorderseite</string>
+    <string name="camera_facing_external">Extern</string>
+    <string name="label_unknown">Unbekannt</string>
+
+    <!-- Compatibility warnings (Settings > Video) -->
+    <string name="fps_hint_custom_resolution">Benutzerdefinierte Auflösung — Geräteunterstützung nicht vorab geprüft</string>
+    <string name="fps_hint_unsupported_resolution">⚠ %1$s wird von dieser Kamera nicht unterstützt</string>
+    <string name="toast_resolution_unavailable">%1$s auf diesem Gerät nicht verfügbar — verwende 1080p</string>
+    <string name="fps_hint_max_fps">Dieses Gerät: bis zu %1$d fps bei %2$s</string>
+    <string name="toast_resolution_maxes_out">%1$s erreicht auf diesem Gerät maximal %2$dfps</string>
+
+    <!-- Misc toasts -->
+    <string name="toast_image_load_failed">Dieses Bild konnte nicht geladen werden</string>
+    <string name="toast_mic_permission_needed">Mikrofonberechtigung für die Audiopegelanzeige erforderlich</string>
+    <string name="toast_camera_permission_required">Kameraberechtigung erforderlich</string>
+    <string name="toast_loading">Wird geladen…</string>
+    <string name="toast_watch_full_ad">Sieh dir die ganze Anzeige an, um die Gutschrift zu erhalten</string>
+    <string name="toast_mic_open_failed">Mikrofon für die Audiopegelanzeige konnte nicht geöffnet werden</string>
+    <string name="toast_lens_not_available">Objektiv %1$s auf diesem Gerät nicht verfügbar</string>
+
+    <!-- Speed test progress -->
+    <string name="speedtest_generating">Testdatei wird erstellt…</string>
+    <string name="speedtest_uploading">Wird zum PC hochgeladen…</string>
+    <string name="speedtest_downloading">Wird vom PC heruntergeladen…</string>
+    <string name="speedtest_cleaning_up">Wird bereinigt…</string>
 </resources>
