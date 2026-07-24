@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">مجاني</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">لا يوجد وقت مميز</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">‎+1 س</string>
+    <string name="start_stream_button">بدء</string>
+    <string name="stop_stream_button">إيقاف</string>
+    <string name="ads_consent_denied">غير متاح</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">خامل</string>
+
+    <!-- Navigation -->
+    <string name="settings">الإعدادات</string>
+    <string name="back">رجوع</string>
+
+    <!-- Camera controls -->
+    <string name="torch">الفلاش</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">الشاشة</string>
+    <string name="settings_keep_awake">إبقاء الشاشة نشطة</string>
+    <string name="settings_stream_brightness">أثناء البث</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">مجاني</string>
+    <string name="sub_pro">Pro</string>
+    <string name="sub_description">افتح تسجيل 4K، وأزل العلامات المائية، واحصل على أدوات تحكم صوتية متقدمة ودعم ذو أولوية.</string>
+    <string name="sub_price">1.49 € شهريًا أو 4.99 € مدى الحياة</string>
+    <string name="sub_upgrade">الترقية إلى Pro</string>
+    <string name="sub_coming_soon">قريبًا</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">الفيديو</string>
+    <string name="settings_audio">الصوت</string>
+    <string name="settings_camera">الكاميرا</string>
+    <string name="settings_network">البث</string>
+    <string name="settings_overlay">التراكب</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">الدقة</string>
+    <string name="settings_aspect_ratio">تركيب الصورة</string>
+    <string name="settings_video_codec">الترميز</string>
+    <string name="settings_video_bitrate">معدل البت</string>
+    <string name="settings_fps">معدل الإطارات</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">تثبيت الصورة</string>
+    <string name="settings_autofocus">التركيز التلقائي</string>
+    <string name="settings_af_speed">نمط التركيز</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">تسجيل الصوت</string>
+    <string name="settings_sample_rate">معدل أخذ العينات</string>
+    <string name="settings_audio_bitrate">معدل البت</string>
+    <string name="settings_audio_codec">الترميز</string>
+    <string name="settings_noise_reduction">تقليل الضوضاء</string>
+    <string name="settings_wind_filter">فلتر الرياح</string>
+    <string name="settings_audio_meter">مقياس مستوى الصوت</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">توازن اللون الأبيض</string>
+    <string name="settings_lens">العدسة</string>
+    <string name="settings_grid">الشبكة</string>
+    <string name="settings_mirror">عكس الصورة</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">عنوان الكمبيوتر</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">البحث عن الكمبيوتر</string>
+    <string name="settings_discover_scan">مسح</string>
+    <string name="settings_discover_found">تم العثور عليه</string>
+    <string name="settings_discover_not_found">لم يتم العثور عليه</string>
+    <string name="settings_connection_mode">الاتصال</string>
+    <string name="settings_protocol">البروتوكول</string>
+    <string name="settings_low_latency">تأخير منخفض</string>
+    <string name="settings_auto_reconnect">إعادة الاتصال التلقائي</string>
+    <string name="settings_sync_obs">مزامنة إعدادات OBS</string>
+    <string name="settings_sync_obs_desc">يقوم تلقائيًا بمطابقة دقة اللوحة ومعدل الإطارات ومعدل بت الفيديو في OBS مع هذا البث (يتطلب خادم WebSocket الخاص بـ OBS، وهو متوقف افتراضيًا في OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">اختبار السرعة</string>
+    <string name="settings_speedtest_desc">ينشئ ملفًا عشوائيًا بحجم 10 ميغابايت، ويرسله إلى الكمبيوتر ويستقبله مرة أخرى، ويقيس سرعة النقل، ثم يحذفه تلقائيًا.</string>
+    <string name="speedtest_run">تشغيل اختبار السرعة</string>
+    <string name="speedtest_upload">الرفع</string>
+    <string name="speedtest_download">التنزيل</string>
+    <string name="speedtest_running">جارٍ الاختبار…</string>
+    <string name="speedtest_done">اكتمل الاختبار — تم حذف الملف تلقائيًا</string>
+    <string name="speedtest_error">فشل الاتصال — تحقق من تشغيل الكمبيوتر</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">حقوق النشر</string>
+    <string name="settings_copyright_mode">الوضع</string>
+    <string name="settings_copyright_text">النص</string>
+    <string name="settings_copyright_hint">© اسمك</string>
+    <string name="settings_copyright_image">صورة</string>
+    <string name="settings_choose_image">اختيار…</string>
+    <string name="settings_show_copyright">إظهار حقوق النشر</string>
+    <string name="settings_timestamp">الطابع الزمني</string>
+    <string name="settings_watermark_position">الموضع</string>
+</resources>

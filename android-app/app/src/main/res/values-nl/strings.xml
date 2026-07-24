@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Gratis</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Geen premiumtijd</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1u</string>
+    <string name="start_stream_button">Starten</string>
+    <string name="stop_stream_button">Stoppen</string>
+    <string name="ads_consent_denied">Niet beschikbaar</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">INACTIEF</string>
+
+    <!-- Navigation -->
+    <string name="settings">Instellingen</string>
+    <string name="back">Terug</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Zaklamp</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">SCHERM</string>
+    <string name="settings_keep_awake">Scherm actief houden</string>
+    <string name="settings_stream_brightness">Tijdens streamen</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">GRATIS</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Ontgrendel 4K-opnames, verwijder watermerken, gebruik geavanceerde audio-instellingen en krijg voorrang bij support.</string>
+    <string name="sub_price">€ 1,49 / maand of € 4,99 eenmalig</string>
+    <string name="sub_upgrade">Upgraden naar Pro</string>
+    <string name="sub_coming_soon">Binnenkort beschikbaar</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VIDEO</string>
+    <string name="settings_audio">AUDIO</string>
+    <string name="settings_camera">CAMERA</string>
+    <string name="settings_network">STREAM</string>
+    <string name="settings_overlay">OVERLAY</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Resolutie</string>
+    <string name="settings_aspect_ratio">Beeldcompositie</string>
+    <string name="settings_video_codec">Codec</string>
+    <string name="settings_video_bitrate">Bitrate</string>
+    <string name="settings_fps">Framerate</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Stabilisatie</string>
+    <string name="settings_autofocus">Autofocus</string>
+    <string name="settings_af_speed">Focusstijl</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Audio opnemen</string>
+    <string name="settings_sample_rate">Samplerate</string>
+    <string name="settings_audio_bitrate">Bitrate</string>
+    <string name="settings_audio_codec">Codec</string>
+    <string name="settings_noise_reduction">Ruisonderdrukking</string>
+    <string name="settings_wind_filter">Windfilter</string>
+    <string name="settings_audio_meter">Audioniveaumeter</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Witbalans</string>
+    <string name="settings_lens">Lens</string>
+    <string name="settings_grid">Raster</string>
+    <string name="settings_mirror">Spiegelen</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">PC-adres</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">PC zoeken</string>
+    <string name="settings_discover_scan">Scannen</string>
+    <string name="settings_discover_found">Gevonden</string>
+    <string name="settings_discover_not_found">Niet gevonden</string>
+    <string name="settings_connection_mode">Verbinding</string>
+    <string name="settings_protocol">Protocol</string>
+    <string name="settings_low_latency">Lage latentie</string>
+    <string name="settings_auto_reconnect">Automatisch opnieuw verbinden</string>
+    <string name="settings_sync_obs">OBS-instellingen synchroniseren</string>
+    <string name="settings_sync_obs_desc">Past automatisch de canvasresolutie, fps en videobitrate van OBS aan deze stream aan (vereist de WebSocket-server van OBS, standaard uitgeschakeld in OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">SNELHEIDSTEST</string>
+    <string name="settings_speedtest_desc">Maakt een willekeurig bestand van 10 MB, stuurt het naar de pc en terug, meet de overdrachtssnelheid en verwijdert het daarna automatisch.</string>
+    <string name="speedtest_run">Snelheidstest uitvoeren</string>
+    <string name="speedtest_upload">Uploaden</string>
+    <string name="speedtest_download">Downloaden</string>
+    <string name="speedtest_running">Bezig met testen…</string>
+    <string name="speedtest_done">Test voltooid — bestand automatisch verwijderd</string>
+    <string name="speedtest_error">Verbinding mislukt — controleer of de pc actief is</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_copyright_mode">Modus</string>
+    <string name="settings_copyright_text">Tekst</string>
+    <string name="settings_copyright_hint">© Jouw naam</string>
+    <string name="settings_copyright_image">Afbeelding</string>
+    <string name="settings_choose_image">Kiezen…</string>
+    <string name="settings_show_copyright">Copyright tonen</string>
+    <string name="settings_timestamp">Tijdstempel</string>
+    <string name="settings_watermark_position">Positie</string>
+</resources>

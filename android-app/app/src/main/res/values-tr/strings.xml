@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Ücretsiz</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Premium süre yok</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1sa</string>
+    <string name="start_stream_button">Başlat</string>
+    <string name="stop_stream_button">Durdur</string>
+    <string name="ads_consent_denied">Kullanılamıyor</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">BOŞTA</string>
+
+    <!-- Navigation -->
+    <string name="settings">Ayarlar</string>
+    <string name="back">Geri</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Fener</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">EKRAN</string>
+    <string name="settings_keep_awake">Ekranı açık tut</string>
+    <string name="settings_stream_brightness">Yayın sırasında</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">ÜCRETSİZ</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">4K kayıt, filigran kaldırma, gelişmiş ses kontrolleri ve öncelikli destek kilidini açın.</string>
+    <string name="sub_price">Ayda 1,49 € veya ömür boyu 4,99 €</string>
+    <string name="sub_upgrade">Pro\'ya yükselt</string>
+    <string name="sub_coming_soon">Yakında</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VİDEO</string>
+    <string name="settings_audio">SES</string>
+    <string name="settings_camera">KAMERA</string>
+    <string name="settings_network">YAYIN</string>
+    <string name="settings_overlay">BİNDİRME</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Çözünürlük</string>
+    <string name="settings_aspect_ratio">Kompozisyon</string>
+    <string name="settings_video_codec">Kodek</string>
+    <string name="settings_video_bitrate">Bit hızı</string>
+    <string name="settings_fps">Kare hızı</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Stabilizasyon</string>
+    <string name="settings_autofocus">Otomatik odak</string>
+    <string name="settings_af_speed">Odak stili</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Ses kaydet</string>
+    <string name="settings_sample_rate">Örnekleme hızı</string>
+    <string name="settings_audio_bitrate">Bit hızı</string>
+    <string name="settings_audio_codec">Kodek</string>
+    <string name="settings_noise_reduction">Gürültü azaltma</string>
+    <string name="settings_wind_filter">Rüzgar filtresi</string>
+    <string name="settings_audio_meter">Ses seviyesi göstergesi</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Beyaz dengesi</string>
+    <string name="settings_lens">Lens</string>
+    <string name="settings_grid">Izgara</string>
+    <string name="settings_mirror">Ayna görüntüsü</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">PC adresi</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">PC\'yi bul</string>
+    <string name="settings_discover_scan">Tara</string>
+    <string name="settings_discover_found">Bulundu</string>
+    <string name="settings_discover_not_found">Bulunamadı</string>
+    <string name="settings_connection_mode">Bağlantı</string>
+    <string name="settings_protocol">Protokol</string>
+    <string name="settings_low_latency">Düşük gecikme</string>
+    <string name="settings_auto_reconnect">Otomatik yeniden bağlan</string>
+    <string name="settings_sync_obs">OBS ayarlarını senkronize et</string>
+    <string name="settings_sync_obs_desc">OBS\'nin kanvas çözünürlüğünü, fps\'ini ve video bit hızını bu yayına otomatik olarak uyarlar (OBS\'nin WebSocket sunucusunu gerektirir, OBS\'de varsayılan olarak kapalıdır).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">HIZ TESTİ</string>
+    <string name="settings_speedtest_desc">10 MB\'lık rastgele bir dosya oluşturur, bilgisayara gönderip geri alır, aktarım hızını ölçer ve ardından otomatik olarak siler.</string>
+    <string name="speedtest_run">Hız testini çalıştır</string>
+    <string name="speedtest_upload">Yükleme</string>
+    <string name="speedtest_download">İndirme</string>
+    <string name="speedtest_running">Test ediliyor…</string>
+    <string name="speedtest_done">Test tamamlandı — dosya otomatik olarak silindi</string>
+    <string name="speedtest_error">Bağlantı başarısız — bilgisayarın açık olduğundan emin olun</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Telif hakkı</string>
+    <string name="settings_copyright_mode">Mod</string>
+    <string name="settings_copyright_text">Metin</string>
+    <string name="settings_copyright_hint">© Adınız</string>
+    <string name="settings_copyright_image">Görsel</string>
+    <string name="settings_choose_image">Seç…</string>
+    <string name="settings_show_copyright">Telif hakkını göster</string>
+    <string name="settings_timestamp">Zaman damgası</string>
+    <string name="settings_watermark_position">Konum</string>
+</resources>

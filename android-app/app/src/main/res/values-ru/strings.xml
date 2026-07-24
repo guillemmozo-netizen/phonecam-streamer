@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Бесплатно</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Нет премиум-времени</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1ч</string>
+    <string name="start_stream_button">Старт</string>
+    <string name="stop_stream_button">Стоп</string>
+    <string name="ads_consent_denied">Недоступно</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">ОЖИДАНИЕ</string>
+
+    <!-- Navigation -->
+    <string name="settings">Настройки</string>
+    <string name="back">Назад</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Фонарик</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">ЭКРАН</string>
+    <string name="settings_keep_awake">Не выключать экран</string>
+    <string name="settings_stream_brightness">Во время трансляции</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">БЕСПЛАТНО</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Откройте запись в 4K, уберите водяные знаки, получите расширенное управление звуком и приоритетную поддержку.</string>
+    <string name="sub_price">1,49 € в месяц или 4,99 € навсегда</string>
+    <string name="sub_upgrade">Перейти на Pro</string>
+    <string name="sub_coming_soon">Скоро</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">ВИДЕО</string>
+    <string name="settings_audio">АУДИО</string>
+    <string name="settings_camera">КАМЕРА</string>
+    <string name="settings_network">ТРАНСЛЯЦИЯ</string>
+    <string name="settings_overlay">НАЛОЖЕНИЕ</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Разрешение</string>
+    <string name="settings_aspect_ratio">Компоновка кадра</string>
+    <string name="settings_video_codec">Кодек</string>
+    <string name="settings_video_bitrate">Битрейт</string>
+    <string name="settings_fps">Частота кадров</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Стабилизация</string>
+    <string name="settings_autofocus">Автофокус</string>
+    <string name="settings_af_speed">Режим фокусировки</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Записывать звук</string>
+    <string name="settings_sample_rate">Частота дискретизации</string>
+    <string name="settings_audio_bitrate">Битрейт</string>
+    <string name="settings_audio_codec">Кодек</string>
+    <string name="settings_noise_reduction">Шумоподавление</string>
+    <string name="settings_wind_filter">Фильтр ветра</string>
+    <string name="settings_audio_meter">Индикатор уровня звука</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Баланс белого</string>
+    <string name="settings_lens">Объектив</string>
+    <string name="settings_grid">Сетка</string>
+    <string name="settings_mirror">Зеркальное отражение</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">Адрес ПК</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">Найти ПК</string>
+    <string name="settings_discover_scan">Сканировать</string>
+    <string name="settings_discover_found">Найдено</string>
+    <string name="settings_discover_not_found">Не найдено</string>
+    <string name="settings_connection_mode">Подключение</string>
+    <string name="settings_protocol">Протокол</string>
+    <string name="settings_low_latency">Низкая задержка</string>
+    <string name="settings_auto_reconnect">Автоматическое переподключение</string>
+    <string name="settings_sync_obs">Синхронизировать настройки OBS</string>
+    <string name="settings_sync_obs_desc">Автоматически подстраивает разрешение холста, fps и битрейт видео в OBS под эту трансляцию (требуется WebSocket-сервер OBS, по умолчанию отключён в OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">ТЕСТ СКОРОСТИ</string>
+    <string name="settings_speedtest_desc">Создаёт случайный файл размером 10 МБ, отправляет его на ПК и обратно, измеряет скорость передачи, а затем автоматически удаляет.</string>
+    <string name="speedtest_run">Запустить тест скорости</string>
+    <string name="speedtest_upload">Отправка</string>
+    <string name="speedtest_download">Загрузка</string>
+    <string name="speedtest_running">Тестирование…</string>
+    <string name="speedtest_done">Тест завершён — файл удалён автоматически</string>
+    <string name="speedtest_error">Не удалось подключиться — проверьте, включён ли ПК</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Авторские права</string>
+    <string name="settings_copyright_mode">Режим</string>
+    <string name="settings_copyright_text">Текст</string>
+    <string name="settings_copyright_hint">© Ваше имя</string>
+    <string name="settings_copyright_image">Изображение</string>
+    <string name="settings_choose_image">Выбрать…</string>
+    <string name="settings_show_copyright">Показывать авторские права</string>
+    <string name="settings_timestamp">Отметка времени</string>
+    <string name="settings_watermark_position">Положение</string>
+</resources>

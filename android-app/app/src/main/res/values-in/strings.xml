@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Gratis</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Tidak ada waktu premium</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1j</string>
+    <string name="start_stream_button">Mulai</string>
+    <string name="stop_stream_button">Berhenti</string>
+    <string name="ads_consent_denied">Tidak tersedia</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">TIDAK AKTIF</string>
+
+    <!-- Navigation -->
+    <string name="settings">Pengaturan</string>
+    <string name="back">Kembali</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Senter</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">LAYAR</string>
+    <string name="settings_keep_awake">Layar tetap menyala</string>
+    <string name="settings_stream_brightness">Saat streaming</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">GRATIS</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Buka rekaman 4K, hapus watermark, dapatkan kontrol audio lanjutan, dan dukungan prioritas.</string>
+    <string name="sub_price">€1,49 / bulan atau €4,99 seumur hidup</string>
+    <string name="sub_upgrade">Upgrade ke Pro</string>
+    <string name="sub_coming_soon">Segera hadir</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VIDEO</string>
+    <string name="settings_audio">AUDIO</string>
+    <string name="settings_camera">KAMERA</string>
+    <string name="settings_network">STREAM</string>
+    <string name="settings_overlay">OVERLAY</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Resolusi</string>
+    <string name="settings_aspect_ratio">Komposisi</string>
+    <string name="settings_video_codec">Codec</string>
+    <string name="settings_video_bitrate">Bitrate</string>
+    <string name="settings_fps">Frame rate</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Stabilisasi</string>
+    <string name="settings_autofocus">Fokus otomatis</string>
+    <string name="settings_af_speed">Gaya fokus</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Rekam audio</string>
+    <string name="settings_sample_rate">Sample rate</string>
+    <string name="settings_audio_bitrate">Bitrate</string>
+    <string name="settings_audio_codec">Codec</string>
+    <string name="settings_noise_reduction">Pengurangan noise</string>
+    <string name="settings_wind_filter">Filter angin</string>
+    <string name="settings_audio_meter">Meteran level audio</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">White balance</string>
+    <string name="settings_lens">Lensa</string>
+    <string name="settings_grid">Grid</string>
+    <string name="settings_mirror">Cerminkan</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">Alamat PC</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">Cari PC</string>
+    <string name="settings_discover_scan">Pindai</string>
+    <string name="settings_discover_found">Ditemukan</string>
+    <string name="settings_discover_not_found">Tidak ditemukan</string>
+    <string name="settings_connection_mode">Koneksi</string>
+    <string name="settings_protocol">Protokol</string>
+    <string name="settings_low_latency">Latensi rendah</string>
+    <string name="settings_auto_reconnect">Sambung ulang otomatis</string>
+    <string name="settings_sync_obs">Sinkronkan pengaturan OBS</string>
+    <string name="settings_sync_obs_desc">Secara otomatis menyesuaikan resolusi kanvas, fps, dan bitrate video OBS dengan stream ini (memerlukan server WebSocket OBS, yang dinonaktifkan secara default di OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">TES KECEPATAN</string>
+    <string name="settings_speedtest_desc">Membuat file acak berukuran 10 MB, mengirimkannya ke PC lalu kembali, mengukur kecepatan transfer, kemudian menghapusnya secara otomatis.</string>
+    <string name="speedtest_run">Jalankan Tes Kecepatan</string>
+    <string name="speedtest_upload">Unggah</string>
+    <string name="speedtest_download">Unduh</string>
+    <string name="speedtest_running">Menguji…</string>
+    <string name="speedtest_done">Tes selesai — file terhapus otomatis</string>
+    <string name="speedtest_error">Koneksi gagal — periksa apakah PC menyala</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Hak cipta</string>
+    <string name="settings_copyright_mode">Mode</string>
+    <string name="settings_copyright_text">Teks</string>
+    <string name="settings_copyright_hint">© Nama Anda</string>
+    <string name="settings_copyright_image">Gambar</string>
+    <string name="settings_choose_image">Pilih…</string>
+    <string name="settings_show_copyright">Tampilkan hak cipta</string>
+    <string name="settings_timestamp">Stempel waktu</string>
+    <string name="settings_watermark_position">Posisi</string>
+</resources>

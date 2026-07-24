@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Miễn phí</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Không có thời gian cao cấp</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1g</string>
+    <string name="start_stream_button">Bắt đầu</string>
+    <string name="stop_stream_button">Dừng</string>
+    <string name="ads_consent_denied">Không khả dụng</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">KHÔNG HOẠT ĐỘNG</string>
+
+    <!-- Navigation -->
+    <string name="settings">Cài đặt</string>
+    <string name="back">Quay lại</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Đèn pin</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">MÀN HÌNH</string>
+    <string name="settings_keep_awake">Giữ màn hình luôn sáng</string>
+    <string name="settings_stream_brightness">Trong khi phát trực tiếp</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">MIỄN PHÍ</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Mở khóa quay video 4K, xóa hình mờ, nhận các tùy chỉnh âm thanh nâng cao và hỗ trợ ưu tiên.</string>
+    <string name="sub_price">1,49 € / tháng hoặc 4,99 € trọn đời</string>
+    <string name="sub_upgrade">Nâng cấp lên Pro</string>
+    <string name="sub_coming_soon">Sắp ra mắt</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VIDEO</string>
+    <string name="settings_audio">ÂM THANH</string>
+    <string name="settings_camera">CAMERA</string>
+    <string name="settings_network">PHÁT TRỰC TIẾP</string>
+    <string name="settings_overlay">LỚP PHỦ</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Độ phân giải</string>
+    <string name="settings_aspect_ratio">Bố cục</string>
+    <string name="settings_video_codec">Codec</string>
+    <string name="settings_video_bitrate">Tốc độ bit</string>
+    <string name="settings_fps">Tốc độ khung hình</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Chống rung</string>
+    <string name="settings_autofocus">Lấy nét tự động</string>
+    <string name="settings_af_speed">Kiểu lấy nét</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Ghi âm</string>
+    <string name="settings_sample_rate">Tần số lấy mẫu</string>
+    <string name="settings_audio_bitrate">Tốc độ bit</string>
+    <string name="settings_audio_codec">Codec</string>
+    <string name="settings_noise_reduction">Giảm tiếng ồn</string>
+    <string name="settings_wind_filter">Lọc tiếng gió</string>
+    <string name="settings_audio_meter">Đồng hồ đo mức âm thanh</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Cân bằng trắng</string>
+    <string name="settings_lens">Ống kính</string>
+    <string name="settings_grid">Lưới</string>
+    <string name="settings_mirror">Lật gương</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">Địa chỉ máy tính</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">Tìm máy tính</string>
+    <string name="settings_discover_scan">Quét</string>
+    <string name="settings_discover_found">Đã tìm thấy</string>
+    <string name="settings_discover_not_found">Không tìm thấy</string>
+    <string name="settings_connection_mode">Kết nối</string>
+    <string name="settings_protocol">Giao thức</string>
+    <string name="settings_low_latency">Độ trễ thấp</string>
+    <string name="settings_auto_reconnect">Tự động kết nối lại</string>
+    <string name="settings_sync_obs">Đồng bộ cài đặt OBS</string>
+    <string name="settings_sync_obs_desc">Tự động khớp độ phân giải canvas, fps và tốc độ bit video của OBS với luồng phát này (yêu cầu máy chủ WebSocket của OBS, mặc định đang tắt trong OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">KIỂM TRA TỐC ĐỘ</string>
+    <string name="settings_speedtest_desc">Tạo một tệp ngẫu nhiên 10 MB, gửi đến máy tính rồi nhận lại, đo tốc độ truyền, sau đó tự động xóa.</string>
+    <string name="speedtest_run">Chạy kiểm tra tốc độ</string>
+    <string name="speedtest_upload">Tải lên</string>
+    <string name="speedtest_download">Tải xuống</string>
+    <string name="speedtest_running">Đang kiểm tra…</string>
+    <string name="speedtest_done">Hoàn tất kiểm tra — tệp đã tự động xóa</string>
+    <string name="speedtest_error">Kết nối thất bại — kiểm tra xem máy tính đã bật chưa</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Bản quyền</string>
+    <string name="settings_copyright_mode">Chế độ</string>
+    <string name="settings_copyright_text">Văn bản</string>
+    <string name="settings_copyright_hint">© Tên của bạn</string>
+    <string name="settings_copyright_image">Hình ảnh</string>
+    <string name="settings_choose_image">Chọn…</string>
+    <string name="settings_show_copyright">Hiển thị bản quyền</string>
+    <string name="settings_timestamp">Dấu thời gian</string>
+    <string name="settings_watermark_position">Vị trí</string>
+</resources>

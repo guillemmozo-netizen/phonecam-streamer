@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">मुफ़्त</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">कोई प्रीमियम समय नहीं</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1 घंटा</string>
+    <string name="start_stream_button">शुरू करें</string>
+    <string name="stop_stream_button">रोकें</string>
+    <string name="ads_consent_denied">उपलब्ध नहीं</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">निष्क्रिय</string>
+
+    <!-- Navigation -->
+    <string name="settings">सेटिंग्स</string>
+    <string name="back">वापस</string>
+
+    <!-- Camera controls -->
+    <string name="torch">टॉर्च</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">डिस्प्ले</string>
+    <string name="settings_keep_awake">स्क्रीन को चालू रखें</string>
+    <string name="settings_stream_brightness">स्ट्रीमिंग के दौरान</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">मुफ़्त</string>
+    <string name="sub_pro">Pro</string>
+    <string name="sub_description">4K रिकॉर्डिंग अनलॉक करें, वॉटरमार्क हटाएं, एडवांस्ड ऑडियो कंट्रोल और प्राथमिकता सहायता पाएं।</string>
+    <string name="sub_price">€1.49 / माह या €4.99 आजीवन</string>
+    <string name="sub_upgrade">Pro में अपग्रेड करें</string>
+    <string name="sub_coming_soon">जल्द आ रहा है</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">वीडियो</string>
+    <string name="settings_audio">ऑडियो</string>
+    <string name="settings_camera">कैमरा</string>
+    <string name="settings_network">स्ट्रीम</string>
+    <string name="settings_overlay">ओवरले</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">रिज़ॉल्यूशन</string>
+    <string name="settings_aspect_ratio">कंपोज़िशन</string>
+    <string name="settings_video_codec">कोडेक</string>
+    <string name="settings_video_bitrate">बिटरेट</string>
+    <string name="settings_fps">फ्रेम रेट</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">स्टेबलाइज़ेशन</string>
+    <string name="settings_autofocus">ऑटो-फोकस</string>
+    <string name="settings_af_speed">फ़ोकस शैली</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">ऑडियो रिकॉर्ड करें</string>
+    <string name="settings_sample_rate">सैंपल रेट</string>
+    <string name="settings_audio_bitrate">बिटरेट</string>
+    <string name="settings_audio_codec">कोडेक</string>
+    <string name="settings_noise_reduction">नॉइज़ रिडक्शन</string>
+    <string name="settings_wind_filter">विंड फ़िल्टर</string>
+    <string name="settings_audio_meter">ऑडियो लेवल मीटर</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">व्हाइट बैलेंस</string>
+    <string name="settings_lens">लेंस</string>
+    <string name="settings_grid">ग्रिड</string>
+    <string name="settings_mirror">मिरर</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">पीसी का पता</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">पीसी खोजें</string>
+    <string name="settings_discover_scan">स्कैन करें</string>
+    <string name="settings_discover_found">मिल गया</string>
+    <string name="settings_discover_not_found">नहीं मिला</string>
+    <string name="settings_connection_mode">कनेक्शन</string>
+    <string name="settings_protocol">प्रोटोकॉल</string>
+    <string name="settings_low_latency">कम लेटेंसी</string>
+    <string name="settings_auto_reconnect">ऑटो रीकनेक्ट</string>
+    <string name="settings_sync_obs">OBS सेटिंग्स सिंक करें</string>
+    <string name="settings_sync_obs_desc">यह इस स्ट्रीम के अनुसार OBS के कैनवास रिज़ॉल्यूशन, fps और वीडियो बिटरेट को अपने आप मिलाता है (इसके लिए OBS के WebSocket सर्वर की ज़रूरत होती है, जो OBS में डिफ़ॉल्ट रूप से बंद रहता है)।</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">स्पीड टेस्ट</string>
+    <string name="settings_speedtest_desc">यह 10 MB की एक रैंडम फ़ाइल बनाता है, उसे पीसी पर भेजता है और वापस लाता है, ट्रांसफ़र स्पीड मापता है, फिर उसे अपने आप हटा देता है।</string>
+    <string name="speedtest_run">स्पीड टेस्ट चलाएं</string>
+    <string name="speedtest_upload">अपलोड</string>
+    <string name="speedtest_download">डाउनलोड</string>
+    <string name="speedtest_running">टेस्ट हो रहा है…</string>
+    <string name="speedtest_done">टेस्ट पूरा हुआ — फ़ाइल अपने आप हट गई</string>
+    <string name="speedtest_error">कनेक्शन नहीं हो पाया — देखें कि पीसी चालू है या नहीं</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">कॉपीराइट</string>
+    <string name="settings_copyright_mode">मोड</string>
+    <string name="settings_copyright_text">टेक्स्ट</string>
+    <string name="settings_copyright_hint">© आपका नाम</string>
+    <string name="settings_copyright_image">इमेज</string>
+    <string name="settings_choose_image">चुनें…</string>
+    <string name="settings_show_copyright">कॉपीराइट दिखाएं</string>
+    <string name="settings_timestamp">टाइमस्टैंप</string>
+    <string name="settings_watermark_position">पोज़ीशन</string>
+</resources>

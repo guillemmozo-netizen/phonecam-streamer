@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">免费</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">无高级时长</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1小时</string>
+    <string name="start_stream_button">开始</string>
+    <string name="stop_stream_button">停止</string>
+    <string name="ads_consent_denied">不可用</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">空闲</string>
+
+    <!-- Navigation -->
+    <string name="settings">设置</string>
+    <string name="back">返回</string>
+
+    <!-- Camera controls -->
+    <string name="torch">手电筒</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">显示</string>
+    <string name="settings_keep_awake">保持屏幕常亮</string>
+    <string name="settings_stream_brightness">直播时</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">免费</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">解锁4K录制、去除水印、高级音频控制和优先支持。</string>
+    <string name="sub_price">每月 €1.49 或买断 €4.99</string>
+    <string name="sub_upgrade">升级到 Pro</string>
+    <string name="sub_coming_soon">敬请期待</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">视频</string>
+    <string name="settings_audio">音频</string>
+    <string name="settings_camera">相机</string>
+    <string name="settings_network">直播</string>
+    <string name="settings_overlay">叠加层</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">分辨率</string>
+    <string name="settings_aspect_ratio">构图</string>
+    <string name="settings_video_codec">编码格式</string>
+    <string name="settings_video_bitrate">比特率</string>
+    <string name="settings_fps">帧率</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">防抖</string>
+    <string name="settings_autofocus">自动对焦</string>
+    <string name="settings_af_speed">对焦方式</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">录制音频</string>
+    <string name="settings_sample_rate">采样率</string>
+    <string name="settings_audio_bitrate">比特率</string>
+    <string name="settings_audio_codec">编码格式</string>
+    <string name="settings_noise_reduction">降噪</string>
+    <string name="settings_wind_filter">风噪过滤</string>
+    <string name="settings_audio_meter">音量表</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">白平衡</string>
+    <string name="settings_lens">镜头</string>
+    <string name="settings_grid">网格线</string>
+    <string name="settings_mirror">镜像</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">电脑地址</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">查找电脑</string>
+    <string name="settings_discover_scan">扫描</string>
+    <string name="settings_discover_found">已找到</string>
+    <string name="settings_discover_not_found">未找到</string>
+    <string name="settings_connection_mode">连接</string>
+    <string name="settings_protocol">协议</string>
+    <string name="settings_low_latency">低延迟</string>
+    <string name="settings_auto_reconnect">自动重连</string>
+    <string name="settings_sync_obs">同步 OBS 设置</string>
+    <string name="settings_sync_obs_desc">自动将 OBS 的画布分辨率、帧率和视频比特率与此直播流匹配（需要开启 OBS 的 WebSocket 服务器，该功能在 OBS 中默认关闭）。</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">速度测试</string>
+    <string name="settings_speedtest_desc">创建一个 10 MB 的随机文件，发送到电脑并接收回来，测量传输速度，然后自动删除。</string>
+    <string name="speedtest_run">运行速度测试</string>
+    <string name="speedtest_upload">上传</string>
+    <string name="speedtest_download">下载</string>
+    <string name="speedtest_running">测试中…</string>
+    <string name="speedtest_done">测试完成 — 文件已自动删除</string>
+    <string name="speedtest_error">连接失败 — 请检查电脑是否已开启</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">版权</string>
+    <string name="settings_copyright_mode">模式</string>
+    <string name="settings_copyright_text">文字</string>
+    <string name="settings_copyright_hint">© 你的名字</string>
+    <string name="settings_copyright_image">图片</string>
+    <string name="settings_choose_image">选择…</string>
+    <string name="settings_show_copyright">显示版权信息</string>
+    <string name="settings_timestamp">时间戳</string>
+    <string name="settings_watermark_position">位置</string>
+</resources>

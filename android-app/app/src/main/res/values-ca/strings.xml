@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Gratis</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Sense temps premium</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1h</string>
+    <string name="start_stream_button">Inicia</string>
+    <string name="stop_stream_button">Atura</string>
+    <string name="ads_consent_denied">No disponible</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">INACTIU</string>
+
+    <!-- Navigation -->
+    <string name="settings">Configuració</string>
+    <string name="back">Enrere</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Llanterna</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">PANTALLA</string>
+    <string name="settings_keep_awake">Mantenir la pantalla activa</string>
+    <string name="settings_stream_brightness">Mentre es transmet</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">GRATIS</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Desbloqueja la gravació en 4K, elimina les marques d\'aigua, obtén controls d\'àudio avançats i suport prioritari.</string>
+    <string name="sub_price">1,49 € / mes o 4,99 € de per vida</string>
+    <string name="sub_upgrade">Passa a Pro</string>
+    <string name="sub_coming_soon">Properament</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VÍDEO</string>
+    <string name="settings_audio">ÀUDIO</string>
+    <string name="settings_camera">CÀMERA</string>
+    <string name="settings_network">TRANSMISSIÓ</string>
+    <string name="settings_overlay">SUPERPOSICIÓ</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Resolució</string>
+    <string name="settings_aspect_ratio">Composició</string>
+    <string name="settings_video_codec">Còdec</string>
+    <string name="settings_video_bitrate">Taxa de bits</string>
+    <string name="settings_fps">Velocitat de fotogrames</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Estabilització</string>
+    <string name="settings_autofocus">Enfocament automàtic</string>
+    <string name="settings_af_speed">Estil d\'enfocament</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Enregistrar àudio</string>
+    <string name="settings_sample_rate">Freqüència de mostreig</string>
+    <string name="settings_audio_bitrate">Taxa de bits</string>
+    <string name="settings_audio_codec">Còdec</string>
+    <string name="settings_noise_reduction">Reducció de soroll</string>
+    <string name="settings_wind_filter">Filtre de vent</string>
+    <string name="settings_audio_meter">Mesurador de nivell d\'àudio</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Balanç de blancs</string>
+    <string name="settings_lens">Lent</string>
+    <string name="settings_grid">Quadrícula</string>
+    <string name="settings_mirror">Mirall</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">Adreça de l\'ordinador</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">Cercar l\'ordinador</string>
+    <string name="settings_discover_scan">Cerca</string>
+    <string name="settings_discover_found">Trobat</string>
+    <string name="settings_discover_not_found">No trobat</string>
+    <string name="settings_connection_mode">Connexió</string>
+    <string name="settings_protocol">Protocol</string>
+    <string name="settings_low_latency">Latència baixa</string>
+    <string name="settings_auto_reconnect">Reconnexió automàtica</string>
+    <string name="settings_sync_obs">Sincronitzar la configuració d\'OBS</string>
+    <string name="settings_sync_obs_desc">Ajusta automàticament la resolució del llenç, els fps i la taxa de bits de vídeo d\'OBS a aquesta transmissió (requereix el servidor WebSocket d\'OBS, desactivat per defecte a OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">PROVA DE VELOCITAT</string>
+    <string name="settings_speedtest_desc">Crea un fitxer aleatori de 10 MB, l\'envia a l\'ordinador i el torna a rebre, mesura la velocitat de transferència i després l\'elimina automàticament.</string>
+    <string name="speedtest_run">Executar la prova de velocitat</string>
+    <string name="speedtest_upload">Pujada</string>
+    <string name="speedtest_download">Baixada</string>
+    <string name="speedtest_running">Provant…</string>
+    <string name="speedtest_done">Prova completada — fitxer eliminat automàticament</string>
+    <string name="speedtest_error">Ha fallat la connexió — comprova que l\'ordinador estigui engegat</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_copyright_mode">Mode</string>
+    <string name="settings_copyright_text">Text</string>
+    <string name="settings_copyright_hint">© El teu nom</string>
+    <string name="settings_copyright_image">Imatge</string>
+    <string name="settings_choose_image">Tria…</string>
+    <string name="settings_show_copyright">Mostrar el copyright</string>
+    <string name="settings_timestamp">Marca de temps</string>
+    <string name="settings_watermark_position">Posició</string>
+</resources>

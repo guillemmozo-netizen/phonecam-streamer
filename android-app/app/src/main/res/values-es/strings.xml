@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">Gratis</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">Sin tiempo premium</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1h</string>
+    <string name="start_stream_button">Iniciar</string>
+    <string name="stop_stream_button">Detener</string>
+    <string name="ads_consent_denied">No disponible</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">INACTIVO</string>
+
+    <!-- Navigation -->
+    <string name="settings">Ajustes</string>
+    <string name="back">Atrás</string>
+
+    <!-- Camera controls -->
+    <string name="torch">Linterna</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">PANTALLA</string>
+    <string name="settings_keep_awake">Mantener pantalla activa</string>
+    <string name="settings_stream_brightness">Durante la retransmisión</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">GRATIS</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">Desbloquea grabación en 4K, elimina las marcas de agua, controles de audio avanzados y soporte prioritario.</string>
+    <string name="sub_price">1,49 € / mes o 4,99 € de por vida</string>
+    <string name="sub_upgrade">Pasar a Pro</string>
+    <string name="sub_coming_soon">Próximamente</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">VÍDEO</string>
+    <string name="settings_audio">AUDIO</string>
+    <string name="settings_camera">CÁMARA</string>
+    <string name="settings_network">RETRANSMISIÓN</string>
+    <string name="settings_overlay">SUPERPOSICIÓN</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">Resolución</string>
+    <string name="settings_aspect_ratio">Composición</string>
+    <string name="settings_video_codec">Códec</string>
+    <string name="settings_video_bitrate">Tasa de bits</string>
+    <string name="settings_fps">Velocidad de fotogramas</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">Estabilización</string>
+    <string name="settings_autofocus">Enfoque automático</string>
+    <string name="settings_af_speed">Estilo de enfoque</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">Grabar audio</string>
+    <string name="settings_sample_rate">Frecuencia de muestreo</string>
+    <string name="settings_audio_bitrate">Tasa de bits</string>
+    <string name="settings_audio_codec">Códec</string>
+    <string name="settings_noise_reduction">Reducción de ruido</string>
+    <string name="settings_wind_filter">Filtro de viento</string>
+    <string name="settings_audio_meter">Medidor de nivel de audio</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">Balance de blancos</string>
+    <string name="settings_lens">Lente</string>
+    <string name="settings_grid">Cuadrícula</string>
+    <string name="settings_mirror">Espejo</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">Dirección del PC</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">Buscar PC</string>
+    <string name="settings_discover_scan">Buscar</string>
+    <string name="settings_discover_found">Encontrado</string>
+    <string name="settings_discover_not_found">No encontrado</string>
+    <string name="settings_connection_mode">Conexión</string>
+    <string name="settings_protocol">Protocolo</string>
+    <string name="settings_low_latency">Baja latencia</string>
+    <string name="settings_auto_reconnect">Reconexión automática</string>
+    <string name="settings_sync_obs">Sincronizar ajustes de OBS</string>
+    <string name="settings_sync_obs_desc">Ajusta automáticamente la resolución del lienzo, los fps y la tasa de bits de vídeo de OBS a esta retransmisión (requiere el servidor WebSocket de OBS, desactivado por defecto en OBS).</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">TEST DE VELOCIDAD</string>
+    <string name="settings_speedtest_desc">Crea un archivo aleatorio de 10 MB, lo envía al PC y de vuelta, mide la velocidad de transferencia y luego se elimina automáticamente.</string>
+    <string name="speedtest_run">Ejecutar test de velocidad</string>
+    <string name="speedtest_upload">Subida</string>
+    <string name="speedtest_download">Descarga</string>
+    <string name="speedtest_running">Probando…</string>
+    <string name="speedtest_done">Test completado — archivo eliminado automáticamente</string>
+    <string name="speedtest_error">Error de conexión — comprueba que el PC esté en marcha</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_copyright_mode">Modo</string>
+    <string name="settings_copyright_text">Texto</string>
+    <string name="settings_copyright_hint">© Tu nombre</string>
+    <string name="settings_copyright_image">Imagen</string>
+    <string name="settings_choose_image">Elegir…</string>
+    <string name="settings_show_copyright">Mostrar copyright</string>
+    <string name="settings_timestamp">Marca de tiempo</string>
+    <string name="settings_watermark_position">Posición</string>
+</resources>

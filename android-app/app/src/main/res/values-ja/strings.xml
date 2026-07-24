@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">無料</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">プレミアム時間なし</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1時間</string>
+    <string name="start_stream_button">開始</string>
+    <string name="stop_stream_button">停止</string>
+    <string name="ads_consent_denied">利用できません</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">待機中</string>
+
+    <!-- Navigation -->
+    <string name="settings">設定</string>
+    <string name="back">戻る</string>
+
+    <!-- Camera controls -->
+    <string name="torch">ライト</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">ディスプレイ</string>
+    <string name="settings_keep_awake">画面をオンのままにする</string>
+    <string name="settings_stream_brightness">配信中</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">無料</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">4K録画、透かしの削除、高度な音声コントロール、優先サポートを利用できます。</string>
+    <string name="sub_price">月額 €1.49 または生涯 €4.99</string>
+    <string name="sub_upgrade">Proにアップグレード</string>
+    <string name="sub_coming_soon">近日公開</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">ビデオ</string>
+    <string name="settings_audio">オーディオ</string>
+    <string name="settings_camera">カメラ</string>
+    <string name="settings_network">配信</string>
+    <string name="settings_overlay">オーバーレイ</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">解像度</string>
+    <string name="settings_aspect_ratio">構図</string>
+    <string name="settings_video_codec">コーデック</string>
+    <string name="settings_video_bitrate">ビットレート</string>
+    <string name="settings_fps">フレームレート</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">手ブレ補正</string>
+    <string name="settings_autofocus">オートフォーカス</string>
+    <string name="settings_af_speed">フォーカス方式</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">音声を録音</string>
+    <string name="settings_sample_rate">サンプルレート</string>
+    <string name="settings_audio_bitrate">ビットレート</string>
+    <string name="settings_audio_codec">コーデック</string>
+    <string name="settings_noise_reduction">ノイズ低減</string>
+    <string name="settings_wind_filter">風切り音防止</string>
+    <string name="settings_audio_meter">音声レベルメーター</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">ホワイトバランス</string>
+    <string name="settings_lens">レンズ</string>
+    <string name="settings_grid">グリッド表示</string>
+    <string name="settings_mirror">左右反転</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">PCのアドレス</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">PCを検索</string>
+    <string name="settings_discover_scan">スキャン</string>
+    <string name="settings_discover_found">見つかりました</string>
+    <string name="settings_discover_not_found">見つかりません</string>
+    <string name="settings_connection_mode">接続</string>
+    <string name="settings_protocol">プロトコル</string>
+    <string name="settings_low_latency">低遅延</string>
+    <string name="settings_auto_reconnect">自動再接続</string>
+    <string name="settings_sync_obs">OBSの設定を同期</string>
+    <string name="settings_sync_obs_desc">OBSのキャンバス解像度、fps、ビデオビットレートをこの配信に自動的に合わせます（OBSのWebSocketサーバーが必要です。OBSではデフォルトで無効になっています）。</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">速度テスト</string>
+    <string name="settings_speedtest_desc">10MBのランダムなファイルを作成し、PCへ送信して受信し、転送速度を測定した後、自動的に削除します。</string>
+    <string name="speedtest_run">速度テストを実行</string>
+    <string name="speedtest_upload">アップロード</string>
+    <string name="speedtest_download">ダウンロード</string>
+    <string name="speedtest_running">テスト中…</string>
+    <string name="speedtest_done">テスト完了 — ファイルは自動削除されました</string>
+    <string name="speedtest_error">接続に失敗しました — PCが起動しているか確認してください</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">著作権</string>
+    <string name="settings_copyright_mode">モード</string>
+    <string name="settings_copyright_text">テキスト</string>
+    <string name="settings_copyright_hint">© あなたの名前</string>
+    <string name="settings_copyright_image">画像</string>
+    <string name="settings_choose_image">選択…</string>
+    <string name="settings_show_copyright">著作権を表示</string>
+    <string name="settings_timestamp">タイムスタンプ</string>
+    <string name="settings_watermark_position">位置</string>
+</resources>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCam</string>
+    <string name="app_version">v0.0.13-alpha</string>
+
+    <!-- Tier status -->
+    <string name="status_free_tier">ฟรี</string>
+    <string name="status_premium_tier">Pro</string>
+
+    <!-- Balance -->
+    <string name="balance_none">ไม่มีเวลาพรีเมียม</string>
+
+    <!-- Buttons -->
+    <string name="watch_ad_button">+1 ชม.</string>
+    <string name="start_stream_button">เริ่ม</string>
+    <string name="stop_stream_button">หยุด</string>
+    <string name="ads_consent_denied">ไม่พร้อมใช้งาน</string>
+
+    <!-- Stream overlay -->
+    <string name="not_streaming">ไม่ได้ใช้งาน</string>
+
+    <!-- Navigation -->
+    <string name="settings">การตั้งค่า</string>
+    <string name="back">ย้อนกลับ</string>
+
+    <!-- Camera controls -->
+    <string name="torch">ไฟฉาย</string>
+    <string name="manual_focus_label">MF</string>
+    <string name="fps_hint_placeholder">—</string>
+    <string name="ae_label">AE</string>
+    <string name="shutter_label">S</string>
+
+    <!-- Display settings -->
+    <string name="settings_display">หน้าจอ</string>
+    <string name="settings_keep_awake">เปิดหน้าจอค้างไว้</string>
+    <string name="settings_stream_brightness">ขณะสตรีม</string>
+
+    <!-- Subscription -->
+    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_free">ฟรี</string>
+    <string name="sub_pro">PRO</string>
+    <string name="sub_description">ปลดล็อกการบันทึกวิดีโอ 4K ลบลายน้ำ ควบคุมเสียงขั้นสูง และรับการสนับสนุนก่อนใคร</string>
+    <string name="sub_price">€1.49 ต่อเดือน หรือ €4.99 ตลอดชีพ</string>
+    <string name="sub_upgrade">อัปเกรดเป็น Pro</string>
+    <string name="sub_coming_soon">เร็ว ๆ นี้</string>
+
+    <!-- Settings sections -->
+    <string name="settings_video">วิดีโอ</string>
+    <string name="settings_audio">เสียง</string>
+    <string name="settings_camera">กล้อง</string>
+    <string name="settings_network">สตรีม</string>
+    <string name="settings_overlay">โอเวอร์เลย์</string>
+
+    <!-- Video settings -->
+    <string name="settings_resolution">ความละเอียด</string>
+    <string name="settings_aspect_ratio">องค์ประกอบภาพ</string>
+    <string name="settings_video_codec">Codec</string>
+    <string name="settings_video_bitrate">บิตเรต</string>
+    <string name="settings_fps">เฟรมเรต</string>
+    <string name="settings_hdr">HDR</string>
+    <string name="settings_stabilization">การกันสั่น</string>
+    <string name="settings_autofocus">โฟกัสอัตโนมัติ</string>
+    <string name="settings_af_speed">รูปแบบโฟกัส</string>
+
+    <!-- Audio settings -->
+    <string name="settings_audio_enabled">บันทึกเสียง</string>
+    <string name="settings_sample_rate">อัตราการสุ่มตัวอย่าง</string>
+    <string name="settings_audio_bitrate">บิตเรต</string>
+    <string name="settings_audio_codec">Codec</string>
+    <string name="settings_noise_reduction">ลดเสียงรบกวน</string>
+    <string name="settings_wind_filter">ตัวกรองเสียงลม</string>
+    <string name="settings_audio_meter">มิเตอร์วัดระดับเสียง</string>
+
+    <!-- Camera settings -->
+    <string name="settings_white_balance">สมดุลแสงขาว</string>
+    <string name="settings_lens">เลนส์</string>
+    <string name="settings_grid">เส้นกริด</string>
+    <string name="settings_mirror">กลับด้าน</string>
+
+    <!-- Network settings -->
+    <string name="settings_pc_ip">ที่อยู่ PC</string>
+    <string name="settings_pc_ip_hint">192.168.1.x</string>
+    <string name="settings_discover_pc">ค้นหา PC</string>
+    <string name="settings_discover_scan">สแกน</string>
+    <string name="settings_discover_found">พบแล้ว</string>
+    <string name="settings_discover_not_found">ไม่พบ</string>
+    <string name="settings_connection_mode">การเชื่อมต่อ</string>
+    <string name="settings_protocol">โปรโตคอล</string>
+    <string name="settings_low_latency">เวลาแฝงต่ำ</string>
+    <string name="settings_auto_reconnect">เชื่อมต่อใหม่อัตโนมัติ</string>
+    <string name="settings_sync_obs">ซิงค์การตั้งค่า OBS</string>
+    <string name="settings_sync_obs_desc">ปรับความละเอียดแคนวาส, fps และบิตเรตวิดีโอของ OBS ให้ตรงกับสตรีมนี้โดยอัตโนมัติ (ต้องเปิดใช้งาน WebSocket server ของ OBS ซึ่งปิดอยู่โดยค่าเริ่มต้นใน OBS)</string>
+
+    <!-- Speed test -->
+    <string name="settings_speedtest">ทดสอบความเร็ว</string>
+    <string name="settings_speedtest_desc">สร้างไฟล์สุ่มขนาด 10 MB ส่งไปที่ PC แล้วส่งกลับ วัดความเร็วในการรับส่งข้อมูล จากนั้นลบไฟล์โดยอัตโนมัติ</string>
+    <string name="speedtest_run">เริ่มทดสอบความเร็ว</string>
+    <string name="speedtest_upload">อัปโหลด</string>
+    <string name="speedtest_download">ดาวน์โหลด</string>
+    <string name="speedtest_running">กำลังทดสอบ…</string>
+    <string name="speedtest_done">ทดสอบเสร็จสิ้น — ลบไฟล์อัตโนมัติแล้ว</string>
+    <string name="speedtest_error">การเชื่อมต่อล้มเหลว — ตรวจสอบว่าเปิด PC อยู่หรือไม่</string>
+
+    <!-- Overlay settings -->
+    <string name="settings_copyright">ลิขสิทธิ์</string>
+    <string name="settings_copyright_mode">โหมด</string>
+    <string name="settings_copyright_text">ข้อความ</string>
+    <string name="settings_copyright_hint">© ชื่อของคุณ</string>
+    <string name="settings_copyright_image">รูปภาพ</string>
+    <string name="settings_choose_image">เลือก…</string>
+    <string name="settings_show_copyright">แสดงลิขสิทธิ์</string>
+    <string name="settings_timestamp">ประทับเวลา</string>
+    <string name="settings_watermark_position">ตำแหน่ง</string>
+</resources>
