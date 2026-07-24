@@ -11,7 +11,7 @@
     <string name="balance_none">कोई प्रीमियम समय नहीं</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1 घंटा</string>
+    <string name="watch_ad_button">+12 घंटे</string>
     <string name="start_stream_button">शुरू करें</string>
     <string name="stop_stream_button">रोकें</string>
     <string name="ads_consent_denied">उपलब्ध नहीं</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">कॉपीराइट दिखाएं</string>
     <string name="settings_timestamp">टाइमस्टैंप</string>
     <string name="settings_watermark_position">पोज़ीशन</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">इस स्वतंत्र ऐप को सपोर्ट करने के लिए धन्यवाद ❤️</string>
+    <string name="welcome_message">PhoneCam को एक व्यक्ति द्वारा स्वतंत्र रूप से बनाया जा रहा है।\n\nAlpha और Beta चरणों के दौरान, हम आपके सपोर्ट के लिए धन्यवाद देना चाहते हैं और इसके लिए सभी Pro फीचर्स रिवॉर्ड वाले विज्ञापनों के ज़रिए उपलब्ध करा रहे हैं।\n\nऐप को टेस्ट करने, फ़ीडबैक भेजने और इसे दूसरों के साथ शेयर करने में आपकी मदद हमें इसे बेहतर बनाते रहने में सक्षम बनाती है।\n\nशुरुआत से ही इस प्रोजेक्ट का हिस्सा बनने के लिए धन्यवाद।</string>
+    <string name="welcome_button">जारी रखें</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Alpha और Beta के दौरान, सभी Pro फीचर्स रिवॉर्ड वाले विज्ञापन देखकर मुफ़्त में अनलॉक किए जा सकते हैं।</string>
+    <string name="pro_feature_locked_desc">इस सेटिंग के लिए PhoneCam Pro चाहिए — इसे अनलॉक करने के लिए कैमरा स्क्रीन पर विज्ञापन देखें</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">%1$d घंटे का Pro पाएं</string>
+    <string name="ad_intro_description">4K60, बिना वॉटरमार्क और %2$d घंटे बिना विज्ञापन के अनलॉक करने के लिए लगातार %1$d छोटे विज्ञापन देखें — यह विज्ञापन %1$d में से %3$d है।</string>
+    <string name="ad_intro_button">विज्ञापन %2$d में से %1$d देखें</string>
+    <string name="ad_reward_celebration_title">%1$d घंटे का Pro जोड़ा गया</string>
+    <string name="ad_reward_celebration_desc">इस स्वतंत्र ऐप को सपोर्ट करने के लिए धन्यवाद — बिना वॉटरमार्क के %1$d घंटे की 4K60 स्ट्रीमिंग का आनंद लें।</string>
+    <string name="ad_progress_title">%2$d में से %1$d देखे गए</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">%2$d घंटे के Pro के लिए %1$d और विज्ञापन बाकी</item>
+        <item quantity="other">%2$d घंटे के Pro के लिए %1$d और विज्ञापन बाकी</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">बचा हुआ Pro समय: %1$d घं %2$d मि</string>
+    <string name="pro_time_remaining_m">बचा हुआ Pro समय: %1$d मि</string>
+    <string name="pro_time_none">अभी तक कोई Pro समय नहीं कमाया — %2$d घंटे पाने के लिए कैमरा स्क्रीन पर %1$d विज्ञापन देखें</string>
 </resources>

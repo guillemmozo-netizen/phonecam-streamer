@@ -11,7 +11,7 @@
     <string name="balance_none">Немає преміум-часу</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1год</string>
+    <string name="watch_ad_button">+12год</string>
     <string name="start_stream_button">Старт</string>
     <string name="stop_stream_button">Стоп</string>
     <string name="ads_consent_denied">Недоступно</string>
@@ -111,4 +111,30 @@
     <string name="settings_show_copyright">Показувати авторські права</string>
     <string name="settings_timestamp">Мітка часу</string>
     <string name="settings_watermark_position">Положення</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Дякуємо за підтримку цього незалежного застосунку ❤️</string>
+    <string name="welcome_message">PhoneCam розробляється незалежно однією людиною.\n\nПід час фаз Alpha і Beta ми хочемо подякувати вам за підтримку, відкривши всі функції Pro через рекламу з винагородою.\n\nВаша допомога в тестуванні застосунку, надсиланні відгуків і поширенні серед інших людей дає нам змогу й далі його вдосконалювати.\n\nДякуємо, що ви з нами від самого початку проєкту.</string>
+    <string name="welcome_button">Продовжити</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Під час Alpha і Beta всі функції Pro можна безкоштовно розблокувати, переглянувши рекламу з винагородою.</string>
+    <string name="pro_feature_locked_desc">Це налаштування потребує PhoneCam Pro — перегляньте рекламу на екрані камери, щоб розблокувати його</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Отримайте %1$d годин Pro</string>
+    <string name="ad_intro_description">Перегляньте %1$d коротких реклам поспіль, щоб розблокувати 4K60 без водяного знака та без реклами на %2$d годин — це реклама %3$d з %1$d.</string>
+    <string name="ad_intro_button">Переглянути рекламу %1$d з %2$d</string>
+    <string name="ad_reward_celebration_title">Додано %1$d год Pro</string>
+    <string name="ad_reward_celebration_desc">Дякуємо за підтримку цього незалежного застосунку — насолоджуйтеся %1$d год трансляції у 4K60 без водяного знака.</string>
+    <string name="ad_progress_title">Переглянуто %1$d/%2$d</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">Ще %1$d реклама до %2$d год Pro</item>
+        <item quantity="few">Ще %1$d реклами до %2$d год Pro</item>
+        <item quantity="many">Ще %1$d реклам до %2$d год Pro</item>
+        <item quantity="other">Ще %1$d реклами до %2$d год Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Залишилося Pro-часу: %1$dг %2$dхв</string>
+    <string name="pro_time_remaining_m">Залишилося Pro-часу: %1$dхв</string>
+    <string name="pro_time_none">Немає зароблено Pro-часу — перегляньте %1$d реклами на екрані камери, щоб отримати %2$d год</string>
 </resources>

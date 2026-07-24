@@ -11,7 +11,7 @@
     <string name="balance_none">Geen premiumtijd</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1u</string>
+    <string name="watch_ad_button">+12u</string>
     <string name="start_stream_button">Starten</string>
     <string name="stop_stream_button">Stoppen</string>
     <string name="ads_consent_denied">Niet beschikbaar</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">Copyright tonen</string>
     <string name="settings_timestamp">Tijdstempel</string>
     <string name="settings_watermark_position">Positie</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Bedankt voor het steunen van deze onafhankelijke app ❤️</string>
+    <string name="welcome_message">PhoneCam wordt onafhankelijk ontwikkeld door één persoon.\n\nTijdens de Alpha- en Bètafase willen we je bedanken voor je steun door alle Pro-functies vrij te geven via beloningsadvertenties.\n\nDoor de app te testen, feedback te sturen en hem met anderen te delen, help je ons de app te blijven verbeteren.\n\nBedankt dat je vanaf het begin deel uitmaakt van dit project.</string>
+    <string name="welcome_button">Doorgaan</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Tijdens de Alpha en Bèta kunnen alle Pro-functies gratis worden ontgrendeld door beloningsadvertenties te bekijken.</string>
+    <string name="pro_feature_locked_desc">Deze instelling vereist PhoneCam Pro — bekijk advertenties op het camerascherm om deze te ontgrendelen</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Verdien %1$d uur Pro</string>
+    <string name="ad_intro_description">Bekijk %1$d korte advertenties achter elkaar om 4K60 te ontgrendelen, zonder watermerk en zonder advertenties, gedurende %2$d uur — dit is advertentie %3$d van %1$d.</string>
+    <string name="ad_intro_button">Advertentie %1$d van %2$d bekijken</string>
+    <string name="ad_reward_celebration_title">%1$d uur Pro toegevoegd</string>
+    <string name="ad_reward_celebration_desc">Bedankt voor het steunen van deze onafhankelijke app — geniet van %1$d uur 4K60-streamen zonder watermerk.</string>
+    <string name="ad_progress_title">%1$d/%2$d bekeken</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">Nog %1$d advertentie voor %2$d uur Pro</item>
+        <item quantity="other">Nog %1$d advertenties voor %2$d uur Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Resterende Pro-tijd: %1$d u %2$d min</string>
+    <string name="pro_time_remaining_m">Resterende Pro-tijd: %1$d min</string>
+    <string name="pro_time_none">Geen verdiende Pro-tijd — bekijk %1$d advertenties op het camerascherm voor %2$d uur</string>
 </resources>

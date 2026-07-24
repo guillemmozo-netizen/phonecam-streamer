@@ -11,7 +11,7 @@
     <string name="balance_none">Nessun tempo premium</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1h</string>
+    <string name="watch_ad_button">+12h</string>
     <string name="start_stream_button">Avvia</string>
     <string name="stop_stream_button">Interrompi</string>
     <string name="ads_consent_denied">Non disponibile</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">Mostra copyright</string>
     <string name="settings_timestamp">Data e ora</string>
     <string name="settings_watermark_position">Posizione</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Grazie per aver sostenuto questa app indipendente ❤️</string>
+    <string name="welcome_message">PhoneCam è sviluppata in modo indipendente da una sola persona.\n\nDurante le fasi Alpha e Beta vogliamo ringraziarti del tuo supporto offrendo tutte le funzioni Pro tramite annunci con premio.\n\nIl tuo aiuto nel testare l\'app, inviare feedback e condividerla con altre persone ci permette di continuare a migliorarla.\n\nGrazie per far parte del progetto fin dall\'inizio.</string>
+    <string name="welcome_button">Continua</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Durante l\'Alpha e la Beta, tutte le funzioni Pro possono essere sbloccate gratuitamente guardando annunci con premio.</string>
+    <string name="pro_feature_locked_desc">Questa impostazione richiede PhoneCam Pro — guarda gli annunci nella schermata della fotocamera per sbloccarla</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Ottieni %1$d ore di Pro</string>
+    <string name="ad_intro_description">Guarda %1$d brevi annunci di seguito per sbloccare il 4K60, senza filigrana e senza annunci per %2$d ore — questo è l\'annuncio %3$d di %1$d.</string>
+    <string name="ad_intro_button">Guarda l\'annuncio %1$d di %2$d</string>
+    <string name="ad_reward_celebration_title">%1$dh di Pro aggiunte</string>
+    <string name="ad_reward_celebration_desc">Grazie per aver sostenuto questa app indipendente — goditi %1$dh di streaming 4K60 senza filigrana.</string>
+    <string name="ad_progress_title">%1$d/%2$d visti</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">Manca %1$d altro annuncio per %2$dh di Pro</item>
+        <item quantity="other">Mancano %1$d altri annunci per %2$dh di Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Tempo Pro rimanente: %1$dh %2$dm</string>
+    <string name="pro_time_remaining_m">Tempo Pro rimanente: %1$dm</string>
+    <string name="pro_time_none">Nessun tempo Pro guadagnato — guarda %1$d annunci nella schermata della fotocamera per ottenere %2$dh</string>
 </resources>

@@ -11,7 +11,7 @@
     <string name="balance_none">Premium süre yok</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1sa</string>
+    <string name="watch_ad_button">+12sa</string>
     <string name="start_stream_button">Başlat</string>
     <string name="stop_stream_button">Durdur</string>
     <string name="ads_consent_denied">Kullanılamıyor</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">Telif hakkını göster</string>
     <string name="settings_timestamp">Zaman damgası</string>
     <string name="settings_watermark_position">Konum</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Bu bağımsız uygulamayı desteklediğin için teşekkürler ❤️</string>
+    <string name="welcome_message">PhoneCam tek bir kişi tarafından bağımsız olarak geliştiriliyor.\n\nAlpha ve Beta aşamalarında desteğin için teşekkür etmek amacıyla tüm Pro özelliklerini ödüllü reklamlar aracılığıyla sunuyoruz.\n\nUygulamayı test etmen, geri bildirim göndermen ve başkalarıyla paylaşman, onu geliştirmeye devam etmemizi sağlıyor.\n\nProjenin en başından beri bir parçası olduğun için teşekkürler.</string>
+    <string name="welcome_button">Devam et</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Alpha ve Beta süresince, tüm Pro özellikleri ödüllü reklamlar izlenerek ücretsiz olarak açılabilir.</string>
+    <string name="pro_feature_locked_desc">Bu ayar PhoneCam Pro gerektirir — kilidini açmak için kamera ekranında reklam izle</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">%1$d saat Pro kazan</string>
+    <string name="ad_intro_description">4K60\'ı, filigransız ve %2$d saat boyunca reklamsız kullanmanın kilidini açmak için art arda %1$d kısa reklam izle — bu %3$d/%1$d numaralı reklam.</string>
+    <string name="ad_intro_button">%1$d/%2$d reklamı izle</string>
+    <string name="ad_reward_celebration_title">%1$d saat Pro eklendi</string>
+    <string name="ad_reward_celebration_desc">Bu bağımsız uygulamayı desteklediğin için teşekkürler — filigransız %1$d saat 4K60 yayının keyfini çıkar.</string>
+    <string name="ad_progress_title">%1$d/%2$d izlendi</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">%2$d saat Pro için %1$d reklam daha</item>
+        <item quantity="other">%2$d saat Pro için %1$d reklam daha</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Kalan Pro süresi: %1$ds %2$dd</string>
+    <string name="pro_time_remaining_m">Kalan Pro süresi: %1$dd</string>
+    <string name="pro_time_none">Reklamla kazanılan Pro süresi yok — %2$d saat kazanmak için kamera ekranında %1$d reklam izle</string>
 </resources>

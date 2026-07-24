@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/pro_toast_bg"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="16dp">
+
+    <TextView
+        android:id="@+id/welcomeTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/welcome_title"
+        android:textColor="@color/text_primary"
+        android:textSize="19sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="2dp" />
+
+    <!-- The message is long (4 paragraphs, worse in some languages than
+         English) and this dialog is not cancelable — without a scrollable,
+         height-capped container here, a tall message could push the
+         Continue button off-screen with no way to reach it, trapping the
+         user on a dialog they can't dismiss. A FIXED layout_height (not
+         wrap_content+android:maxHeight — confirmed on-device that plain
+         ScrollView silently ignores maxHeight, unlike ImageView) keeps the
+         button always visible below it; the message scrolls internally
+         whenever it doesn't fit in that fixed box. -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_marginTop="14dp"
+        android:scrollbars="none"
+        android:overScrollMode="never">
+
+        <TextView
+            android:id="@+id/welcomeMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/welcome_message"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp" />
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/welcomeContinueButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="18dp"
+        android:text="@string/welcome_button"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:textAllCaps="false"
+        app:backgroundTint="@color/accent"
+        app:cornerRadius="12dp"
+        app:elevation="0dp" />
+
+</LinearLayout>

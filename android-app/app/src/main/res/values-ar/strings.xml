@@ -11,7 +11,7 @@
     <string name="balance_none">لا يوجد وقت مميز</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">‎+1 س</string>
+    <string name="watch_ad_button">‎+12 س</string>
     <string name="start_stream_button">بدء</string>
     <string name="stop_stream_button">إيقاف</string>
     <string name="ads_consent_denied">غير متاح</string>
@@ -111,4 +111,30 @@
     <string name="settings_show_copyright">إظهار حقوق النشر</string>
     <string name="settings_timestamp">الطابع الزمني</string>
     <string name="settings_watermark_position">الموضع</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">شكرًا لدعمك هذا التطبيق المستقل ❤️</string>
+    <string name="welcome_message">يتم تطوير PhoneCam بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
+    <string name="welcome_button">متابعة</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">خلال مرحلتي Alpha وBeta، يمكن فتح جميع ميزات Pro مجانًا بمشاهدة الإعلانات المكافئة.</string>
+    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد PhoneCam Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">احصل على %1$d ساعة من Pro</string>
+    <string name="ad_intro_description">شاهد %1$d إعلانات قصيرة متتالية لفتح 4K60 دون علامة مائية ودون إعلانات لمدة %2$d ساعة — هذا الإعلان رقم %3$d من %1$d.</string>
+    <string name="ad_intro_button">مشاهدة الإعلان %1$d من %2$d</string>
+    <string name="ad_reward_celebration_title">تمت إضافة %1$d ساعة من Pro</string>
+    <string name="ad_reward_celebration_desc">شكرًا لدعمك هذا التطبيق المستقل — استمتع بـ %1$d ساعة من البث بجودة 4K60 دون علامة مائية.</string>
+    <string name="ad_progress_title">تمت مشاهدة %1$d من %2$d</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">إعلان واحد آخر لـ %2$d ساعة من Pro</item>
+        <item quantity="two">إعلانان آخران لـ %2$d ساعة من Pro</item>
+        <item quantity="few">%1$d إعلانات أخرى لـ %2$d ساعة من Pro</item>
+        <item quantity="other">%1$d إعلانًا آخر لـ %2$d ساعة من Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">الوقت المتبقي من Pro: %1$d س %2$d د</string>
+    <string name="pro_time_remaining_m">الوقت المتبقي من Pro: %1$d د</string>
+    <string name="pro_time_none">لا يوجد وقت Pro مكتسب — شاهد %1$d إعلانات في شاشة الكاميرا للحصول على %2$d ساعة</string>
 </resources>

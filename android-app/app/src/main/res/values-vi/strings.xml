@@ -11,7 +11,7 @@
     <string name="balance_none">Không có thời gian cao cấp</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1g</string>
+    <string name="watch_ad_button">+12g</string>
     <string name="start_stream_button">Bắt đầu</string>
     <string name="stop_stream_button">Dừng</string>
     <string name="ads_consent_denied">Không khả dụng</string>
@@ -111,4 +111,27 @@
     <string name="settings_show_copyright">Hiển thị bản quyền</string>
     <string name="settings_timestamp">Dấu thời gian</string>
     <string name="settings_watermark_position">Vị trí</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Cảm ơn bạn đã ủng hộ ứng dụng độc lập này ❤️</string>
+    <string name="welcome_message">PhoneCam đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
+    <string name="welcome_button">Tiếp tục</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Trong giai đoạn Alpha và Beta, mọi tính năng Pro đều có thể được mở khóa miễn phí bằng cách xem quảng cáo có thưởng.</string>
+    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu PhoneCam Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Nhận %1$d giờ Pro</string>
+    <string name="ad_intro_description">Xem %1$d quảng cáo ngắn liên tiếp để mở khóa 4K60, không hình mờ và không quảng cáo trong %2$d giờ — đây là quảng cáo %3$d trong %1$d.</string>
+    <string name="ad_intro_button">Xem quảng cáo %1$d trong %2$d</string>
+    <string name="ad_reward_celebration_title">Đã thêm %1$d giờ Pro</string>
+    <string name="ad_reward_celebration_desc">Cảm ơn bạn đã ủng hộ ứng dụng độc lập này — tận hưởng %1$d giờ phát trực tiếp 4K60 không hình mờ.</string>
+    <string name="ad_progress_title">Đã xem %1$d/%2$d</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="other">Còn %1$d quảng cáo nữa để nhận %2$d giờ Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Thời gian Pro còn lại: %1$dg %2$dp</string>
+    <string name="pro_time_remaining_m">Thời gian Pro còn lại: %1$dp</string>
+    <string name="pro_time_none">Chưa có thời gian Pro từ quảng cáo — xem %1$d quảng cáo trên màn hình camera để nhận %2$d giờ</string>
 </resources>

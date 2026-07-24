@@ -29,14 +29,17 @@ from typing import Optional
 class RewardConfig:
     """Tunable knobs for the ad-credit economy.
 
-    Defaults reflect the "3 ads = 1 hour" recommendation: enough of a batch
-    that the reward feels earned rather than accidental, without requiring
-    so many ads that watching them becomes the whole point of opening the app.
+    Alpha/Beta defaults reflect "3 ads = 12 hours" (was 1 hour): there is no
+    paid Pro tier at all while the app is in Alpha/Beta (see the Android
+    app's AppPhase.kt), so the ad reward is the only way in and is worth
+    making generous. max_balance_seconds is kept at 8x a single reward —
+    the same "how many batches can stack" ratio as before the 1h->12h bump
+    (was 8x 1h = 8h) — even though each batch is now worth much more.
     """
 
-    seconds_per_reward: float = 3600.0
+    seconds_per_reward: float = 12 * 3600.0
     ads_per_reward: int = 3
-    max_balance_seconds: float = 8 * 3600.0
+    max_balance_seconds: float = 8 * (12 * 3600.0)
     free_quality: str = "1080p60"
     premium_quality: str = "4k60"
 

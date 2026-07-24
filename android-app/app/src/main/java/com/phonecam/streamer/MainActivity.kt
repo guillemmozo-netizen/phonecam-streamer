@@ -56,6 +56,7 @@ import com.phonecam.streamer.rewards.AdMobAdController
 import com.phonecam.streamer.rewards.RewardManager
 import com.phonecam.streamer.streaming.CameraStreamer
 import com.phonecam.streamer.ui.AppToast
+import com.phonecam.streamer.ui.WelcomeDialog
 import org.json.JSONObject
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -195,6 +196,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Gates the rest of setup (camera permission prompt, ad init, etc.)
+        // behind the welcome popup so it's genuinely the first thing a new
+        // user sees — not a race against the permission dialog. Returning
+        // users (WelcomeDialog finds it already marked shown) fall straight
+        // through with no visible delay.
+        WelcomeDialog.showIfFirstLaunch(this) { continueOnCreate() }
+    }
+
+    private fun continueOnCreate() {
         rewardManager = loadRewardManager()
         adController = AdMobAdController(this)
         consentManager = ConsentManager(this)
@@ -786,13 +796,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAdBatchIntroDialog(onContinue: () -> Unit) {
         val adsPerReward = rewardManager.config.adsPerReward
+        val hours = (rewardManager.config.secondsPerReward / 3600.0).roundToInt()
         val ordinal = rewardManager.adsWatchedInBatch + 1
         AppToast.showAdIntro(
             this,
-            title = "Earn 1 hour of Pro",
-            description = "Watch $adsPerReward short ads back to back to unlock 4K60, no watermark, " +
-                "and no ads for a full hour — this is ad $ordinal of $adsPerReward.",
-            buttonText = "Watch ad $ordinal of $adsPerReward",
+            title = getString(R.string.ad_intro_title, hours),
+            description = getString(R.string.ad_intro_description, adsPerReward, hours, ordinal),
+            buttonText = getString(R.string.ad_intro_button, ordinal, adsPerReward),
             onWatchAd = onContinue,
         )
     }
@@ -806,10 +816,12 @@ class MainActivity : AppCompatActivity() {
                 refreshStatusUi()
                 updateAdProgressBadge()
 
+                val hours = (rewardManager.config.secondsPerReward / 3600.0).roundToInt()
                 if (batchCompleted) {
                     AppToast.showCelebration(
                         this,
-                        "Thanks for supporting this independent app — enjoy 1h of 4K60, watermark-free streaming.",
+                        title = getString(R.string.ad_reward_celebration_title, hours),
+                        description = getString(R.string.ad_reward_celebration_desc, hours),
                     )
                 } else {
                     val watched = rewardManager.adsWatchedInBatch
@@ -817,8 +829,10 @@ class MainActivity : AppCompatActivity() {
                     val remaining = total - watched
                     AppToast.showProgress(
                         this,
-                        title = "$watched/$total watched",
-                        description = "$remaining more ad${if (remaining == 1) "" else "s"} for 1h of Pro",
+                        title = getString(R.string.ad_progress_title, watched, total),
+                        description = resources.getQuantityString(
+                            R.plurals.ads_remaining_desc, remaining, remaining, hours,
+                        ),
                     )
                 }
             },
@@ -1423,7 +1437,12 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         orientationEventListener.disable()
-        saveRewardManager()
+        // rewardManager is only set up once the welcome dialog is dismissed
+        // (see continueOnCreate) — confirmed on-device, backgrounding the
+        // app (home button, incoming call, screen timeout) while that
+        // dialog is still showing fires onPause() first, and saving here
+        // unconditionally crashed with UninitializedPropertyAccessException.
+        if (::rewardManager.isInitialized) saveRewardManager()
         // Background apps shouldn't hold the mic open — re-acquired in startCamera()
         // via applyAudioMeterSetting() when the app comes back to the foreground.
         stopAudioMeter()

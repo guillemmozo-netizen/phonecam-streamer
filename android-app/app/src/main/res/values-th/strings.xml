@@ -11,7 +11,7 @@
     <string name="balance_none">ไม่มีเวลาพรีเมียม</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1 ชม.</string>
+    <string name="watch_ad_button">+12 ชม.</string>
     <string name="start_stream_button">เริ่ม</string>
     <string name="stop_stream_button">หยุด</string>
     <string name="ads_consent_denied">ไม่พร้อมใช้งาน</string>
@@ -111,4 +111,27 @@
     <string name="settings_show_copyright">แสดงลิขสิทธิ์</string>
     <string name="settings_timestamp">ประทับเวลา</string>
     <string name="settings_watermark_position">ตำแหน่ง</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">ขอบคุณที่สนับสนุนแอปอิสระนี้ ❤️</string>
+    <string name="welcome_message">PhoneCam กำลังได้รับการพัฒนาอย่างอิสระโดยคนเพียงคนเดียว\n\nในช่วง Alpha และ Beta เราอยากขอบคุณสำหรับการสนับสนุนของคุณ ด้วยการเปิดให้ใช้ฟีเจอร์ Pro ทั้งหมดผ่านการดูโฆษณาแบบมีรางวัล\n\nความช่วยเหลือของคุณในการทดสอบแอป ส่งความคิดเห็น และแชร์ให้ผู้อื่น ช่วยให้เราพัฒนาแอปนี้ต่อไปได้\n\nขอบคุณที่เป็นส่วนหนึ่งของโปรเจกต์นี้ตั้งแต่เริ่มต้น</string>
+    <string name="welcome_button">ดำเนินการต่อ</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">ในช่วง Alpha และ Beta ฟีเจอร์ Pro ทั้งหมดสามารถปลดล็อกได้ฟรีโดยการดูโฆษณาแบบมีรางวัล</string>
+    <string name="pro_feature_locked_desc">การตั้งค่านี้ต้องใช้ PhoneCam Pro — ดูโฆษณาที่หน้าจอกล้องเพื่อปลดล็อก</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">รับ Pro %1$d ชั่วโมง</string>
+    <string name="ad_intro_description">ดูโฆษณาสั้น %1$d รายการติดต่อกันเพื่อปลดล็อก 4K60 ไม่มีลายน้ำ และไม่มีโฆษณาเป็นเวลา %2$d ชั่วโมง — นี่คือโฆษณาที่ %3$d จาก %1$d</string>
+    <string name="ad_intro_button">ดูโฆษณา %1$d จาก %2$d</string>
+    <string name="ad_reward_celebration_title">เพิ่ม Pro %1$d ชม. แล้ว</string>
+    <string name="ad_reward_celebration_desc">ขอบคุณที่สนับสนุนแอปอิสระนี้ — เพลิดเพลินกับการสตรีม 4K60 ไม่มีลายน้ำ %1$d ชั่วโมง</string>
+    <string name="ad_progress_title">ดูแล้ว %1$d/%2$d</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="other">อีก %1$d โฆษณาเพื่อรับ Pro %2$d ชั่วโมง</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">เวลา Pro ที่เหลือ: %1$d ชม. %2$d น.</string>
+    <string name="pro_time_remaining_m">เวลา Pro ที่เหลือ: %1$d น.</string>
+    <string name="pro_time_none">ยังไม่มีเวลา Pro จากโฆษณา — ดูโฆษณา %1$d รายการที่หน้าจอกล้องเพื่อรับ %2$d ชั่วโมง</string>
 </resources>

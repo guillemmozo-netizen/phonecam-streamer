@@ -40,13 +40,13 @@ object AppToast {
     // ── Pro / ad-reward moments — richer cards with a title and sometimes a button ──
 
     /** Shown when a free-tier user taps a Pro-gated setting. */
-    fun show(activity: Activity, description: String, onUpgrade: (() -> Unit)? = null) {
-        showCard(activity, Style.PRO, "Pro feature", description, "Upgrade", onUpgrade)
+    fun show(activity: Activity, description: String, title: String? = null, buttonText: String? = null, onButtonClick: (() -> Unit)? = null) {
+        showCard(activity, Style.PRO, title, description, buttonText, onButtonClick)
     }
 
     /** Shown right after a completed ad batch extends Pro time. */
-    fun showCelebration(activity: Activity, description: String) {
-        showCard(activity, Style.PRO, "1h of Pro added", description, null, null)
+    fun showCelebration(activity: Activity, title: String, description: String) {
+        showCard(activity, Style.PRO, title, description, null, null)
     }
 
     /** Mid-batch progress ("2/3 watched") — no button, just informational. */

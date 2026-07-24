@@ -11,7 +11,7 @@
     <string name="balance_none">Tidak ada waktu premium</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1j</string>
+    <string name="watch_ad_button">+12j</string>
     <string name="start_stream_button">Mulai</string>
     <string name="stop_stream_button">Berhenti</string>
     <string name="ads_consent_denied">Tidak tersedia</string>
@@ -111,4 +111,27 @@
     <string name="settings_show_copyright">Tampilkan hak cipta</string>
     <string name="settings_timestamp">Stempel waktu</string>
     <string name="settings_watermark_position">Posisi</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Terima kasih telah mendukung aplikasi independen ini ❤️</string>
+    <string name="welcome_message">PhoneCam dikembangkan secara independen oleh satu orang.\n\nSelama fase Alpha dan Beta, kami ingin berterima kasih atas dukungan Anda dengan membuka semua fitur Pro melalui iklan berhadiah.\n\nBantuan Anda dalam menguji aplikasi, mengirim masukan, dan membagikannya kepada orang lain memungkinkan kami untuk terus menyempurnakannya.\n\nTerima kasih telah menjadi bagian dari proyek ini sejak awal.</string>
+    <string name="welcome_button">Lanjutkan</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Selama Alpha dan Beta, semua fitur Pro dapat dibuka secara gratis dengan menonton iklan berhadiah.</string>
+    <string name="pro_feature_locked_desc">Pengaturan ini memerlukan PhoneCam Pro — tonton iklan di layar kamera untuk membukanya</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Dapatkan %1$d jam Pro</string>
+    <string name="ad_intro_description">Tonton %1$d iklan pendek berturut-turut untuk membuka 4K60, tanpa watermark, dan tanpa iklan selama %2$d jam — ini iklan ke-%3$d dari %1$d.</string>
+    <string name="ad_intro_button">Tonton iklan %1$d dari %2$d</string>
+    <string name="ad_reward_celebration_title">%1$d jam Pro ditambahkan</string>
+    <string name="ad_reward_celebration_desc">Terima kasih telah mendukung aplikasi independen ini — nikmati %1$d jam streaming 4K60 tanpa watermark.</string>
+    <string name="ad_progress_title">%1$d/%2$d ditonton</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="other">%1$d iklan lagi untuk %2$d jam Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Sisa waktu Pro: %1$dj %2$dm</string>
+    <string name="pro_time_remaining_m">Sisa waktu Pro: %1$dm</string>
+    <string name="pro_time_none">Belum ada waktu Pro dari iklan — tonton %1$d iklan di layar kamera untuk mendapatkan %2$d jam</string>
 </resources>

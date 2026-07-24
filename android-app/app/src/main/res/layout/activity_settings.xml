@@ -135,6 +135,22 @@
                         app:backgroundTint="@color/accent"
                         app:cornerRadius="12dp"
                         app:elevation="0dp" />
+
+                    <!-- Alpha/Beta: replaces subPrice+upgradeButton above (both
+                         GONE'd in code, see SettingsActivity — AppPhase.kt) with
+                         a quiet, non-intrusive note that Pro is free via ads
+                         right now instead of a purchase prompt. -->
+                    <TextView
+                        android:id="@+id/proAdsNotice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:text="@string/pro_ads_notice"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="2dp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </FrameLayout>

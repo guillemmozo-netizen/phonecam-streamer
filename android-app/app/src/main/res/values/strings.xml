@@ -11,7 +11,7 @@
     <string name="balance_none">No premium time</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1h</string>
+    <string name="watch_ad_button">+12h</string>
     <string name="start_stream_button">Start</string>
     <string name="stop_stream_button">Stop</string>
     <string name="ads_consent_denied">Unavailable</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">Show copyright</string>
     <string name="settings_timestamp">Timestamp</string>
     <string name="settings_watermark_position">Position</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Thank you for supporting this independent app ❤️</string>
+    <string name="welcome_message">PhoneCam is being developed independently by a single person.\n\nDuring the Alpha and Beta phases, we want to thank you for your support by offering every Pro feature through rewarded ads.\n\nYour help testing the app, sending feedback, and sharing it with others lets us keep improving it.\n\nThanks for being part of the project from the start.</string>
+    <string name="welcome_button">Continue</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">During Alpha and Beta, every Pro feature can be unlocked for free by watching rewarded ads.</string>
+    <string name="pro_feature_locked_desc">This setting requires PhoneCam Pro — watch ads on the camera screen to unlock</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Earn %1$d hours of Pro</string>
+    <string name="ad_intro_description">Watch %1$d short ads back to back to unlock 4K60, no watermark, and no ads for %2$d hours — this is ad %3$d of %1$d.</string>
+    <string name="ad_intro_button">Watch ad %1$d of %2$d</string>
+    <string name="ad_reward_celebration_title">%1$dh of Pro added</string>
+    <string name="ad_reward_celebration_desc">Thanks for supporting this independent app — enjoy %1$dh of 4K60, watermark-free streaming.</string>
+    <string name="ad_progress_title">%1$d/%2$d watched</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">%1$d more ad for %2$dh of Pro</item>
+        <item quantity="other">%1$d more ads for %2$dh of Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Pro time remaining: %1$dh %2$dm</string>
+    <string name="pro_time_remaining_m">Pro time remaining: %1$dm</string>
+    <string name="pro_time_none">No ad-earned Pro time — watch %1$d ads on the camera screen for %2$dh</string>
 </resources>

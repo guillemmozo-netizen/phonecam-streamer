@@ -21,6 +21,7 @@ import com.phonecam.streamer.speedtest.SpeedTestManager
 import com.phonecam.streamer.ui.ExpandableChoiceRow
 import com.phonecam.streamer.ui.AppToast
 import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -75,6 +76,13 @@ class SettingsActivity : AppCompatActivity() {
         binding.upgradeButton.setOnClickListener {
             AppToast.info(this, getString(R.string.sub_coming_soon))
         }
+        // AppPhase.MONETIZATION_ENABLED is false during Alpha/Beta — no purchase
+        // to offer, so the price+button are hidden in favor of a note that Pro
+        // unlocks free via ads. Flip the flag and both sides swap back on their
+        // own, no other changes needed (see AppPhase.kt's doc).
+        binding.subPrice.visibility = if (AppPhase.MONETIZATION_ENABLED) View.VISIBLE else View.GONE
+        binding.upgradeButton.visibility = if (AppPhase.MONETIZATION_ENABLED) View.VISIBLE else View.GONE
+        binding.proAdsNotice.visibility = if (AppPhase.MONETIZATION_ENABLED) View.GONE else View.VISIBLE
 
         binding.discoverButton.setOnClickListener { discoverPc() }
 
@@ -105,9 +113,15 @@ class SettingsActivity : AppCompatActivity() {
         binding.proTimeRemainingText.text = if (seconds > 0) {
             val h = (seconds / 3600).toInt()
             val m = ((seconds % 3600) / 60).toInt()
-            if (h > 0) "Pro time remaining: ${h}h ${m}m" else "Pro time remaining: ${m}m"
+            if (h > 0) {
+                getString(R.string.pro_time_remaining_hm, h, m)
+            } else {
+                getString(R.string.pro_time_remaining_m, m)
+            }
         } else {
-            "No ad-earned Pro time — watch 3 ads on the camera screen for 1h"
+            val config = (manager ?: RewardManager()).config
+            val hours = (config.secondsPerReward / 3600.0).roundToInt()
+            getString(R.string.pro_time_none, config.adsPerReward, hours)
         }
     }
 
@@ -180,8 +194,16 @@ class SettingsActivity : AppCompatActivity() {
         row.onChoiceSelectedListener = ExpandableChoiceRow.OnChoiceSelectedListener { _, pos ->
             if (pos in proIndices && !isPro) {
                 row.setSelection(fallback)
-                AppToast.show(this, "This setting requires PhoneCam Pro — upgrade to unlock") {
-                    AppToast.info(this, getString(R.string.sub_coming_soon))
+                // AppPhase.MONETIZATION_ENABLED is false during Alpha/Beta (see its
+                // doc) — no purchase to offer, so this is informational only, no
+                // button. Once monetization is live this branches to an upgrade
+                // button+action instead, same as the rest of the Pro UI.
+                if (AppPhase.MONETIZATION_ENABLED) {
+                    AppToast.show(this, getString(R.string.pro_feature_locked_desc)) {
+                        AppToast.info(this, getString(R.string.sub_coming_soon))
+                    }
+                } else {
+                    AppToast.show(this, getString(R.string.pro_feature_locked_desc))
                 }
             }
         }

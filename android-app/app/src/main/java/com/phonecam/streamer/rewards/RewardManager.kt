@@ -15,9 +15,15 @@ import org.json.JSONObject
  * then mirrored here.
  */
 data class RewardConfig(
-    val secondsPerReward: Double = 3600.0,
+    // Alpha/Beta rate: 3 ads = 12h of Pro (was 1h) — see AppPhase's doc for
+    // why there's no paid tier at all right now, making the ad reward the
+    // only way in and worth making generous.
+    val secondsPerReward: Double = 12 * 3600.0,
     val adsPerReward: Int = 3,
-    val maxBalanceSeconds: Double = 8 * 3600.0,
+    // Kept at 8x a single reward, same ratio as before the 1h->12h bump
+    // (was 8x 1h = 8h), so "how many batches can stack" is unchanged even
+    // though each batch is now worth much more.
+    val maxBalanceSeconds: Double = 8 * (12 * 3600.0),
     val freeQuality: String = "1080p60",
     val premiumQuality: String = "4k60",
 ) {
@@ -109,12 +115,13 @@ class RewardManager(
     companion object {
         fun fromJson(json: JSONObject): RewardManager {
             val cfgJson = json.optJSONObject("config")
+            val defaults = RewardConfig()
             val config = RewardConfig(
-                secondsPerReward = cfgJson?.optDouble("seconds_per_reward", 3600.0) ?: 3600.0,
-                adsPerReward = cfgJson?.optInt("ads_per_reward", 3) ?: 3,
-                maxBalanceSeconds = cfgJson?.optDouble("max_balance_seconds", 8 * 3600.0) ?: (8 * 3600.0),
-                freeQuality = cfgJson?.optString("free_quality", "1080p60") ?: "1080p60",
-                premiumQuality = cfgJson?.optString("premium_quality", "4k60") ?: "4k60",
+                secondsPerReward = cfgJson?.optDouble("seconds_per_reward", defaults.secondsPerReward) ?: defaults.secondsPerReward,
+                adsPerReward = cfgJson?.optInt("ads_per_reward", defaults.adsPerReward) ?: defaults.adsPerReward,
+                maxBalanceSeconds = cfgJson?.optDouble("max_balance_seconds", defaults.maxBalanceSeconds) ?: defaults.maxBalanceSeconds,
+                freeQuality = cfgJson?.optString("free_quality", defaults.freeQuality) ?: defaults.freeQuality,
+                premiumQuality = cfgJson?.optString("premium_quality", defaults.premiumQuality) ?: defaults.premiumQuality,
             )
             // A corrupted/edited save file shouldn't crash the app on load.
             val adsWatched = json.optInt("ads_watched_in_batch", 0).let {

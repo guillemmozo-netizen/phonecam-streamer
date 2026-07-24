@@ -11,7 +11,7 @@
     <string name="balance_none">Keine Premium-Zeit</string>
 
     <!-- Buttons -->
-    <string name="watch_ad_button">+1 Std.</string>
+    <string name="watch_ad_button">+12 Std.</string>
     <string name="start_stream_button">Start</string>
     <string name="stop_stream_button">Stopp</string>
     <string name="ads_consent_denied">Nicht verfügbar</string>
@@ -111,4 +111,28 @@
     <string name="settings_show_copyright">Copyright anzeigen</string>
     <string name="settings_timestamp">Zeitstempel</string>
     <string name="settings_watermark_position">Position</string>
+
+    <!-- Welcome dialog (first launch only) -->
+    <string name="welcome_title">Danke, dass du diese unabhängige App unterstützt ❤️</string>
+    <string name="welcome_message">PhoneCam wird unabhängig von einer einzelnen Person entwickelt.\n\nWährend der Alpha- und Beta-Phase möchten wir uns für deine Unterstützung bedanken, indem wir alle Pro-Funktionen über Werbeprämien freischalten.\n\nDeine Hilfe beim Testen der App, beim Senden von Feedback und beim Teilen mit anderen ermöglicht es uns, sie weiter zu verbessern.\n\nDanke, dass du von Anfang an Teil des Projekts bist.</string>
+    <string name="welcome_button">Weiter</string>
+
+    <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
+    <string name="pro_ads_notice">Während der Alpha- und Beta-Phase können alle Pro-Funktionen kostenlos durch das Ansehen von Werbevideos freigeschaltet werden.</string>
+    <string name="pro_feature_locked_desc">Diese Einstellung erfordert PhoneCam Pro — sieh dir Werbevideos auf dem Kamerabildschirm an, um sie freizuschalten</string>
+
+    <!-- Rewarded-ad flow -->
+    <string name="ad_intro_title">Verdiene %1$d Stunden Pro</string>
+    <string name="ad_intro_description">Sieh dir %1$d kurze Werbevideos hintereinander an, um 4K60, kein Wasserzeichen und keine Werbung für %2$d Stunden freizuschalten — dies ist Anzeige %3$d von %1$d.</string>
+    <string name="ad_intro_button">Anzeige %1$d von %2$d ansehen</string>
+    <string name="ad_reward_celebration_title">%1$d Std. Pro hinzugefügt</string>
+    <string name="ad_reward_celebration_desc">Danke, dass du diese unabhängige App unterstützt — genieße %1$d Std. 4K60-Streaming ohne Wasserzeichen.</string>
+    <string name="ad_progress_title">%1$d/%2$d angesehen</string>
+    <plurals name="ads_remaining_desc">
+        <item quantity="one">Noch %1$d Anzeige für %2$d Std. Pro</item>
+        <item quantity="other">Noch %1$d Anzeigen für %2$d Std. Pro</item>
+    </plurals>
+    <string name="pro_time_remaining_hm">Verbleibende Pro-Zeit: %1$d Std. %2$d Min.</string>
+    <string name="pro_time_remaining_m">Verbleibende Pro-Zeit: %1$d Min.</string>
+    <string name="pro_time_none">Keine durch Werbung verdiente Pro-Zeit — sieh dir %1$d Anzeigen auf dem Kamerabildschirm an, um %2$d Std. zu erhalten</string>
 </resources>
