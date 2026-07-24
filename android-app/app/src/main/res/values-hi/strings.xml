@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">बचा हुआ Pro समय: %1$d घं %2$d मि</string>
     <string name="pro_time_remaining_m">बचा हुआ Pro समय: %1$d मि</string>
     <string name="pro_time_none">अभी तक कोई Pro समय नहीं कमाया — %2$d घंटे पाने के लिए कैमरा स्क्रीन पर %1$d विज्ञापन देखें</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">पीसी नियंत्रण</string>
+    <string name="pc_status_not_connected">कनेक्ट नहीं है</string>
+    <string name="pc_status_check">जांचें</string>
+    <string name="pc_start">पीसी शुरू करें</string>
+    <string name="pc_stop">पीसी रोकें</string>
+    <string name="pc_setup_usb">USB सेट करें (adb reverse)</string>
+    <string name="pc_status_running">चल रहा है: %1$s</string>
+    <string name="pc_status_connected_stopped">कनेक्टेड — सेवाएं रुकी हुई हैं</string>
+    <string name="pc_status_unreachable">पीसी उपलब्ध नहीं</string>
+    <string name="pc_starting">शुरू हो रहा है…</string>
+    <string name="pc_services_started">पीसी सेवाएं शुरू हो गईं</string>
+    <string name="pc_unreachable_hint">पीसी तक नहीं पहुंचा जा सका — पहले PhoneCam_PC.bat चलाएं</string>
+    <string name="pc_services_stopped">पीसी सेवाएं रोक दी गईं</string>
+    <string name="pc_usb_forwarded">USB पोर्ट फॉरवर्ड किए गए</string>
+    <string name="pc_usb_failed">विफल — USB कनेक्शन जांचें</string>
 </resources>

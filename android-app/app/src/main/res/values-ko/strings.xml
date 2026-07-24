@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">남은 Pro 시간: %1$d시간 %2$d분</string>
     <string name="pro_time_remaining_m">남은 Pro 시간: %1$d분</string>
     <string name="pro_time_none">광고로 얻은 Pro 시간이 없습니다 — 카메라 화면에서 광고 %1$d개를 보고 %2$d시간을 받으세요</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC 제어</string>
+    <string name="pc_status_not_connected">연결 안 됨</string>
+    <string name="pc_status_check">확인</string>
+    <string name="pc_start">PC 시작</string>
+    <string name="pc_stop">PC 중지</string>
+    <string name="pc_setup_usb">USB 설정 (adb reverse)</string>
+    <string name="pc_status_running">실행 중: %1$s</string>
+    <string name="pc_status_connected_stopped">연결됨 — 서비스 중지됨</string>
+    <string name="pc_status_unreachable">PC에 연결할 수 없음</string>
+    <string name="pc_starting">시작 중…</string>
+    <string name="pc_services_started">PC 서비스가 시작되었습니다</string>
+    <string name="pc_unreachable_hint">PC에 연결할 수 없습니다 — 먼저 PhoneCam_PC.bat를 실행하세요</string>
+    <string name="pc_services_stopped">PC 서비스가 중지되었습니다</string>
+    <string name="pc_usb_forwarded">USB 포트가 전달되었습니다</string>
+    <string name="pc_usb_failed">실패 — USB 연결을 확인하세요</string>
 </resources>

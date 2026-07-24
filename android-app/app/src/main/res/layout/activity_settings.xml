@@ -832,7 +832,7 @@
             android:layout_marginStart="4dp"
             android:layout_marginBottom="9dp">
             <View style="@style/SectionLabelTick" />
-            <TextView style="@style/SectionLabelText" android:text="PC CONTROL" />
+            <TextView style="@style/SectionLabelText" android:text="@string/settings_pc_control" />
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
@@ -871,7 +871,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
-                        android:text="Not connected"
+                        android:text="@string/pc_status_not_connected"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif" />
@@ -881,7 +881,7 @@
                         style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="28dp"
-                        android:text="Check"
+                        android:text="@string/pc_status_check"
                         android:textColor="@color/accent"
                         android:textSize="12sp"
                         android:textAllCaps="false"
@@ -902,7 +902,7 @@
                         android:layout_height="40dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="6dp"
-                        android:text="Start PC"
+                        android:text="@string/pc_start"
                         android:textColor="@color/surface_dark"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif-medium"
@@ -917,7 +917,7 @@
                         android:layout_height="40dp"
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
-                        android:text="Stop PC"
+                        android:text="@string/pc_stop"
                         android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         android:fontFamily="sans-serif-medium"
@@ -934,7 +934,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="36dp"
                     android:layout_marginTop="8dp"
-                    android:text="Setup USB (adb reverse)"
+                    android:text="@string/pc_setup_usb"
                     android:textColor="@color/readout"
                     android:textSize="12sp"
                     android:textAllCaps="false"

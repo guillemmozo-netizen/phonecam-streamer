@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">Thời gian Pro còn lại: %1$dg %2$dp</string>
     <string name="pro_time_remaining_m">Thời gian Pro còn lại: %1$dp</string>
     <string name="pro_time_none">Chưa có thời gian Pro từ quảng cáo — xem %1$d quảng cáo trên màn hình camera để nhận %2$d giờ</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">ĐIỀU KHIỂN PC</string>
+    <string name="pc_status_not_connected">Chưa kết nối</string>
+    <string name="pc_status_check">Kiểm tra</string>
+    <string name="pc_start">Khởi động PC</string>
+    <string name="pc_stop">Dừng PC</string>
+    <string name="pc_setup_usb">Thiết lập USB (adb reverse)</string>
+    <string name="pc_status_running">Đang chạy: %1$s</string>
+    <string name="pc_status_connected_stopped">Đã kết nối — dịch vụ đã dừng</string>
+    <string name="pc_status_unreachable">Không thể kết nối PC</string>
+    <string name="pc_starting">Đang khởi động…</string>
+    <string name="pc_services_started">Đã khởi động dịch vụ PC</string>
+    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy PhoneCam_PC.bat trước</string>
+    <string name="pc_services_stopped">Đã dừng dịch vụ PC</string>
+    <string name="pc_usb_forwarded">Đã chuyển tiếp cổng USB</string>
+    <string name="pc_usb_failed">Thất bại — kiểm tra kết nối USB</string>
 </resources>

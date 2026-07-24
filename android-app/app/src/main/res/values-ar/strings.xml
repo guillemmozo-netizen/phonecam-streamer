@@ -137,4 +137,21 @@
     <string name="pro_time_remaining_hm">الوقت المتبقي من Pro: %1$d س %2$d د</string>
     <string name="pro_time_remaining_m">الوقت المتبقي من Pro: %1$d د</string>
     <string name="pro_time_none">لا يوجد وقت Pro مكتسب — شاهد %1$d إعلانات في شاشة الكاميرا للحصول على %2$d ساعة</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">التحكم بالكمبيوتر</string>
+    <string name="pc_status_not_connected">غير متصل</string>
+    <string name="pc_status_check">تحقق</string>
+    <string name="pc_start">تشغيل الكمبيوتر</string>
+    <string name="pc_stop">إيقاف الكمبيوتر</string>
+    <string name="pc_setup_usb">إعداد USB (adb reverse)</string>
+    <string name="pc_status_running">قيد التشغيل: %1$s</string>
+    <string name="pc_status_connected_stopped">متصل — الخدمات متوقفة</string>
+    <string name="pc_status_unreachable">الكمبيوتر غير متاح</string>
+    <string name="pc_starting">جارٍ التشغيل…</string>
+    <string name="pc_services_started">تم تشغيل خدمات الكمبيوتر</string>
+    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل PhoneCam_PC.bat أولاً</string>
+    <string name="pc_services_stopped">تم إيقاف خدمات الكمبيوتر</string>
+    <string name="pc_usb_forwarded">تم توجيه منافذ USB</string>
+    <string name="pc_usb_failed">فشل — تحقق من اتصال USB</string>
 </resources>

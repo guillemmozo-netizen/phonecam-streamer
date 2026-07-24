@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">剩余 Pro 时间：%1$d 小时 %2$d 分钟</string>
     <string name="pro_time_remaining_m">剩余 Pro 时间：%1$d 分钟</string>
     <string name="pro_time_none">暂无通过广告获得的 Pro 时间 — 在相机界面观看 %1$d 个广告即可获得 %2$d 小时</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">电脑控制</string>
+    <string name="pc_status_not_connected">未连接</string>
+    <string name="pc_status_check">检查</string>
+    <string name="pc_start">启动电脑</string>
+    <string name="pc_stop">停止电脑</string>
+    <string name="pc_setup_usb">设置 USB（adb reverse）</string>
+    <string name="pc_status_running">运行中：%1$s</string>
+    <string name="pc_status_connected_stopped">已连接 — 服务已停止</string>
+    <string name="pc_status_unreachable">无法连接电脑</string>
+    <string name="pc_starting">正在启动…</string>
+    <string name="pc_services_started">电脑服务已启动</string>
+    <string name="pc_unreachable_hint">无法连接电脑 — 请先运行 PhoneCam_PC.bat</string>
+    <string name="pc_services_stopped">电脑服务已停止</string>
+    <string name="pc_usb_forwarded">USB 端口已转发</string>
+    <string name="pc_usb_failed">失败 — 请检查 USB 连接</string>
 </resources>

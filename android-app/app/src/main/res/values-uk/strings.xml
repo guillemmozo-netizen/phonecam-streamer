@@ -137,4 +137,21 @@
     <string name="pro_time_remaining_hm">Залишилося Pro-часу: %1$dг %2$dхв</string>
     <string name="pro_time_remaining_m">Залишилося Pro-часу: %1$dхв</string>
     <string name="pro_time_none">Немає зароблено Pro-часу — перегляньте %1$d реклами на екрані камери, щоб отримати %2$d год</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">КЕРУВАННЯ ПК</string>
+    <string name="pc_status_not_connected">Не підключено</string>
+    <string name="pc_status_check">Перевірити</string>
+    <string name="pc_start">Запустити ПК</string>
+    <string name="pc_stop">Зупинити ПК</string>
+    <string name="pc_setup_usb">Налаштувати USB (adb reverse)</string>
+    <string name="pc_status_running">Працює: %1$s</string>
+    <string name="pc_status_connected_stopped">Підключено — служби зупинено</string>
+    <string name="pc_status_unreachable">ПК недоступний</string>
+    <string name="pc_starting">Запуск…</string>
+    <string name="pc_services_started">Служби ПК запущено</string>
+    <string name="pc_unreachable_hint">Не вдається підключитися до ПК — спочатку запустіть PhoneCam_PC.bat</string>
+    <string name="pc_services_stopped">Служби ПК зупинено</string>
+    <string name="pc_usb_forwarded">USB-порти перенаправлено</string>
+    <string name="pc_usb_failed">Помилка — перевірте USB-з\'єднання</string>
 </resources>

@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">Pro time remaining: %1$dh %2$dm</string>
     <string name="pro_time_remaining_m">Pro time remaining: %1$dm</string>
     <string name="pro_time_none">No ad-earned Pro time — watch %1$d ads on the camera screen for %2$dh</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC CONTROL</string>
+    <string name="pc_status_not_connected">Not connected</string>
+    <string name="pc_status_check">Check</string>
+    <string name="pc_start">Start PC</string>
+    <string name="pc_stop">Stop PC</string>
+    <string name="pc_setup_usb">Setup USB (adb reverse)</string>
+    <string name="pc_status_running">Running: %1$s</string>
+    <string name="pc_status_connected_stopped">Connected — services stopped</string>
+    <string name="pc_status_unreachable">PC not reachable</string>
+    <string name="pc_starting">Starting…</string>
+    <string name="pc_services_started">PC services started</string>
+    <string name="pc_unreachable_hint">Cannot reach PC — run PhoneCam_PC.bat first</string>
+    <string name="pc_services_stopped">PC services stopped</string>
+    <string name="pc_usb_forwarded">USB ports forwarded</string>
+    <string name="pc_usb_failed">Failed — check USB connection</string>
 </resources>

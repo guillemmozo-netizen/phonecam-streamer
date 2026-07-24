@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">Temps Pro restant: %1$dh %2$dm</string>
     <string name="pro_time_remaining_m">Temps Pro restant: %1$dm</string>
     <string name="pro_time_none">Sense temps Pro guanyat — mira %1$d anuncis a la pantalla de la càmera per aconseguir %2$dh</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">CONTROL DEL PC</string>
+    <string name="pc_status_not_connected">No connectat</string>
+    <string name="pc_status_check">Comprova</string>
+    <string name="pc_start">Inicia el PC</string>
+    <string name="pc_stop">Atura el PC</string>
+    <string name="pc_setup_usb">Configura l\'USB (adb reverse)</string>
+    <string name="pc_status_running">En marxa: %1$s</string>
+    <string name="pc_status_connected_stopped">Connectat — serveis aturats</string>
+    <string name="pc_status_unreachable">PC no accessible</string>
+    <string name="pc_starting">S\'està iniciant…</string>
+    <string name="pc_services_started">Serveis del PC iniciats</string>
+    <string name="pc_unreachable_hint">No es pot accedir al PC — executa primer PhoneCam_PC.bat</string>
+    <string name="pc_services_stopped">Serveis del PC aturats</string>
+    <string name="pc_usb_forwarded">Ports USB redirigits</string>
+    <string name="pc_usb_failed">Error — comprova la connexió USB</string>
 </resources>

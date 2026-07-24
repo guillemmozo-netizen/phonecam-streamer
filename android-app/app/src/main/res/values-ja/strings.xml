@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">残りのPro時間：%1$d時間%2$d分</string>
     <string name="pro_time_remaining_m">残りのPro時間：%1$d分</string>
     <string name="pro_time_none">広告で獲得したPro時間はありません — カメラ画面で広告を%1$d本見て%2$d時間を獲得しましょう</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC操作</string>
+    <string name="pc_status_not_connected">未接続</string>
+    <string name="pc_status_check">確認</string>
+    <string name="pc_start">PCを起動</string>
+    <string name="pc_stop">PCを停止</string>
+    <string name="pc_setup_usb">USBを設定（adb reverse）</string>
+    <string name="pc_status_running">実行中：%1$s</string>
+    <string name="pc_status_connected_stopped">接続済み — サービス停止中</string>
+    <string name="pc_status_unreachable">PCに接続できません</string>
+    <string name="pc_starting">起動中…</string>
+    <string name="pc_services_started">PCサービスを起動しました</string>
+    <string name="pc_unreachable_hint">PCに接続できません — 先にPhoneCam_PC.batを実行してください</string>
+    <string name="pc_services_stopped">PCサービスを停止しました</string>
+    <string name="pc_usb_forwarded">USBポートを転送しました</string>
+    <string name="pc_usb_failed">失敗しました — USB接続を確認してください</string>
 </resources>

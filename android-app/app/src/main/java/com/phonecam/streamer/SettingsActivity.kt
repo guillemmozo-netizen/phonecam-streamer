@@ -83,6 +83,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.subPrice.visibility = if (AppPhase.MONETIZATION_ENABLED) View.VISIBLE else View.GONE
         binding.upgradeButton.visibility = if (AppPhase.MONETIZATION_ENABLED) View.VISIBLE else View.GONE
         binding.proAdsNotice.visibility = if (AppPhase.MONETIZATION_ENABLED) View.GONE else View.VISIBLE
+        updateSubBadge()
 
         binding.discoverButton.setOnClickListener { discoverPc() }
 
@@ -123,6 +124,14 @@ class SettingsActivity : AppCompatActivity() {
             val hours = (config.secondsPerReward / 3600.0).roundToInt()
             getString(R.string.pro_time_none, config.adsPerReward, hours)
         }
+    }
+
+    /** The "FREE"/"PRO" pill next to the PhoneCam Pro title — was always the
+     * layout's static default ("FREE") no matter the user's actual ad-earned
+     * status, since nothing ever wrote to it after inflation. */
+    private fun updateSubBadge() {
+        binding.subBadge.text = if (isPro) getString(R.string.sub_pro) else getString(R.string.sub_free)
+        binding.subBadge.setBackgroundResource(if (isPro) R.drawable.badge_pro else R.drawable.badge_free)
     }
 
     private val isPro: Boolean
@@ -284,16 +293,16 @@ class SettingsActivity : AppCompatActivity() {
                 if (status != null) {
                     if (status.running) {
                         binding.pcStatusDot.setBackgroundResource(R.drawable.dot_live)
-                        binding.pcStatusText.text = "Running: ${status.services.joinToString(", ")}"
+                        binding.pcStatusText.text = getString(R.string.pc_status_running, status.services.joinToString(", "))
                         binding.pcStatusText.setTextColor(getColor(R.color.accent_green))
                     } else {
                         binding.pcStatusDot.setBackgroundResource(R.drawable.dot_accent)
-                        binding.pcStatusText.text = "Connected — services stopped"
+                        binding.pcStatusText.text = getString(R.string.pc_status_connected_stopped)
                         binding.pcStatusText.setTextColor(getColor(R.color.accent))
                     }
                 } else {
                     binding.pcStatusDot.setBackgroundResource(R.drawable.dot_idle)
-                    binding.pcStatusText.text = "PC not reachable"
+                    binding.pcStatusText.text = getString(R.string.pc_status_unreachable)
                     binding.pcStatusText.setTextColor(getColor(R.color.text_tertiary))
                 }
             }
@@ -302,17 +311,17 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun startPcServices() {
         binding.btnStartPc.isEnabled = false
-        binding.btnStartPc.text = "Starting..."
+        binding.btnStartPc.text = getString(R.string.pc_starting)
         testExecutor.execute {
             val host = getPcHost()
             val ok = PcControl.startServices(host)
             runOnUiThread {
                 binding.btnStartPc.isEnabled = true
-                binding.btnStartPc.text = "Start PC"
+                binding.btnStartPc.text = getString(R.string.pc_start)
                 if (ok) {
-                    AppToast.success(this, "PC services started")
+                    AppToast.success(this, getString(R.string.pc_services_started))
                 } else {
-                    AppToast.error(this, "Cannot reach PC — run PhoneCam_PC.bat first")
+                    AppToast.error(this, getString(R.string.pc_unreachable_hint))
                 }
                 checkPcStatus()
             }
@@ -324,7 +333,7 @@ class SettingsActivity : AppCompatActivity() {
             val host = getPcHost()
             PcControl.stopServices(host)
             runOnUiThread {
-                AppToast.info(this, "PC services stopped")
+                AppToast.info(this, getString(R.string.pc_services_stopped))
                 checkPcStatus()
             }
         }
@@ -338,9 +347,9 @@ class SettingsActivity : AppCompatActivity() {
             runOnUiThread {
                 binding.btnAdbReverse.isEnabled = true
                 if (ok) {
-                    AppToast.success(this, "USB ports forwarded")
+                    AppToast.success(this, getString(R.string.pc_usb_forwarded))
                 } else {
-                    AppToast.error(this, "Failed — check USB connection")
+                    AppToast.error(this, getString(R.string.pc_usb_failed))
                 }
             }
         }

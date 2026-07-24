@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">Verbleibende Pro-Zeit: %1$d Std. %2$d Min.</string>
     <string name="pro_time_remaining_m">Verbleibende Pro-Zeit: %1$d Min.</string>
     <string name="pro_time_none">Keine durch Werbung verdiente Pro-Zeit — sieh dir %1$d Anzeigen auf dem Kamerabildschirm an, um %2$d Std. zu erhalten</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC-STEUERUNG</string>
+    <string name="pc_status_not_connected">Nicht verbunden</string>
+    <string name="pc_status_check">Prüfen</string>
+    <string name="pc_start">PC starten</string>
+    <string name="pc_stop">PC stoppen</string>
+    <string name="pc_setup_usb">USB einrichten (adb reverse)</string>
+    <string name="pc_status_running">Aktiv: %1$s</string>
+    <string name="pc_status_connected_stopped">Verbunden — Dienste gestoppt</string>
+    <string name="pc_status_unreachable">PC nicht erreichbar</string>
+    <string name="pc_starting">Wird gestartet…</string>
+    <string name="pc_services_started">PC-Dienste gestartet</string>
+    <string name="pc_unreachable_hint">PC nicht erreichbar — starte zuerst PhoneCam_PC.bat</string>
+    <string name="pc_services_stopped">PC-Dienste gestoppt</string>
+    <string name="pc_usb_forwarded">USB-Ports weitergeleitet</string>
+    <string name="pc_usb_failed">Fehlgeschlagen — USB-Verbindung prüfen</string>
 </resources>

@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">Sisa waktu Pro: %1$dj %2$dm</string>
     <string name="pro_time_remaining_m">Sisa waktu Pro: %1$dm</string>
     <string name="pro_time_none">Belum ada waktu Pro dari iklan — tonton %1$d iklan di layar kamera untuk mendapatkan %2$d jam</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">KONTROL PC</string>
+    <string name="pc_status_not_connected">Tidak terhubung</string>
+    <string name="pc_status_check">Periksa</string>
+    <string name="pc_start">Mulai PC</string>
+    <string name="pc_stop">Hentikan PC</string>
+    <string name="pc_setup_usb">Atur USB (adb reverse)</string>
+    <string name="pc_status_running">Berjalan: %1$s</string>
+    <string name="pc_status_connected_stopped">Terhubung — layanan dihentikan</string>
+    <string name="pc_status_unreachable">PC tidak dapat dijangkau</string>
+    <string name="pc_starting">Memulai…</string>
+    <string name="pc_services_started">Layanan PC dimulai</string>
+    <string name="pc_unreachable_hint">Tidak dapat menjangkau PC — jalankan PhoneCam_PC.bat terlebih dahulu</string>
+    <string name="pc_services_stopped">Layanan PC dihentikan</string>
+    <string name="pc_usb_forwarded">Port USB diteruskan</string>
+    <string name="pc_usb_failed">Gagal — periksa koneksi USB</string>
 </resources>

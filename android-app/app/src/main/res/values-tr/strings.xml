@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">Kalan Pro süresi: %1$ds %2$dd</string>
     <string name="pro_time_remaining_m">Kalan Pro süresi: %1$dd</string>
     <string name="pro_time_none">Reklamla kazanılan Pro süresi yok — %2$d saat kazanmak için kamera ekranında %1$d reklam izle</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC KONTROLÜ</string>
+    <string name="pc_status_not_connected">Bağlı değil</string>
+    <string name="pc_status_check">Kontrol et</string>
+    <string name="pc_start">PC\'yi başlat</string>
+    <string name="pc_stop">PC\'yi durdur</string>
+    <string name="pc_setup_usb">USB\'yi ayarla (adb reverse)</string>
+    <string name="pc_status_running">Çalışıyor: %1$s</string>
+    <string name="pc_status_connected_stopped">Bağlı — hizmetler durduruldu</string>
+    <string name="pc_status_unreachable">PC\'ye ulaşılamıyor</string>
+    <string name="pc_starting">Başlatılıyor…</string>
+    <string name="pc_services_started">PC hizmetleri başlatıldı</string>
+    <string name="pc_unreachable_hint">PC\'ye ulaşılamıyor — önce PhoneCam_PC.bat dosyasını çalıştırın</string>
+    <string name="pc_services_stopped">PC hizmetleri durduruldu</string>
+    <string name="pc_usb_forwarded">USB portları yönlendirildi</string>
+    <string name="pc_usb_failed">Başarısız — USB bağlantısını kontrol edin</string>
 </resources>

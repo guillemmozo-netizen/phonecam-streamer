@@ -134,4 +134,21 @@
     <string name="pro_time_remaining_hm">เวลา Pro ที่เหลือ: %1$d ชม. %2$d น.</string>
     <string name="pro_time_remaining_m">เวลา Pro ที่เหลือ: %1$d น.</string>
     <string name="pro_time_none">ยังไม่มีเวลา Pro จากโฆษณา — ดูโฆษณา %1$d รายการที่หน้าจอกล้องเพื่อรับ %2$d ชั่วโมง</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">ควบคุม PC</string>
+    <string name="pc_status_not_connected">ยังไม่ได้เชื่อมต่อ</string>
+    <string name="pc_status_check">ตรวจสอบ</string>
+    <string name="pc_start">เริ่ม PC</string>
+    <string name="pc_stop">หยุด PC</string>
+    <string name="pc_setup_usb">ตั้งค่า USB (adb reverse)</string>
+    <string name="pc_status_running">กำลังทำงาน: %1$s</string>
+    <string name="pc_status_connected_stopped">เชื่อมต่อแล้ว — บริการหยุดทำงาน</string>
+    <string name="pc_status_unreachable">ไม่พบ PC</string>
+    <string name="pc_starting">กำลังเริ่ม…</string>
+    <string name="pc_services_started">เริ่มบริการ PC แล้ว</string>
+    <string name="pc_unreachable_hint">ไม่พบ PC — เปิด PhoneCam_PC.bat ก่อน</string>
+    <string name="pc_services_stopped">หยุดบริการ PC แล้ว</string>
+    <string name="pc_usb_forwarded">ส่งต่อพอร์ต USB แล้ว</string>
+    <string name="pc_usb_failed">ล้มเหลว — ตรวจสอบการเชื่อมต่อ USB</string>
 </resources>

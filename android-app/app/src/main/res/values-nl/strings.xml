@@ -135,4 +135,21 @@
     <string name="pro_time_remaining_hm">Resterende Pro-tijd: %1$d u %2$d min</string>
     <string name="pro_time_remaining_m">Resterende Pro-tijd: %1$d min</string>
     <string name="pro_time_none">Geen verdiende Pro-tijd — bekijk %1$d advertenties op het camerascherm voor %2$d uur</string>
+
+    <!-- PC control -->
+    <string name="settings_pc_control">PC-BEDIENING</string>
+    <string name="pc_status_not_connected">Niet verbonden</string>
+    <string name="pc_status_check">Controleren</string>
+    <string name="pc_start">PC starten</string>
+    <string name="pc_stop">PC stoppen</string>
+    <string name="pc_setup_usb">USB instellen (adb reverse)</string>
+    <string name="pc_status_running">Actief: %1$s</string>
+    <string name="pc_status_connected_stopped">Verbonden — services gestopt</string>
+    <string name="pc_status_unreachable">PC niet bereikbaar</string>
+    <string name="pc_starting">Bezig met starten…</string>
+    <string name="pc_services_started">PC-services gestart</string>
+    <string name="pc_unreachable_hint">PC niet bereikbaar — start eerst PhoneCam_PC.bat</string>
+    <string name="pc_services_stopped">PC-services gestopt</string>
+    <string name="pc_usb_forwarded">USB-poorten doorgestuurd</string>
+    <string name="pc_usb_failed">Mislukt — controleer de USB-verbinding</string>
 </resources>
