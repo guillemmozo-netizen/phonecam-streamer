@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only manifest additions. Merged into the app manifest for debug builds
+  and absent from release builds entirely, so the diagnostic probe can never
+  ship. See Camera2ProbeActivity's own doc for what it measures.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity
+            android:name=".probe.Camera2ProbeActivity"
+            android:exported="true"
+            android:label="Camera2 probe"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
+    </application>
+
+</manifest>

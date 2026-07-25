@@ -114,12 +114,18 @@ class CameraStreamer(
     private var nextSendDeadlineNanos = 0L
     private var targetFps = 30
 
-    // Set by MainActivity right after it computes the real negotiated
-    // CONTROL_AE_TARGET_FPS_RANGE for the bound camera (DeviceCapabilities.
-    // closestFpsRange) — confirmed via `adb shell dumpsys media.camera` that
-    // every camera id on a real S23 Ultra tops out at 30fps in that range
-    // regardless of what's requested, so a user picking "60 fps" in Settings
-    // still only gets ~30 distinct frames/sec from the sensor. Before this
+    // Set by MainActivity right after it computes the real negotiated fps
+    // range for the bound camera.
+    //
+    // Under CameraX that range comes from CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES
+    // (DeviceCapabilities.closestFpsRange), which on the S23 Ultra tops out at
+    // 30 — so a user picking "60 fps" really does only get ~30 distinct
+    // frames/sec through that backend. That is a CameraX/AOSP-metadata limit,
+    // NOT a hardware one: the same sensor delivers a measured 59.8fps at 4K
+    // through the Camera2 backend, which reads Samsung's vendor table instead
+    // and passes the rate as a session parameter (see Camera2Capabilities).
+    // The Camera2 path therefore sets this ceiling from what it actually
+    // negotiated, not from the AE table. Before this
     // field existed, targetFps (and therefore Hello.fps, the encoder's
     // configured rate, and the PC's declared pyvirtualcam/OBS canvas fps)
     // stayed at the raw 60 the user picked — so the PC side believed it was
@@ -137,13 +143,14 @@ class CameraStreamer(
     // recording corrects the encoded frame without us polling anything.
     @Volatile private var rotationDegrees = 0
 
-    // Diagnostics only: periodic logging to see exactly where frame budget
-    // goes on-device — camera delivery rate vs. how long encode() (GL
-    // render + MediaCodec drain) actually takes per call.
-    private var frameCallCount = 0
-    private var encodeCallCount = 0
-    private var encodeTimeTotalNanos = 0L
-    private var diagWindowStartNanos = 0L
+    /**
+     * Per-stage instrumentation (capture/encode/send rates, latencies, drops)
+     * — see [StreamMetrics]. Public so the capture backend can record camera-
+     * side events (Camera2's capture callbacks) into the same window as the
+     * encode/send events recorded here, which is the whole point: the numbers
+     * are only diagnostic when they line up on one timeline.
+     */
+    val metrics = StreamMetrics(TAG)
 
     /** Bind this to CameraX's `VideoCapture.withOutput(...)` — see MainActivity.startCamera. */
     val videoOutput = StreamingVideoOutput { request -> onSurfaceRequested(request) }
@@ -218,15 +225,68 @@ class CameraStreamer(
      * CPU-buffer path used.
      */
     private fun onSurfaceRequested(request: SurfaceRequest) {
+        startEncoderFor(
+            cameraWidth = request.resolution.width,
+            cameraHeight = request.resolution.height,
+            onSurfaceReady = { surface ->
+                request.setTransformationInfoListener(DIRECT_EXECUTOR) { info -> rotationDegrees = info.rotationDegrees }
+                request.provideSurface(surface, DIRECT_EXECUTOR, Consumer { })
+            },
+            onFailed = { request.willNotProvideSurface() },
+        )
+    }
+
+    /**
+     * Camera2 backend entry point (see com.phonecam.streamer.camera2.Camera2CaptureSource).
+     *
+     * Same encoder, same renderer, same Surface — the only difference from the
+     * CameraX path above is who hands that Surface to the camera. CameraX does
+     * it through SurfaceRequest.provideSurface; Camera2 does it through
+     * OutputConfiguration. Nothing downstream of the Surface changes, which is
+     * exactly why the two backends can share this code.
+     *
+     * Rotation is the one thing CameraX supplied for free (via
+     * TransformationInfo) that Camera2 has to compute — see
+     * [setRotationDegrees], which the caller drives from SENSOR_ORIENTATION
+     * plus the device's physical orientation.
+     */
+    fun attachCamera2Surface(
+        cameraWidth: Int,
+        cameraHeight: Int,
+        onSurfaceReady: (android.view.Surface) -> Unit,
+        onFailed: () -> Unit,
+    ) = startEncoderFor(cameraWidth, cameraHeight, onSurfaceReady, onFailed)
+
+    /** Camera2 has no TransformationInfo; the caller computes the equivalent and pushes it here. */
+    fun setRotationDegrees(degrees: Int) {
+        rotationDegrees = degrees
+    }
+
+    /**
+     * Creates the session's encoder sized to the tier-capped target, points the
+     * GL renderer at the camera's actual output geometry, and hands the
+     * resulting camera-input Surface back through [onSurfaceReady].
+     *
+     * Extracted verbatim from onSurfaceRequested so both capture backends run
+     * the identical path — [cameraWidth]/[cameraHeight] are what the *camera*
+     * will really produce, which is not necessarily the encoder's size (the
+     * renderer scales between them via the draw viewport, same as before).
+     */
+    private fun startEncoderFor(
+        cameraWidth: Int,
+        cameraHeight: Int,
+        onSurfaceReady: (android.view.Surface) -> Unit,
+        onFailed: () -> Unit,
+    ) {
         val profile = rewardManager.currentProfile()
         val (encWidth, encHeight, fps) = effectiveTarget(streamConfig, profile)
         targetFps = minOf(fps, cameraFpsCeiling)
-        val cameraWidth = request.resolution.width
-        val cameraHeight = request.resolution.height
+        metrics.encoderSize = "${encWidth}x$encHeight"
+        metrics.targetFps = targetFps
 
         glHandler.post {
             if (stopped) {
-                request.willNotProvideSurface()
+                onFailed()
                 return@post
             }
             val activeEncoder = try {
@@ -240,7 +300,7 @@ class CameraStreamer(
                 Log.e(TAG, "failed to create H.264 encoder at ${encWidth}x$encHeight " +
                     "${streamConfig.videoBitrateBps}bps — streaming cannot continue this session", e)
                 encoderFailed = true
-                request.willNotProvideSurface()
+                onFailed()
                 return@post
             }
             synchronized(encoderLock) { encoder = activeEncoder }
@@ -249,8 +309,8 @@ class CameraStreamer(
             renderer.setCameraFrameSize(cameraWidth, cameraHeight)
             renderer.setOnFrameAvailableListener({ onFrameAvailable(profile) }, glHandler)
 
-            request.setTransformationInfoListener(DIRECT_EXECUTOR) { info -> rotationDegrees = info.rotationDegrees }
-            request.provideSurface(renderer.cameraInputSurface, DIRECT_EXECUTOR, Consumer { })
+            Log.i(TAG, "session: ${metrics.describeSession()} camera=${cameraWidth}x$cameraHeight")
+            onSurfaceReady(renderer.cameraInputSurface)
         }
     }
 
@@ -264,30 +324,25 @@ class CameraStreamer(
             if (!stopped) encoder?.renderer?.updateCameraTexture()
         }
 
-        frameCallCount++
-        if (diagWindowStartNanos == 0L) diagWindowStartNanos = System.nanoTime()
-        val diagElapsedNanos = System.nanoTime() - diagWindowStartNanos
-        if (diagElapsedNanos >= 2_000_000_000L) {
-            val deliveryFps = frameCallCount / (diagElapsedNanos / 1_000_000_000.0)
-            val avgEncodeMs = if (encodeCallCount > 0) (encodeTimeTotalNanos / encodeCallCount) / 1_000_000.0 else 0.0
-            Log.i(
-                TAG,
-                "diag: camera delivers ${"%.1f".format(deliveryFps)} fps " +
-                    "($frameCallCount calls/${diagElapsedNanos / 1_000_000}ms), " +
-                    "encode() sent=$encodeCallCount avg=${"%.1f".format(avgEncodeMs)}ms/call",
-            )
-            frameCallCount = 0
-            encodeCallCount = 0
-            encodeTimeTotalNanos = 0L
-            diagWindowStartNanos = System.nanoTime()
-        }
+        metrics.onCameraFrame()
+        metrics.logIfWindowElapsed()
 
-        val conn = connection ?: return
-        if (encoderFailed || stopped) return
+        val conn = connection
+        if (conn == null) {
+            metrics.onDrop(StreamMetrics.Drop.NO_CONNECTION)
+            return
+        }
+        if (encoderFailed || stopped) {
+            if (encoderFailed) metrics.onDrop(StreamMetrics.Drop.ENCODER_FAILED)
+            return
+        }
 
         val now = System.nanoTime()
         val minIntervalNanos = 1_000_000_000L / targetFps.coerceAtLeast(1)
-        if (now < nextSendDeadlineNanos) return
+        if (now < nextSendDeadlineNanos) {
+            metrics.onDrop(StreamMetrics.Drop.THROTTLED)
+            return
+        }
         nextSendDeadlineNanos = maxOf(nextSendDeadlineNanos + minIntervalNanos, now - minIntervalNanos)
 
         val presentationTimeUs = now / 1000
@@ -302,10 +357,10 @@ class CameraStreamer(
             val result = synchronized(encoderLock) {
                 if (stopped) emptyList() else encoder?.encode(rotationDegrees, profile.watermark, presentationTimeUs) ?: emptyList()
             }
-            encodeCallCount++
-            encodeTimeTotalNanos += System.nanoTime() - encodeStart
+            metrics.onEncoded(System.nanoTime() - encodeStart)
             result
         } catch (e: Exception) {
+            metrics.onDrop(StreamMetrics.Drop.ENCODE_EXCEPTION)
             encodeFailureStreak++
             if (encodeFailureStreak == 1 || encodeFailureStreak % 60 == 0) {
                 Log.e(TAG, "encode failed ($encodeFailureStreak in a row, likely stream stopping) — dropping frame", e)
@@ -334,8 +389,19 @@ class CameraStreamer(
                     )
                     helloSent = true
                 }
-                for (chunk in chunks) conn.sendFrame(chunk)
+                // Timed because a blocking write is the honest measure of
+                // network backpressure: when the far side stops keeping up,
+                // TCP's send buffer fills and this call starts costing
+                // milliseconds it never cost before.
+                val sendStart = System.nanoTime()
+                var bytes = 0
+                for (chunk in chunks) {
+                    conn.sendFrame(chunk)
+                    bytes += chunk.size
+                }
+                metrics.onSent(System.nanoTime() - sendStart, bytes)
             } catch (e: Exception) {
+                metrics.onDrop(StreamMetrics.Drop.SEND_FAILED)
                 Log.e(TAG, "send failed, dropping frame", e)
             }
         }

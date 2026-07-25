@@ -1000,6 +1000,12 @@ body {
         <div class="section-label">DISPLAY</div>
         <div class="section-card">
           <div class="setting-row"><span class="setting-label">Keep screen awake</span><div class="toggle on" data-key="keepawake"><div class="toggle-knob"></div></div></div>
+          <!-- Experimental Camera2 capture backend (developer flag, off by default).
+               Mirrors switchExperimentalCamera2 in activity_settings.xml. -->
+          <div class="setting-row">
+            <span class="setting-label">Experimental Camera2 capture<br><span style="font-size:11px;opacity:.55">Unlocks true 4K60. Camera controls disabled while streaming.</span></span>
+            <div class="toggle" data-key="camera2"><div class="toggle-knob"></div></div>
+          </div>
           <div class="setting-row">
             <span class="setting-label">While streaming</span>
             <select class="setting-select" id="selStreamBrightness">

@@ -25,6 +25,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Viewfinder for the experimental Camera2 backend (Settings > Developer).
+         PreviewView is a CameraX view and can only be fed by a CameraX Preview
+         use case, so the Camera2 session needs a surface of its own. GONE (and
+         costing nothing) unless that backend is actually running; the two are
+         mutually exclusive because only one client can hold the camera. -->
+    <TextureView
+        android:id="@+id/camera2PreviewView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        app:layout_constraintStart_toStartOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView" />
+
     <!-- Grid overlay (3x3 rule-of-thirds) -->
     <com.phonecam.streamer.ui.GridOverlay
         android:id="@+id/gridOverlay"

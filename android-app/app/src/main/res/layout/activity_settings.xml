@@ -1015,6 +1015,29 @@
                     android:id="@+id/spinnerStreamBrightness"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_stream_brightness" />
+
+                <View style="@style/Separator" />
+
+                <!-- Experimental Camera2 capture backend. Deliberately English-only
+                     and plainly labelled "experimental": it's a developer flag for
+                     validating 4K60, not a shipped feature, and it disables the
+                     CameraX-backed camera controls while streaming. -->
+                <LinearLayout style="@style/SettingRow">
+                    <LinearLayout
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:text="@string/settings_experimental_camera2"
+                            android:textColor="@color/text_primary" android:textSize="16sp" />
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:text="@string/settings_experimental_camera2_hint"
+                            android:textColor="@color/text_tertiary" android:textSize="12sp" />
+                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchExperimentalCamera2"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:checked="false" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

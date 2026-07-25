@@ -11,6 +11,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Range
+import android.util.Size
+import android.view.TextureView
 import android.view.View
 import android.view.MotionEvent
 import android.view.OrientationEventListener
@@ -48,6 +50,8 @@ import java.util.concurrent.TimeUnit
 import com.phonecam.streamer.audio.AudioLevelMeter
 import com.phonecam.streamer.consent.ConsentManager
 import com.phonecam.streamer.databinding.ActivityMainBinding
+import com.phonecam.streamer.camera2.Camera2Capabilities
+import com.phonecam.streamer.camera2.Camera2CaptureSource
 import com.phonecam.streamer.device.DeviceCapabilities
 import com.phonecam.streamer.device.DeviceModelDatabase
 import com.phonecam.streamer.network.PcControl
@@ -66,6 +70,11 @@ private const val TAG = "MainActivity"
 // A rotation reading has to hold steady for this long before it's actually
 // applied — see orientationEventListener's doc for why.
 private const val ROTATION_DEBOUNCE_MS = 400L
+
+// Phase 1 of the Camera2 backend targets the main back camera only — the id
+// whose vendor table advertises 3840x2160@60 and which the probe measured at
+// a sustained 59.8fps.
+private const val CAMERA2_CAMERA_ID = "0"
 
 class MainActivity : AppCompatActivity() {
 
@@ -99,6 +108,21 @@ class MainActivity : AppCompatActivity() {
     // targetRotation update to it without a full camera rebind every time
     // the phone is turned.
     private var currentVideoCapture: VideoCapture<com.phonecam.streamer.streaming.StreamingVideoOutput>? = null
+
+    // ── Experimental Camera2 capture backend (Settings > Display > Experimental) ──
+    // Null and inert unless the flag is on AND this device advertises the
+    // requested size/rate. CameraX stays the default and the fallback; see
+    // startCamera2Backend / fallbackToCameraX.
+    private var camera2Source: com.phonecam.streamer.camera2.Camera2CaptureSource? = null
+    private var camera2Active = false
+    // Sticky for the lifetime of the process once the backend has failed once,
+    // so a fallback can't bounce straight back into the path that just failed.
+    private var camera2FailedThisRun = false
+    private var camera2AppliedRotation: Int? = null
+    // What the Camera2 session actually negotiated — the numbers diagnostics
+    // should show, as opposed to what Settings asked for.
+    private var camera2ActualSize: Size? = null
+    private var camera2ActualFps: Int? = null
 
     // Bound to VideoCapture in startCamera() and forwards every SurfaceRequest
     // to whichever CameraStreamer is current — created once here (not per
@@ -154,6 +178,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (now - pendingSinceMs >= ROTATION_DEBOUNCE_MS) {
                     currentVideoCapture?.targetRotation = rotation
+                    // Camera2 has no targetRotation to push this into — the
+                    // equivalent is computed from the sensor's mounting and
+                    // handed to the renderer directly.
+                    if (camera2Active) applyCamera2Rotation(rotation)
                     pendingRotation = null
                 }
             }
@@ -904,15 +932,22 @@ class MainActivity : AppCompatActivity() {
         // on the main thread; only start() below (via hostResolver, called
         // on networkExecutor) actually resolves the PC's address or touches
         // the network.
+        val cfg = currentConfig ?: StreamConfig.load(this)
         val newStreamer = CameraStreamer(
             hostResolver = { resolveStreamHost() },
             port = 8787,
             rewardManager = rewardManager,
-            streamConfig = currentConfig ?: StreamConfig.load(this),
+            streamConfig = cfg,
         )
         streamer = newStreamer
 
-        startCamera() // rebind WITH the video-capture stream (kept unbound while idle for a snappy viewfinder)
+        if (shouldUseCamera2(cfg)) {
+            newStreamer.metrics.backend = "camera2"
+            startCamera2Backend(cfg, newStreamer)
+        } else {
+            newStreamer.metrics.backend = "camerax"
+            startCamera() // rebind WITH the video-capture stream (kept unbound while idle for a snappy viewfinder)
+        }
         applyStreamBrightness(active = true)
 
         morphRecButton(recording = true)
@@ -932,6 +967,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopStreaming() {
+        stopCamera2Backend()
         streamer?.stop()
         streamer = null
         isStreaming = false
@@ -941,6 +977,212 @@ class MainActivity : AppCompatActivity() {
         morphRecButton(recording = false)
         binding.recDot.setBackgroundResource(R.drawable.dot_idle)
         stopRecDotAnimation()
+    }
+
+    // ─────────────── experimental Camera2 capture backend ───────────────
+
+    /**
+     * Phase 1 scope: the flag is on, nothing has failed yet this run, we're on
+     * the main back camera, and this device genuinely advertises the requested
+     * size at the requested rate (vendor table first, AOSP second — see
+     * [Camera2Capabilities]). Anything else stays on CameraX.
+     *
+     * Front/tele/ultra-wide are excluded on purpose: CameraX reaches those
+     * through physical-id routing that this backend doesn't implement yet.
+     */
+    // isSupported/the source itself are API 28+ (SessionConfiguration, and with
+    // it session parameters — the entire point of this backend). isSupported()
+    // returns false below that, so the runtime gate is real even though lint
+    // can't follow it across the call.
+    @android.annotation.SuppressLint("NewApi")
+    private fun shouldUseCamera2(cfg: StreamConfig): Boolean {
+        val enabled = getSharedPreferences("stream_settings", MODE_PRIVATE)
+            .getBoolean("experimental_camera2", false)
+        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        val size = Size(width, height)
+        val supported = enabled && Camera2CaptureSource.isSupported(this, CAMERA2_CAMERA_ID, size, cfg.fps)
+        val eligible = enabled &&
+            !camera2FailedThisRun &&
+            cfg.lensFacing == CameraSelector.LENS_FACING_BACK &&
+            cfg.lensType == "wide" &&
+            supported
+        // Every one of these has silently returned false at least once during
+        // bring-up, and a silent false is indistinguishable from "the backend
+        // ran and was slow" in the metrics — so say which one it was.
+        Log.i(
+            TAG,
+            "camera2 gate: eligible=$eligible (flag=$enabled failedEarlier=$camera2FailedThisRun " +
+                "facing=${cfg.lensFacing} lens=${cfg.lensType} " +
+                "size=${size.width}x${size.height}@${cfg.fps} supported=$supported)",
+        )
+        return eligible
+    }
+
+    /**
+     * Hands the camera from CameraX to Camera2 for this streaming session.
+     *
+     * Order matters and is not negotiable: only one client may hold a camera,
+     * so CameraX has to unbind *completely* before openCamera() is attempted.
+     * The encoder is created only once a preview surface exists, so the whole
+     * thing is a chain of callbacks rather than a straight line — any link
+     * failing lands in [fallbackToCameraX].
+     */
+    @android.annotation.SuppressLint("NewApi") // reached only via shouldUseCamera2 -> isSupported, which gates on API 28
+    private fun startCamera2Backend(cfg: StreamConfig, activeStreamer: CameraStreamer) {
+        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        val captureSize = Size(width, height)
+        val chars = Camera2Capabilities.characteristicsOrNull(this, CAMERA2_CAMERA_ID)
+        val negotiated = chars?.let { Camera2Capabilities.sessionFpsRange(it, captureSize, cfg.fps) }
+
+        // The honest ceiling for this backend: what it can really negotiate,
+        // not the AE table that caps CameraX at 30.
+        activeStreamer.cameraFpsCeiling = negotiated?.upper ?: cfg.fps
+        camera2Active = true
+        camera2AppliedRotation = null
+
+        val providerFuture = ProcessCameraProvider.getInstance(this)
+        providerFuture.addListener({
+            try {
+                providerFuture.get().unbindAll()
+            } catch (e: Exception) {
+                Log.w(TAG, "unbindAll before Camera2 open failed", e)
+            }
+            camera = null
+            currentVideoCapture = null
+            binding.previewView.visibility = View.GONE
+            binding.camera2PreviewView.visibility = View.VISIBLE
+
+            val previewSize = chars?.let { Camera2Capabilities.previewSizeFor(it, Size(1920, 1080)) }
+                ?: Size(1280, 720)
+
+            withCamera2PreviewSurface(previewSize) { previewSurface ->
+                if (!camera2Active || !isStreaming) return@withCamera2PreviewSurface
+
+                val source = Camera2CaptureSource(
+                    context = applicationContext,
+                    cameraId = CAMERA2_CAMERA_ID,
+                    captureSize = captureSize,
+                    desiredFps = cfg.fps,
+                    metrics = activeStreamer.metrics,
+                    listener = camera2Listener(activeStreamer),
+                )
+                camera2Source = source
+                applyCamera2Rotation(Surface.ROTATION_0)
+
+                activeStreamer.attachCamera2Surface(
+                    cameraWidth = captureSize.width,
+                    cameraHeight = captureSize.height,
+                    onSurfaceReady = { encoderSurface -> source.start(encoderSurface, previewSurface) },
+                    onFailed = { runOnUiThread { fallbackToCameraX("encoder unavailable") } },
+                )
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun camera2Listener(activeStreamer: CameraStreamer) = object : Camera2CaptureSource.Listener {
+        override fun onStarted(size: Size, fpsRange: Range<Int>) {
+            runOnUiThread {
+                camera2ActualSize = size
+                camera2ActualFps = fpsRange.upper
+                activeStreamer.cameraFpsCeiling = fpsRange.upper
+                Log.i(TAG, "Camera2 backend running: ${size.width}x${size.height} @ $fpsRange")
+                refreshStatusUi()
+            }
+        }
+
+        override fun onFailed(stage: String, reason: String) {
+            runOnUiThread { fallbackToCameraX("$stage: $reason") }
+        }
+    }
+
+    /**
+     * A TextureView has no SurfaceTexture until it's been laid out, and it was
+     * GONE until a moment ago — so this either fires immediately or waits for
+     * the listener. The watchdog matters: without it, a surface that never
+     * arrives leaves the session silently half-started, with the record button
+     * lit and nothing streaming.
+     */
+    private fun withCamera2PreviewSurface(previewSize: Size, onReady: (Surface?) -> Unit) {
+        val view = binding.camera2PreviewView
+        var delivered = false
+        fun deliver(surface: Surface?) {
+            if (delivered) return
+            delivered = true
+            onReady(surface)
+        }
+
+        view.surfaceTexture?.let { texture ->
+            texture.setDefaultBufferSize(previewSize.width, previewSize.height)
+            deliver(Surface(texture))
+            return
+        }
+
+        view.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(texture: android.graphics.SurfaceTexture, w: Int, h: Int) {
+                texture.setDefaultBufferSize(previewSize.width, previewSize.height)
+                deliver(Surface(texture))
+            }
+
+            override fun onSurfaceTextureSizeChanged(texture: android.graphics.SurfaceTexture, w: Int, h: Int) {}
+            override fun onSurfaceTextureDestroyed(texture: android.graphics.SurfaceTexture): Boolean = true
+            override fun onSurfaceTextureUpdated(texture: android.graphics.SurfaceTexture) {}
+        }
+
+        // Capture without a viewfinder beats not capturing at all.
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!delivered) Log.w(TAG, "Camera2 preview surface never arrived — starting without a viewfinder")
+            deliver(null)
+        }, 3000)
+    }
+
+    /**
+     * Mirrors CameraX's own relative-rotation math for a back-facing sensor:
+     * how far the captured buffer must be rotated clockwise to come out
+     * upright, given how the phone is physically held. CameraX derived this
+     * from targetRotation; with Camera2 it has to be computed and pushed into
+     * the renderer by hand.
+     */
+    private fun applyCamera2Rotation(surfaceRotation: Int) {
+        if (camera2AppliedRotation == surfaceRotation) return
+        val source = camera2Source ?: return
+        val deviceDegrees = when (surfaceRotation) {
+            Surface.ROTATION_90 -> 90
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 270
+            else -> 0
+        }
+        streamer?.setRotationDegrees((source.sensorOrientation - deviceDegrees + 360) % 360)
+        camera2AppliedRotation = surfaceRotation
+    }
+
+    private fun stopCamera2Backend() {
+        camera2Source?.stop()
+        camera2Source = null
+        camera2Active = false
+        camera2ActualSize = null
+        camera2ActualFps = null
+        camera2AppliedRotation = null
+        binding.camera2PreviewView.visibility = View.GONE
+        binding.previewView.visibility = View.VISIBLE
+    }
+
+    /**
+     * Any Camera2 failure ends the session and restarts it on CameraX, rather
+     * than swapping the capture source under a live stream: the encoder is
+     * created the first time a surface is provided, so re-binding CameraX onto
+     * a streamer that already has one would leave two encoders competing for
+     * the same session. [camera2FailedThisRun] makes the retreat one-way, so a
+     * fallback can't bounce straight back into the path that just failed.
+     */
+    private fun fallbackToCameraX(reason: String) {
+        if (camera2FailedThisRun) return
+        Log.w(TAG, "Camera2 backend unavailable ($reason) — falling back to CameraX")
+        camera2FailedThisRun = true
+        AppToast.warning(this, getString(R.string.toast_camera2_fallback))
+
+        val wasStreaming = isStreaming
+        stopStreaming()
+        if (wasStreaming) startStreaming()
     }
 
     private fun morphRecButton(recording: Boolean) {
@@ -1173,6 +1415,10 @@ class MainActivity : AppCompatActivity() {
             // target, regardless of encoder/network headroom. mainVideoOutput forwards
             // each SurfaceRequest to whichever CameraStreamer is current.
             val videoCapture = if (isStreaming) {
+                // Decides the ordered candidate list VideoCapture builds from
+                // the VideoOutput's MediaSpec — which outranks the
+                // ResolutionSelector below. See StreamingVideoOutput.targetHeight.
+                mainVideoOutput.targetHeight = targetHeight
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
                     .setTargetFrameRate(android.util.Range(cfg.fps, cfg.fps))
@@ -1418,6 +1664,12 @@ class MainActivity : AppCompatActivity() {
      */
     private fun streamingResolutionLabel(): String {
         val cfg = currentConfig ?: return if (rewardManager.currentProfile().premiumActive) "4K60" else "1080p60"
+        // Camera2 reports what it actually negotiated with the HAL, which is
+        // the number worth showing — under CameraX the label can only ever
+        // echo the request back, true or not.
+        camera2ActualSize?.let { size ->
+            return "${size.width}x${size.height} ${camera2ActualFps ?: cfg.fps}fps"
+        }
         return if (cfg.qualityLabel.contains("x")) {
             "${cfg.qualityLabel} ${cfg.fps}fps"
         } else {

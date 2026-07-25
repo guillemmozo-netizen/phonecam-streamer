@@ -683,6 +683,7 @@ class SettingsActivity : AppCompatActivity() {
         // Display
         binding.switchKeepAwake.isChecked = prefs.getBoolean("keep_screen_on", true)
         binding.spinnerStreamBrightness.setSelection(prefs.getInt("stream_brightness", 0))
+        binding.switchExperimentalCamera2.isChecked = prefs.getBoolean("experimental_camera2", false)
     }
 
     override fun onPause() {
@@ -742,6 +743,7 @@ class SettingsActivity : AppCompatActivity() {
         // Display
         prefs.putBoolean("keep_screen_on", binding.switchKeepAwake.isChecked)
         prefs.putInt("stream_brightness", binding.spinnerStreamBrightness.selectedItemPosition)
+        prefs.putBoolean("experimental_camera2", binding.switchExperimentalCamera2.isChecked)
 
         prefs.apply()
     }
