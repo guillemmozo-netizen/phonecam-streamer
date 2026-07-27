@@ -232,7 +232,15 @@ def handle_connection(
     # config-only (0 frames), and reordering can occasionally emit more than
     # one at a time. JPEG stays exactly the old one-chunk-in/one-frame-out
     # behavior, still used by the PC-only demo sender.
-    h264_decoder = H264Decoder() if hello.codec == "h264" else None
+    # A sink that can take the decoder's own pixel format gets it unconverted;
+    # everything else keeps receiving RGB exactly as before. Only the H.264
+    # path can honour this — the JPEG path decodes to RGB by nature.
+    sink_prefers = getattr(sink, "preferred_frame_format", "rgb")
+    h264_decoder = (
+        H264Decoder(output_format="native" if sink_prefers == "native" else "rgb")
+        if hello.codec == "h264"
+        else None
+    )
     frames_skipped_stale = 0
     pipeline = _PipelineStageLog(hello.codec, h264_decoder)
     sink_writer = _SinkWriter(sink, pipeline.on_sent)
@@ -274,6 +282,13 @@ def handle_connection(
             if h264_decoder is not None:
                 decoded = h264_decoder.decode(payload)
                 pipeline.on_decoded(len(decoded))
+                if decoded:
+                    # The decoder only knows its native format once a frame has
+                    # actually come out of it, so the sink is told here rather
+                    # than at construction. Idempotent after the first call.
+                    set_format = getattr(sink, "set_frame_format", None)
+                    if set_format is not None:
+                        set_format(h264_decoder.frame_format)
                 if is_stale:
                     frames_skipped_stale += len(decoded)
                     pipeline.maybe_log()

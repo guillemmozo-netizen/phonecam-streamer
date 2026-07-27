@@ -33,6 +33,10 @@
     <!-- Display settings -->
     <string name="settings_display">DISPLAY</string>
     <string name="settings_keep_awake">Keep screen awake</string>
+    <!-- Developer flag, intentionally not translated: it is not a shipped feature. -->
+    <string name="settings_experimental_camera2">Experimental Camera2 capture</string>
+    <string name="settings_experimental_camera2_hint">Unlocks true 4K60. Camera controls are disabled while streaming.</string>
+    <string name="toast_camera2_fallback">Camera2 backend unavailable — using CameraX</string>
     <string name="settings_stream_brightness">While streaming</string>
 
     <!-- Subscription -->

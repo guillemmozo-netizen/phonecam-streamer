@@ -18,6 +18,16 @@ class FrameSink(Protocol):
     def close(self) -> None: ...
 
 
+# A sink may additionally declare:
+#
+#   preferred_frame_format = "native"   -> receive frames in the decoder's own
+#                                          pixel format instead of RGB
+#   set_frame_format(name)              -> told which format that turned out to be
+#
+# Both are optional and looked up with getattr, so a sink (or a test double)
+# that doesn't care keeps working unchanged and keeps receiving RGB.
+
+
 class NullSink:
     """Discards frames; records how many/what shape it received. Test-only."""
 
@@ -59,6 +69,25 @@ class PreviewWindowSink:
             cv2.destroyWindow(self._window_name)
 
 
+def _pixel_format_by_name() -> dict:
+    """av pixel-format name -> pyvirtualcam PixelFormat. Imported lazily so
+    merely importing this module doesn't require pyvirtualcam (the tests and
+    the null/preview sinks don't)."""
+    try:
+        from pyvirtualcam import PixelFormat
+    except ImportError:  # pragma: no cover - only on machines without the backend
+        return {}
+    return {
+        "nv12": PixelFormat.NV12,        # what h264_cuvid (NVDEC) outputs
+        "yuv420p": PixelFormat.I420,     # what the software decoder outputs
+        "yuvj420p": PixelFormat.I420,
+        "rgb": PixelFormat.RGB,
+    }
+
+
+_PIXEL_FORMAT_BY_NAME = _pixel_format_by_name()
+
+
 class VirtualCamSink:
     """Feeds frames into a system virtual camera via pyvirtualcam.
 
@@ -67,17 +96,45 @@ class VirtualCamSink:
     because we only know the true resolution once the stream announces it.
     """
 
+    # The virtual camera's own native format is NV12, which is also what NVDEC
+    # produces — so asking for native frames removes a conversion at BOTH ends
+    # (see H264Decoder's output_format doc for the measurements).
+    preferred_frame_format = "native"
+
     def __init__(self) -> None:
         self._cam = None
+        self._frame_format = "rgb"
+
+    def set_frame_format(self, frame_format: str) -> None:
+        """Tells this sink which pixel format frames will arrive in. The camera
+        can't change format once created, so a change closes it and the next
+        send() re-creates it — which in practice happens at most once, on the
+        first decoded frame of a session."""
+        if frame_format == self._frame_format:
+            return
+        self._frame_format = frame_format
+        if self._cam is not None:
+            self._cam.close()
+            self._cam = None
 
     def send(self, frame_rgb: np.ndarray, fps: int) -> None:
         import pyvirtualcam
+        from pyvirtualcam import PixelFormat
 
-        height, width = frame_rgb.shape[:2]
+        pixel_format = _PIXEL_FORMAT_BY_NAME.get(self._frame_format, PixelFormat.RGB)
+        if pixel_format in (PixelFormat.NV12, PixelFormat.I420):
+            # Planar 4:2:0 arrives as one (height * 3/2, width) array: the luma
+            # plane with the half-height chroma plane stacked underneath, so the
+            # picture height is two thirds of the array's.
+            height = frame_rgb.shape[0] * 2 // 3
+            width = frame_rgb.shape[1]
+        else:
+            height, width = frame_rgb.shape[:2]
+
         if self._cam is None or self._cam.width != width or self._cam.height != height:
             if self._cam is not None:
                 self._cam.close()
-            self._cam = pyvirtualcam.Camera(width=width, height=height, fps=fps)
+            self._cam = pyvirtualcam.Camera(width=width, height=height, fps=fps, fmt=pixel_format)
 
         # No cv2.cvtColor here — the decoder now hands us RGB directly (see
         # H264Decoder.decode's doc), which is exactly what pyvirtualcam
