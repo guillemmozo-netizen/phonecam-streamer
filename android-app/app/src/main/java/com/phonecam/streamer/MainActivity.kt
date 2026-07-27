@@ -1457,9 +1457,21 @@ class MainActivity : AppCompatActivity() {
             // changes what's sent to the PC — not just a cosmetic letterbox over an
             // uncropped 16:9 sensor feed.
             val (ratioNum, ratioDenom) = StreamConfig.aspectRatioParts(cfg.aspectRatio)
+            // The rotation argument says which orientation the aspect ratio is
+            // expressed in - NOT which way the phone is held. This Activity is
+            // locked to portrait, so display.rotation was always ROTATION_0 and
+            // CameraX read "16:9" as 16:9 *in portrait*, i.e. a tall narrow
+            // slice: measured, a 1080p session delivered 1080x608 and a 4K one
+            // 2160x1216, cropping away the sides of the scene and looking, on
+            // the viewfinder, like the image had been rotated 90 degrees. The
+            // ViewPort applies to every use case in the group - the Preview
+            // included - which is why the viewfinder was affected too, while
+            // the Camera2 backend (which binds no ViewPort) was not.
+            // The output, encoder and preview alike, is landscape, so the ratio
+            // has to be expressed in a landscape rotation.
             val viewPort = ViewPort.Builder(
                 android.util.Rational(ratioNum, ratioDenom),
-                binding.previewView.display?.rotation ?: android.view.Surface.ROTATION_0,
+                android.view.Surface.ROTATION_90,
             ).build()
 
             fun buildUseCaseGroup(previewUseCase: Preview) = UseCaseGroup.Builder()
