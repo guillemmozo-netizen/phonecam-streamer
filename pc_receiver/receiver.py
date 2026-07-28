@@ -225,7 +225,24 @@ def handle_connection(
     )
 
     if hello.sync_obs:
-        sync_video_settings(hello.width, hello.height, hello.fps, hello.video_bitrate_bps)
+        # On its own thread, never inline. This talks to OBS over a WebSocket
+        # and blocks for up to its connect timeout when OBS isn't answering
+        # (PC asleep, OBS closed, a firewall dropping rather than refusing) -
+        # and it sits directly in front of the receive loop, so that stall
+        # happens with frames already arriving. They pile up in the socket, the
+        # loop then reads a backlog of >= 2 and correctly skips those frames as
+        # stale: a nice-to-have setting sync was costing real frames at the
+        # start of every stream. Reproduced by the two receiver tests, which
+        # lost exactly one frame each for this reason.
+        #
+        # Nothing downstream depends on the result, so fire-and-forget is the
+        # whole fix - no lock, no ordering requirement, no failure path.
+        threading.Thread(
+            target=sync_video_settings,
+            args=(hello.width, hello.height, hello.fps, hello.video_bitrate_bps),
+            name="obs-sync",
+            daemon=True,
+        ).start()
 
     # H.264 is stateful (SPS/PPS, reference frames) and one chunk doesn't
     # necessarily map to one output frame — the very first chunk is usually
