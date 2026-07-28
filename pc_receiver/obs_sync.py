@@ -106,6 +106,7 @@ def sync_video_settings(
     bitrate_bps: int = 0,
     audio_bitrate_bps: int = 0,
     sample_rate: int = 0,
+    allow_scene_requests: bool = False,
 ) -> bool:
     """Sets OBS's canvas/output resolution+fps to match the phone's stream,
     and (best-effort, only takes effect if the profile is in Simple output
@@ -198,7 +199,14 @@ def sync_video_settings(
                 "parameterValue": str(sample_rate),
             })
 
-        _fit_virtual_camera_source(ws, width, height)
+        # Gated, and defaulting to off. GetCurrentProgramScene crashed OBS
+        # 32.2.1 with an access violation when it arrived during startup - the
+        # WebSocket server answers before the frontend is ready. Callers that
+        # know OBS has been up for a while (see ObsManager.scene_requests_
+        # allowed) opt in; the Hello path never does, because a stream starting
+        # is exactly when OBS may have just been launched.
+        if allow_scene_requests:
+            _fit_virtual_camera_source(ws, width, height)
 
         log.info(
             "obs_sync: synced canvas=%sx%s@%sfps video=%skbps audio=%skbps rate=%sHz",

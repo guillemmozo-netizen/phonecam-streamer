@@ -254,3 +254,49 @@ def test_status_is_a_copy_not_a_live_reference():
     snap = m.status
     snap.state = ObsState.OFFLINE
     assert m.status.state is ObsState.CONNECTED
+
+
+# ---------- scene-request gate (OBS crash regression) ----------
+
+def test_scene_requests_blocked_on_the_first_connect():
+    """GetCurrentProgramScene crashed OBS 32.2.1 outright when it arrived
+    during startup, so the first connect - which is exactly when OBS may have
+    just launched - must not allow scene requests."""
+    m = manager(ENABLED)
+    assert m.tick() is ObsState.CONNECTED
+    assert m.snapshot()["scene_requests_allowed"] is False
+
+
+def test_scene_requests_allowed_once_the_connection_is_stable():
+    m = manager(ENABLED)
+    m.tick()
+    m.tick()
+    assert m.snapshot()["scene_requests_allowed"] is True
+
+
+def test_scene_requests_blocked_again_after_obs_restarts():
+    """A drop may mean OBS is restarting; the next connect could land
+    mid-init, so the grace period restarts with it."""
+    calls = {"n": 0}
+
+    def flaky(port, password):
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise ConnectionRefusedError("obs restarting")
+        return FakeConnection()
+
+    m = manager(ENABLED, connector=flaky)
+    m.tick()
+    m.tick()
+    assert m.snapshot()["scene_requests_allowed"] is True
+    m.tick()  # OBS goes away
+    assert m.snapshot()["scene_requests_allowed"] is False
+    m.tick()  # back, but freshly started
+    assert m.snapshot()["scene_requests_allowed"] is False
+
+
+def test_scene_requests_blocked_while_not_connected():
+    for cfg in (None, DISABLED):
+        m = manager(cfg)
+        m.tick()
+        assert m.snapshot()["scene_requests_allowed"] is False

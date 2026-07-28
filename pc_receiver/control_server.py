@@ -457,10 +457,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if width <= 0 or height <= 0 or fps <= 0:
             return {"ok": False, "error": "width/height/fps required"}
 
+        # Settings are pushed from the Settings screen, long after OBS was
+        # launched, so the scene fit is safe here if the manager agrees.
+        allow_scene = False
+        try:
+            obs_manager_snapshot()
+            allow_scene = bool(_obs_manager and _obs_manager.scene_requests_allowed)
+        except Exception:
+            allow_scene = False
+
         ok = sync_video_settings(
             width=width,
             height=height,
             fps=fps,
+            allow_scene_requests=allow_scene,
             bitrate_bps=int(payload.get("video_bitrate_bps", 0)),
             audio_bitrate_bps=int(payload.get("audio_bitrate_bps", 0)),
             sample_rate=int(payload.get("sample_rate", 0)),

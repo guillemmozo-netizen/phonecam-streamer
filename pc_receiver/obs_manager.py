@@ -52,6 +52,13 @@ class ObsState(str, Enum):
 # OBS first. Polling these on the fast backoff would just burn cycles.
 _USER_ACTION_REQUIRED = {ObsState.NOT_INSTALLED, ObsState.DISABLED, ObsState.AUTH_FAILED}
 
+# Entering any of these means the connection is not usable, so the scene-request
+# grace period starts over: OBS may be restarting and the next connect could
+# land mid-init, which is the crash this gate exists to avoid.
+_FAILURE_STATES = {
+    ObsState.NOT_INSTALLED, ObsState.DISABLED, ObsState.OFFLINE, ObsState.AUTH_FAILED,
+}
+
 _HINTS = {
     ObsState.NOT_INSTALLED: "OBS not found - install it and open it once",
     ObsState.DISABLED: "Enable OBS WebSocket: Tools > WebSocket Server Settings",
@@ -71,6 +78,9 @@ class ObsStatus:
     attempts: int = 0
     last_attempt: Optional[float] = None
     next_retry_in: float = 0.0
+    # Consecutive successful connects. Scene requests are gated on this - see
+    # scene_requests_allowed.
+    stable_connects: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -81,7 +91,24 @@ class ObsStatus:
             "connected_since": self.connected_since,
             "attempts": self.attempts,
             "next_retry_in": round(self.next_retry_in, 1),
+            "scene_requests_allowed": self.scene_requests_allowed,
         }
+
+    @property
+    def scene_requests_allowed(self) -> bool:
+        """Whether OBS has been up long enough to be asked about scenes.
+
+        GetCurrentProgramScene crashed OBS 32.2.1 outright (access violation in
+        obs-websocket.dll, with OBSBasic::OBSInit still on another thread) when
+        it arrived while OBS was still starting: the WebSocket server accepts
+        requests before the frontend is ready. Requiring two consecutive
+        successful connects puts at least one recheck interval between OBS
+        appearing and the first scene request, which is the window that crashed.
+
+        Connect/identify and the video/profile settings requests were never
+        implicated and stay ungated.
+        """
+        return self.state is ObsState.CONNECTED and self.stable_connects >= 2
 
 
 class AuthRejected(Exception):
@@ -162,6 +189,7 @@ class ObsManager:
 
         self._backoff = INITIAL_BACKOFF_SECONDS
         with self._lock:
+            self._status.stable_connects += 1
             self._status.state = ObsState.CONNECTED
             self._status.hint = _HINTS[ObsState.CONNECTED]
             self._status.last_error = ""
@@ -204,6 +232,14 @@ class ObsManager:
         with self._lock:
             if state is not ObsState.CONNECTED and self._status.state is ObsState.CONNECTED:
                 self._status.connected_since = None
+            # Keyed on the state being entered, not the one being left. By the
+            # time a connect fails the state is already CONNECTING, so a
+            # previous-state check never fired and the grace period was never
+            # actually restarted. CONNECTING itself is part of every recheck
+            # cycle and must not reset it, or stable_connects sticks at 1 and
+            # scene requests are blocked forever.
+            if state in _FAILURE_STATES:
+                self._status.stable_connects = 0
             self._status.state = state
             self._status.hint = _HINTS.get(state, "")
             if error:
