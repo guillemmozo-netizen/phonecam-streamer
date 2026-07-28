@@ -43,7 +43,70 @@ def _compute_auth(password: str, salt: str, challenge: str) -> str:
     return base64.b64encode(hashlib.sha256((secret + challenge).encode()).digest()).decode()
 
 
-def sync_video_settings(width: int, height: int, fps: int, bitrate_bps: int = 0) -> bool:
+def _request(ws, request_type: str, request_id: str, data: dict) -> dict:
+    """One obs-websocket request/response round trip, returning its
+    requestStatus. Every caller here treats a rejection as non-fatal."""
+    ws.send(json.dumps({
+        "op": 6,
+        "d": {"requestType": request_type, "requestId": request_id, "requestData": data},
+    }))
+    try:
+        return json.loads(ws.recv()).get("d", {}) or {}
+    except Exception:
+        return {}
+
+
+def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
+    """Makes the phone's source fit the canvas without distortion.
+
+    Matching the canvas to the stream is only half of it: a scene item keeps
+    whatever scale it was given when it was added, so after a resolution change
+    the source stays at its old size and OBS stretches it to fill. Setting a
+    bounding box with OBS_BOUNDS_SCALE_INNER makes OBS scale the source to fit
+    inside the canvas *preserving aspect ratio* — letterboxing rather than
+    distorting, which is what "don't stretch the image" actually requires.
+
+    Best-effort throughout: if the scene or the source can't be found, the rest
+    of the sync is still worth doing.
+    """
+    scene_status = _request(ws, "GetCurrentProgramScene", "phonecam-scene", {})
+    scene = (scene_status.get("responseData") or {}).get("sceneName")
+    if not scene:
+        return
+
+    items_status = _request(ws, "GetSceneItemList", "phonecam-items", {"sceneName": scene})
+    items = (items_status.get("responseData") or {}).get("sceneItems") or []
+    for item in items:
+        name = str(item.get("sourceName", ""))
+        # The receiver feeds OBS through a virtual camera, so the scene item is
+        # a video capture device whose name mentions it. Matching loosely on
+        # purpose: the device name is localised and varies by backend.
+        if "cam" not in name.lower():
+            continue
+        _request(ws, "SetSceneItemTransform", "phonecam-fit", {
+            "sceneName": scene,
+            "sceneItemId": item.get("sceneItemId"),
+            "sceneItemTransform": {
+                "boundsType": "OBS_BOUNDS_SCALE_INNER",
+                "boundsAlignment": 0,
+                "boundsWidth": float(width),
+                "boundsHeight": float(height),
+                "positionX": 0.0,
+                "positionY": 0.0,
+            },
+        })
+        log.info("obs_sync: fitted scene item '%s' to %sx%s without stretching", name, width, height)
+        return
+
+
+def sync_video_settings(
+    width: int,
+    height: int,
+    fps: int,
+    bitrate_bps: int = 0,
+    audio_bitrate_bps: int = 0,
+    sample_rate: int = 0,
+) -> bool:
     """Sets OBS's canvas/output resolution+fps to match the phone's stream,
     and (best-effort, only takes effect if the profile is in Simple output
     mode) its video bitrate. Returns whether the sync actually went through —
@@ -109,22 +172,38 @@ def sync_video_settings(width: int, height: int, fps: int, bitrate_bps: int = 0)
             # while any output is running. Not fatal to the rest of the sync.
             log.warning("obs_sync: SetVideoSettings rejected: %s", video_status.get("comment"))
 
+        # Profile parameters below only take effect in Simple output mode, and
+        # OBS silently ignores them otherwise — all best-effort.
         if bitrate_bps > 0:
-            bitrate_request = {
-                "op": 6,
-                "d": {
-                    "requestType": "SetProfileParameter",
-                    "requestId": "phonecam-sync-bitrate",
-                    "requestData": {
-                        "parameterCategory": "SimpleOutput",
-                        "parameterName": "VBitrate",
-                        "parameterValue": str(bitrate_bps // 1000),
-                    },
-                },
-            }
-            ws.send(json.dumps(bitrate_request))
-            ws.recv()  # best-effort — only takes effect in Simple output mode
+            _request(ws, "SetProfileParameter", "phonecam-sync-vbitrate", {
+                "parameterCategory": "SimpleOutput",
+                "parameterName": "VBitrate",
+                "parameterValue": str(bitrate_bps // 1000),
+            })
 
+        if audio_bitrate_bps > 0:
+            _request(ws, "SetProfileParameter", "phonecam-sync-abitrate", {
+                "parameterCategory": "SimpleOutput",
+                "parameterName": "ABitrate",
+                "parameterValue": str(audio_bitrate_bps // 1000),
+            })
+
+        if sample_rate > 0:
+            # Audio sample rate lives on the profile's Audio category, not
+            # SimpleOutput, and OBS only picks it up on the next profile load —
+            # worth setting anyway so a restart lands on the right value.
+            _request(ws, "SetProfileParameter", "phonecam-sync-samplerate", {
+                "parameterCategory": "Audio",
+                "parameterName": "SampleRate",
+                "parameterValue": str(sample_rate),
+            })
+
+        _fit_virtual_camera_source(ws, width, height)
+
+        log.info(
+            "obs_sync: synced canvas=%sx%s@%sfps video=%skbps audio=%skbps rate=%sHz",
+            width, height, fps, bitrate_bps // 1000, audio_bitrate_bps // 1000, sample_rate,
+        )
         return True
     except Exception as e:
         log.warning("obs_sync: sync failed: %s", e)

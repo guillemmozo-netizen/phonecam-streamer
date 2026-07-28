@@ -90,6 +90,32 @@ If setupResult <> 0 Or Not fso.FileExists(venvPy) Then
     WScript.Quit 1
 End If
 
+' 3.5. Turn on OBS's WebSocket server. It ships disabled, which is why the
+' phone's "Sync OBS settings" toggle silently does nothing on a fresh machine -
+' obs_sync.py connects to 127.0.0.1:4455 and is refused. Authentication is
+' left enabled: obs_sync.py already speaks the v5 handshake and reads the
+' password out of OBS's own config file, so nothing has to be typed anywhere.
+Dim obsResult, obsNote
+obsNote = ""
+obsResult = shell.Run("""" & venvPy & """ """ & appDir & "\enable_obs_websocket.py""", 0, True)
+If obsResult = 2 Then
+    obsNote = vbCrLf & vbCrLf & "Note: OBS was not detected on this PC yet. " & _
+              "Install OBS, open it once, then run this installer again so " & _
+              "the ""Sync OBS settings"" option can work."
+ElseIf obsResult = 3 Then
+    ' OBS rewrites its plugin config from memory when it exits, so a change
+    ' made while it is open is discarded on close - saying nothing here would
+    ' let the setting silently revert.
+    obsNote = vbCrLf & vbCrLf & "Important: OBS is running right now. " & _
+              "Close OBS and run this installer once more, otherwise OBS " & _
+              "will overwrite the WebSocket setting when it exits and " & _
+              """Sync OBS settings"" will not work."
+ElseIf obsResult = 4 Then
+    obsNote = vbCrLf & vbCrLf & "Note: OBS's WebSocket settings could not be " & _
+              "updated automatically. You can enable it by hand in OBS: " & _
+              "Tools > WebSocket Server Settings > Enable WebSocket server."
+End If
+
 ' 4. Register Windows startup - points at PhoneCam_Service.vbs, a lightweight
 ' watcher (not the full PhoneCam services) that waits for OBS to be running
 ' before starting anything, and stops everything again once OBS closes. So
@@ -119,4 +145,4 @@ MsgBox "PhoneCam is set up." & vbCrLf & vbCrLf & _
        "  - WiFi: just open the app on the same network." & vbCrLf & vbCrLf & _
        "Nothing else to run, ever again." & vbCrLf & vbCrLf & _
        "(OBS with its Virtual Camera must be installed for the phone to " & _
-       "show up as a webcam.)", vbInformation, "PhoneCam Setup - Done"
+       "show up as a webcam.)" & obsNote, vbInformation, "PhoneCam Setup - Done"

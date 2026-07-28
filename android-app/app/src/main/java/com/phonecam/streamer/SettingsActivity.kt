@@ -746,6 +746,47 @@ class SettingsActivity : AppCompatActivity() {
         prefs.putBoolean("experimental_camera2", binding.switchExperimentalCamera2.isChecked)
 
         prefs.apply()
+        pushSettingsToObs()
+    }
+
+    /**
+     * Applies the just-saved settings to OBS, if "Sync OBS settings" is on.
+     *
+     * Until now the sync only ran when a stream started (on Hello), which is
+     * the worst possible moment: OBS rejects SetVideoSettings whenever an
+     * output is active, so a canvas change made at that point is refused and
+     * the user sees nothing happen. Doing it here — settings saved, nothing
+     * recording — is when OBS will actually accept it.
+     *
+     * Entirely best-effort and off the main thread: the PC may be off, the
+     * WebSocket server may be disabled, OBS may not be installed. None of that
+     * should slow down or fail leaving the Settings screen.
+     */
+    private fun pushSettingsToObs() {
+        val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+        if (!prefs.getBoolean("sync_obs", true)) return
+
+        val cfg = StreamConfig.load(this)
+        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        val audioBitrateKbps = when (prefs.getInt("audio_bitrate", 1)) {
+            0 -> 128; 2 -> 256; 3 -> 320; else -> 192
+        }
+        val sampleRate = when (prefs.getInt("sample_rate", 1)) {
+            0 -> 44100; 2 -> 96000; else -> 48000
+        }
+        val host = prefs.getString("pc_ip", "")?.trim().orEmpty().ifEmpty { "127.0.0.1" }
+
+        Thread {
+            PcControl.syncObs(
+                host = host,
+                width = width,
+                height = height,
+                fps = cfg.fps,
+                videoBitrateBps = cfg.videoBitrateBps,
+                audioBitrateBps = audioBitrateKbps * 1000,
+                sampleRate = sampleRate,
+            )
+        }.start()
     }
 
     @Deprecated("Use onBackPressedDispatcher")
