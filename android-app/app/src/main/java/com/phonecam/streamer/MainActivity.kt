@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 if (now - pendingSinceMs >= ROTATION_DEBOUNCE_MS) {
-                    currentVideoCapture?.targetRotation = rotation
+                    currentVideoCapture?.targetRotation = landscapeTargetRotation(rotation)
                     // Camera2 has no targetRotation to push this into — the
                     // equivalent is computed from the sensor's mounting and
                     // handed to the renderer directly.
@@ -1208,6 +1208,27 @@ class MainActivity : AppCompatActivity() {
         if (wasStreaming) startStreaming()
     }
 
+
+    /**
+     * The stream is always landscape - the encoder is 1920x1080 and OBS wants a
+     * landscape webcam - but targetRotation is expressed relative to the
+     * device's natural orientation, which on a phone is portrait. Left as-is,
+     * CameraX reported rotationDegrees=90 ("rotate this to stand upright in
+     * portrait") and the GL renderer duly turned the landscape frame on its
+     * side: correct viewfinder, rotated output in OBS.
+     *
+     * Shifting the reference by one quarter turn makes "phone held upright"
+     * mean "landscape output, no rotation" - measured, rotationDegrees goes
+     * 90 -> 0 - while keeping the physical-rotation feature intact, since the
+     * offset moves with the phone.
+     */
+    private fun landscapeTargetRotation(surfaceRotation: Int): Int = when (surfaceRotation) {
+        Surface.ROTATION_0 -> Surface.ROTATION_90
+        Surface.ROTATION_90 -> Surface.ROTATION_180
+        Surface.ROTATION_180 -> Surface.ROTATION_270
+        else -> Surface.ROTATION_0
+    }
+
     private fun morphRecButton(recording: Boolean) {
         val outer = binding.toggleStreamButton
         val inner = binding.recBtnInner
@@ -1408,6 +1429,9 @@ class MainActivity : AppCompatActivity() {
             // than just picking 30.
             streamer?.cameraFpsCeiling = fpsRange?.upper ?: cfg.fps
 
+            // Note: deliberately no setTargetRotation here. PreviewView owns
+            // the viewfinder's transform and ignores it, so setting it looks
+            // like it should help and does nothing at all.
             val previewBuilder = Preview.Builder()
                 .setResolutionSelector(previewSelector)
             applyCamera2Options(previewBuilder, cfg, physicalCameraId, fpsRange)
@@ -1444,6 +1468,8 @@ class MainActivity : AppCompatActivity() {
                 mainVideoOutput.targetHeight = targetHeight
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
+                    .setTargetRotation(landscapeTargetRotation(
+                        binding.previewView.display?.rotation ?: Surface.ROTATION_0))
                     .setTargetFrameRate(android.util.Range(cfg.fps, cfg.fps))
                 applyPhysicalCameraId(videoCaptureBuilder, physicalCameraId, fpsRange)
                 videoCaptureBuilder.build()
@@ -1457,21 +1483,25 @@ class MainActivity : AppCompatActivity() {
             // changes what's sent to the PC — not just a cosmetic letterbox over an
             // uncropped 16:9 sensor feed.
             val (ratioNum, ratioDenom) = StreamConfig.aspectRatioParts(cfg.aspectRatio)
-            // The rotation argument says which orientation the aspect ratio is
-            // expressed in - NOT which way the phone is held. This Activity is
-            // locked to portrait, so display.rotation was always ROTATION_0 and
-            // CameraX read "16:9" as 16:9 *in portrait*, i.e. a tall narrow
-            // slice: measured, a 1080p session delivered 1080x608 and a 4K one
-            // 2160x1216, cropping away the sides of the scene and looking, on
-            // the viewfinder, like the image had been rotated 90 degrees. The
-            // ViewPort applies to every use case in the group - the Preview
-            // included - which is why the viewfinder was affected too, while
-            // the Camera2 backend (which binds no ViewPort) was not.
-            // The output, encoder and preview alike, is landscape, so the ratio
-            // has to be expressed in a landscape rotation.
+            // Two things have to be true at once here, and getting one right
+            // used to break the other.
+            //
+            // The ratio is inverted (denominator first) because the ViewPort
+            // expresses it in the rotation given as the second argument, and
+            // that rotation must stay the display's: PreviewView builds its own
+            // transform from the resulting TransformationInfo, so any mismatch
+            // between the two shows up as a viewfinder rotated 90 degrees.
+            // Passing ROTATION_90 instead fixed the crop but tilted the
+            // viewfinder - measured, both ways round.
+            //
+            // Expressed this way the crop comes out landscape (verified:
+            // 1080p delivers 1920x1080 and 4K delivers 3840x2160, where the
+            // original code delivered 1080x608 and 2160x1216 - a tall slice of
+            // the scene, stretched back up by the renderer) while the Preview
+            // stays consistent with the display.
             val viewPort = ViewPort.Builder(
-                android.util.Rational(ratioNum, ratioDenom),
-                android.view.Surface.ROTATION_90,
+                android.util.Rational(ratioDenom, ratioNum),
+                binding.previewView.display?.rotation ?: android.view.Surface.ROTATION_0,
             ).build()
 
             fun buildUseCaseGroup(previewUseCase: Preview) = UseCaseGroup.Builder()
