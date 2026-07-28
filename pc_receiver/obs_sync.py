@@ -214,3 +214,41 @@ def sync_video_settings(
                 ws.close()
             except Exception:
                 pass
+
+
+def open_connection(port: int, password: str):
+    """Connector for ObsManager: a live, identified obs-websocket session.
+
+    Raises AuthRejected when OBS answers but refuses the password, so the state
+    machine can tell "wrong password" (user must act) apart from "nothing
+    listening" (retry soon) - they used to look identical.
+    """
+    import websocket
+
+    from pc_receiver.obs_manager import AuthRejected
+
+    ws = websocket.create_connection(f"ws://127.0.0.1:{port}", timeout=3)
+    try:
+        hello = json.loads(ws.recv())
+        auth_info = hello.get("d", {}).get("authentication")
+        identify: dict = {"op": 1, "d": {"rpcVersion": 1}}
+        if auth_info:
+            identify["d"]["authentication"] = _compute_auth(
+                password, auth_info["salt"], auth_info["challenge"],
+            )
+        ws.send(json.dumps(identify))
+        identified = json.loads(ws.recv())
+        if identified.get("op") != 2:
+            raise AuthRejected(str(identified.get("d", {}).get("comment") or identified))
+        return ws
+    except Exception:
+        try:
+            ws.close()
+        except Exception:
+            pass
+        raise
+
+
+def read_config() -> Optional[dict]:
+    """Config reader for ObsManager. None means OBS was never installed/run."""
+    return _read_obs_websocket_config()

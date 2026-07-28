@@ -115,6 +115,28 @@ AUTH_TOKEN_PATH = os.path.join(script_dir, ".control_token")
 _auth_token: str = ""
 
 
+_obs_manager = None
+
+
+def obs_manager_snapshot() -> dict:
+    """Live OBS reachability for the phone's status UI.
+
+    Started lazily so importing this module (as the tests do) never spawns a
+    background thread.
+    """
+    global _obs_manager
+    if _obs_manager is None:
+        try:
+            from pc_receiver.obs_manager import ObsManager
+            from pc_receiver.obs_sync import open_connection, read_config
+
+            _obs_manager = ObsManager(connector=open_connection, config_reader=read_config)
+            _obs_manager.start()
+        except Exception as e:
+            return {"state": "offline", "connected": False, "hint": f"unavailable: {e}"}
+    return _obs_manager.snapshot()
+
+
 def load_or_create_token() -> str:
     """A shared secret every control request must carry.
 
@@ -373,7 +395,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
             return
-        if self.path == "/token":
+        if self.path == "/obs-status":
+            self._json(200, obs_manager_snapshot())
+        elif self.path == "/token":
             # Loopback only, and _authorised() already enforced that. This is
             # the pairing step: the phone fetches the token over USB (physical
             # access + an authorised adb key) and stores it, so a later Wi-Fi
