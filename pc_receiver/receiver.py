@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import secrets
 import socket
 import threading
 import time
@@ -31,6 +33,12 @@ from pc_receiver.protocol import FrameReader, ProtocolError
 from pc_receiver.sinks import FrameSink, create_sink
 
 log = logging.getLogger("pc_receiver")
+
+# How long the Hello-triggered OBS sync waits before touching OBS. Both OBS
+# crashes so far happened within ~11s of OBS finishing its module load, while
+# obs-websocket was already answering; this is comfortably past that, and it
+# runs on a daemon thread nobody waits for.
+OBS_SETTLE_SECONDS = 20.0
 
 
 @dataclass
@@ -199,6 +207,35 @@ def decode_frame(jpeg_bytes: bytes) -> Optional[np.ndarray]:
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
+def _peer_ip(conn: socket.socket) -> str:
+    try:
+        return conn.getpeername()[0]
+    except OSError:
+        return "?"
+
+
+def _load_control_token() -> str:
+    """The token control_server generates. Read per connection rather than
+    cached so rotating it doesn't need a receiver restart."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".control_token")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def _peer_is_authorised(conn: socket.socket, supplied: str) -> bool:
+    if _peer_ip(conn) in ("127.0.0.1", "::1"):
+        return True
+    token = _load_control_token()
+    if not token:
+        # No token on disk means the PC never generated one; refusing every
+        # remote sender is the safe reading, and USB still works.
+        return False
+    return secrets.compare_digest(supplied or "", token)
+
+
 def handle_connection(
     conn: socket.socket,
     sink: FrameSink,
@@ -213,6 +250,16 @@ def handle_connection(
     stats = stats or ReceiverStats()
     reader = FrameReader(conn)
     hello = reader.recv_hello()
+
+    # Same trust model as control_server: loopback (the USB tunnel, which
+    # already required physical access and an authorised adb key) is exempt;
+    # anything arriving over the network has to present the PC's token. Without
+    # this the video socket was open to the whole LAN - anyone could connect and
+    # push frames into the user's virtual camera, or occupy the port so the real
+    # phone couldn't.
+    if not _peer_is_authorised(conn, hello.auth_token):
+        log.warning("rejected unauthorised connection from %s", _peer_ip(conn))
+        raise ProtocolError("unauthorised sender")
     log.info(
         "stream started: %sx%s@%sfps quality=%s watermark=%s device=%s codec=%s",
         hello.width,
@@ -225,7 +272,32 @@ def handle_connection(
     )
 
     if hello.sync_obs:
-        sync_video_settings(hello.width, hello.height, hello.fps, hello.video_bitrate_bps)
+        # On its own thread, never inline. This talks to OBS over a WebSocket
+        # and blocks for up to its connect timeout when OBS isn't answering
+        # (PC asleep, OBS closed, a firewall dropping rather than refusing) —
+        # and it sits directly in front of the receive loop, so that stall
+        # happens with frames already arriving. They pile up in the socket, the
+        # loop then reads a backlog of >= 2 and correctly skips those frames as
+        # stale: a nice-to-have setting sync was costing real frames at the
+        # start of every stream. Reproduced by the two receiver tests, which
+        # lost exactly one frame each for this reason.
+        #
+        # Nothing downstream depends on the result, so fire-and-forget is the
+        # whole fix — no lock, no ordering requirement, no failure path.
+        #
+        # settle_seconds because this is the one caller that can fire seconds
+        # after OBS launched: the phone starting a stream is exactly what makes
+        # a user open OBS. obs-websocket answers before OBS's frontend is
+        # ready, and mutating OBS in that window is what both crash reports
+        # have in common. Nothing waits on this thread, so the delay is free.
+        threading.Thread(
+            target=lambda: sync_video_settings(
+                hello.width, hello.height, hello.fps, hello.video_bitrate_bps,
+                settle_seconds=OBS_SETTLE_SECONDS, source="hello",
+            ),
+            name="obs-sync",
+            daemon=True,
+        ).start()
 
     # H.264 is stateful (SPS/PPS, reference frames) and one chunk doesn't
     # necessarily map to one output frame — the very first chunk is usually
@@ -237,8 +309,9 @@ def handle_connection(
     # path can honour this — the JPEG path decodes to RGB by nature.
     sink_prefers = getattr(sink, "preferred_frame_format", "rgb")
     h264_decoder = (
-        H264Decoder(output_format="native" if sink_prefers == "native" else "rgb")
-        if hello.codec == "h264"
+        H264Decoder(output_format="native" if sink_prefers == "native" else "rgb",
+                    codec=hello.codec)
+        if hello.codec in ("h264", "h265", "hevc")
         else None
     )
     frames_skipped_stale = 0
@@ -376,6 +449,18 @@ def serve_forever(port: int, sink_kind: str, host: str = "127.0.0.1") -> None:
     "started receiver (pid ...)" loop in the control_server log). Binding
     once and isolating each connection's errors here means a single bad
     connection just gets logged, not a process crash.
+
+    handle_connection runs *inline here*, on this one thread, for every
+    connection the process ever serves. That is load-bearing, not incidental:
+    the first decode on any given OS thread makes FFmpeg allocate a semaphore
+    and a waitable timer that are never released when that thread dies.
+    Measured on this PC, 30 sessions handled by this loop cost +2 handles in
+    total (the one-off allocation), while the same 30 sessions each given their
+    own thread cost +60 - exactly the "+2 handles per session, growing
+    linearly" that was chased as a receiver leak and is in fact per *thread*.
+    Moving to a thread-per-connection design to serve several phones at once
+    would reintroduce it for real, and would need the decode to live on a
+    long-lived worker instead.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

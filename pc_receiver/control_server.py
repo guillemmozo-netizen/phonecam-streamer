@@ -22,6 +22,7 @@ import http.server
 import json
 import os
 import shutil
+import secrets
 import subprocess
 import sys
 import threading
@@ -108,6 +109,64 @@ SERVICE_ARGS = {
     # now started eagerly at boot rather than per-session.
     "receiver": ["--host", "0.0.0.0", "--sink", "virtualcam", "--serve-forever"],
 }
+
+
+AUTH_TOKEN_PATH = os.path.join(script_dir, ".control_token")
+_auth_token: str = ""
+
+
+_obs_manager = None
+
+
+def obs_manager_snapshot() -> dict:
+    """Live OBS reachability for the phone's status UI.
+
+    Started lazily so importing this module (as the tests do) never spawns a
+    background thread.
+    """
+    global _obs_manager
+    if _obs_manager is None:
+        try:
+            from pc_receiver.obs_manager import ObsManager
+            from pc_receiver.obs_sync import open_connection, read_config
+
+            _obs_manager = ObsManager(connector=open_connection, config_reader=read_config)
+            _obs_manager.start()
+        except Exception as e:
+            return {"state": "offline", "connected": False, "hint": f"unavailable: {e}"}
+    return _obs_manager.snapshot()
+
+
+def load_or_create_token() -> str:
+    """A shared secret every control request must carry.
+
+    These endpoints start and stop processes on the machine, and the server has
+    to listen on 0.0.0.0 so a Wi-Fi phone can reach it - which also puts it in
+    front of every other device on the network. A token file readable only by
+    this user account is the smallest thing that turns "anyone on the LAN" into
+    "whoever can read this file", without forcing a pairing UI on the user: the
+    phone is handed the token over the USB path, which is already implicitly
+    trusted (it requires physical access and an authorised adb key).
+    """
+    global _auth_token
+    try:
+        if os.path.exists(AUTH_TOKEN_PATH):
+            with open(AUTH_TOKEN_PATH, encoding="utf-8") as f:
+                token = f.read().strip()
+            if token:
+                _auth_token = token
+                return token
+        token = secrets.token_urlsafe(24)
+        with open(AUTH_TOKEN_PATH, "w", encoding="utf-8") as f:
+            f.write(token)
+        _auth_token = token
+        return token
+    except OSError as e:
+        # Never fail closed in a way that bricks the user's setup: without a
+        # readable token file the server still runs, but only for loopback.
+        print(f"[control] could not persist auth token ({e}); loopback-only mode")
+        _auth_token = ""
+        return ""
 
 
 service_log_files: dict[str, "object"] = {}
@@ -307,18 +366,57 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", len(body))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # No Access-Control-Allow-Origin. It used to be "*", which let any web
+        # page the user happened to visit POST to these endpoints from their
+        # browser and start or stop services on their machine. Nothing here is
+        # meant to be called from a browser at all, so the correct header is
+        # none.
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
 
+    def _authorised(self) -> bool:
+        """Loopback (the USB tunnel) is trusted; anything else needs the token.
+
+        adb reverse lands on 127.0.0.1 and already required physical access
+        plus an authorised adb key, so requiring a token there would break the
+        plug-in-and-go path for no security gain. Remote callers - i.e. Wi-Fi,
+        i.e. the whole LAN - must present it.
+        """
+        peer = self.client_address[0] if self.client_address else ""
+        if peer in ("127.0.0.1", "::1"):
+            return True
+        if not _auth_token:
+            return False
+        supplied = self.headers.get("X-PhoneCam-Token", "")
+        return secrets.compare_digest(supplied, _auth_token)
+
     def do_GET(self):
-        if self.path == "/status":
+        if not self._authorised():
+            self._json(403, {"error": "unauthorised"})
+            return
+        if self.path == "/obs-status":
+            self._json(200, obs_manager_snapshot())
+        elif self.path == "/token":
+            # Loopback only, and _authorised() already enforced that. This is
+            # the pairing step: the phone fetches the token over USB (physical
+            # access + an authorised adb key) and stores it, so a later Wi-Fi
+            # session can authenticate without the user typing anything.
+            peer = self.client_address[0] if self.client_address else ""
+            if peer not in ("127.0.0.1", "::1"):
+                self._json(403, {"error": "token is only served over USB"})
+                return
+            self._json(200, {"token": _auth_token})
+        elif self.path == "/status":
             active = get_status()
             self._json(200, {"running": len(active) > 0, "services": active})
         else:
             self._json(404, {"error": "not found"})
 
     def do_POST(self):
+        if not self._authorised():
+            self._json(403, {"error": "unauthorised"})
+            return
         if self.path == "/start":
             started = start_services()
             self._json(200, {"started": started})
@@ -328,18 +426,67 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif self.path == "/adb-reverse":
             result = setup_adb_reverse()
             self._json(200, result)
+        elif self.path == "/obs-sync":
+            self._json(200, self._handle_obs_sync())
         else:
             self._json(404, {"error": "not found"})
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.end_headers()
+    def _handle_obs_sync(self) -> dict:
+        """Pushes the phone's current settings into OBS without waiting for a
+        stream to start.
+
+        obs_sync used to run only on Hello, so changing a setting did nothing
+        visible until the next recording - by which point OBS was already
+        rejecting SetVideoSettings because an output was active. Doing it from
+        Settings, while nothing is running, is when it can actually be applied.
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length) or b"{}") if length else {}
+        except Exception as e:
+            return {"ok": False, "error": f"bad request body: {e}"}
+
+        try:
+            from pc_receiver.obs_sync import sync_video_settings
+        except Exception as e:
+            return {"ok": False, "error": f"obs_sync unavailable: {e}"}
+
+        width = int(payload.get("width", 0))
+        height = int(payload.get("height", 0))
+        fps = int(payload.get("fps", 0))
+        if width <= 0 or height <= 0 or fps <= 0:
+            return {"ok": False, "error": "width/height/fps required"}
+
+        # Settings are pushed from the Settings screen, long after OBS was
+        # launched, so the scene fit is safe here if the manager agrees.
+        allow_scene = False
+        try:
+            obs_manager_snapshot()
+            allow_scene = bool(_obs_manager and _obs_manager.scene_requests_allowed)
+        except Exception:
+            allow_scene = False
+
+        ok = sync_video_settings(
+            width=width,
+            height=height,
+            fps=fps,
+            allow_scene_requests=allow_scene,
+            # No settle wait: the manager's verdict already means OBS has been
+            # answering for at least a recheck interval, and a user sitting in
+            # the Settings screen is waiting for this to take effect.
+            source="settings",
+            bitrate_bps=int(payload.get("video_bitrate_bps", 0)),
+            audio_bitrate_bps=int(payload.get("audio_bitrate_bps", 0)),
+            sample_rate=int(payload.get("sample_rate", 0)),
+        )
+        return {"ok": ok}
+
 
 
 def main():
     redirect_own_output_to_log()
+    load_or_create_token()
+    print(f"[control] auth token at {AUTH_TOKEN_PATH} (loopback exempt)")
     server = http.server.HTTPServer((HOST, PORT), Handler)
     print(f"[control] PhoneCam Control Server running on port {PORT}")
     print(f"[control] Endpoints: GET /status, POST /start, POST /stop, POST /adb-reverse")

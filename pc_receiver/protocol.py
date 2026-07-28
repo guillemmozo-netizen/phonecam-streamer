@@ -24,10 +24,17 @@ from __future__ import annotations
 import json
 import socket
 import struct
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 
 _LENGTH_STRUCT = struct.Struct(">I")
 MAX_FRAME_BYTES = 32 * 1024 * 1024  # sanity guard against a corrupt length prefix
+
+# Ceiling for the opportunistic drain in buffered_message_count(). Large enough
+# to hold several encoded frames at any resolution the app offers, small enough
+# that a fast sender cannot turn this buffer into unbounded process memory.
+# recv_message()'s own _fill() is deliberately not capped - a single frame may
+# legitimately exceed this and still has to be read whole.
+_MAX_OPPORTUNISTIC_BUFFER = 4 * 1024 * 1024
 
 
 class ProtocolError(Exception):
@@ -56,14 +63,57 @@ class Hello:
     # (matches the toggle's own default), rather than silently opting every
     # existing install out.
     sync_obs: bool = True
+    # Shared secret from the PC, required for non-loopback (i.e. Wi-Fi)
+    # senders. Empty for the USB path, which arrives on loopback and is
+    # exempt - see receiver.handle_connection.
+    auth_token: str = ""
 
     def to_json_bytes(self) -> bytes:
         return json.dumps(asdict(self)).encode("utf-8")
 
     @classmethod
     def from_json_bytes(cls, data: bytes) -> "Hello":
+        """Parses a Hello from untrusted bytes.
+
+        Anything on the network can open this socket, so the payload is
+        treated as hostile: unknown keys are dropped rather than passed to the
+        constructor (cls(**obj) raised TypeError on any unexpected field, which
+        let a single stray key kill the connection - and would break every old
+        receiver the moment a new field is added), types are coerced, and
+        dimensions are bounded. A malformed Hello must fail as a rejected
+        connection, never as a crash or an absurd canvas pushed into OBS.
+        """
         obj = json.loads(data.decode("utf-8"))
-        return cls(**obj)
+        if not isinstance(obj, dict):
+            raise ProtocolError("hello must be a JSON object")
+
+        known = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in obj.items() if k in known}
+
+        def _int(name: str, default: int, low: int, high: int) -> int:
+            try:
+                value = int(filtered.get(name, default))
+            except (TypeError, ValueError):
+                raise ProtocolError(f"hello.{name} is not an integer")
+            if not low <= value <= high:
+                raise ProtocolError(f"hello.{name}={value} out of range {low}..{high}")
+            return value
+
+        # 16..8192 covers every mode the app offers (360p to 8K) with room to
+        # spare; 240fps is the highest the reference device advertises at all.
+        filtered["width"] = _int("width", 0, 16, 8192)
+        filtered["height"] = _int("height", 0, 16, 8192)
+        filtered["fps"] = _int("fps", 30, 1, 240)
+        filtered["video_bitrate_bps"] = _int("video_bitrate_bps", 0, 0, 1_000_000_000)
+
+        for name in ("quality", "device_name", "codec", "auth_token"):
+            if name in filtered:
+                filtered[name] = str(filtered[name])[:256]
+        for name in ("watermark", "sync_obs"):
+            if name in filtered:
+                filtered[name] = bool(filtered[name])
+
+        return cls(**filtered)
 
 
 def _recv_exact(sock: socket.socket, n: int) -> bytes:
@@ -151,9 +201,22 @@ class FrameReader:
         the kernel's socket receive buffer) — i.e. how far behind the sender
         this reader currently is. Tops up from the kernel buffer
         (non-blocking) first, since a message can straddle the two."""
+        # Bounded on purpose. This used to drain the kernel buffer in full,
+        # every frame, with no cap - so whenever the sender outran the consumer
+        # the surplus moved into this bytearray instead of staying in the
+        # kernel, and it grew without limit: measured at 457 MiB in a single
+        # object over one 6000-frame session, 530 MB of process RSS.
+        #
+        # It also defeated the very backpressure the caller relies on: emptying
+        # the kernel buffer reopens the TCP window, so the phone was never told
+        # to slow down.
+        #
+        # The caller only needs to know whether it is >= 2 messages behind, so
+        # stop as soon as the cap is reached; anything beyond that stays in the
+        # kernel where it belongs.
         self._sock.setblocking(False)
         try:
-            while True:
+            while len(self._buf) < _MAX_OPPORTUNISTIC_BUFFER:
                 chunk = self._sock.recv(65536)
                 if not chunk:
                     break  # peer closed; let the next recv_message() raise cleanly

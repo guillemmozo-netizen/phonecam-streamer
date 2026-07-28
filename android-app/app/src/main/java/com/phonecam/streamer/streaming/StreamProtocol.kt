@@ -24,6 +24,10 @@ data class Hello(
     val videoBitrateBps: Int = 0,
     // Settings > "Sync OBS settings" — see pc_receiver/obs_sync.py.
     val syncObs: Boolean = true,
+    // Shared secret fetched from the PC over USB (PcControl.fetchToken). The
+    // receiver requires it for non-loopback senders, so Wi-Fi sessions must
+    // carry it; the USB path arrives on loopback and is exempt.
+    val authToken: String = "",
 ) {
     fun toJsonBytes(): ByteArray = JSONObject().apply {
         put("width", width)
@@ -35,6 +39,7 @@ data class Hello(
         put("codec", codec)
         put("video_bitrate_bps", videoBitrateBps)
         put("sync_obs", syncObs)
+        put("auth_token", authToken)
     }.toString().toByteArray(Charsets.UTF_8)
 }
 

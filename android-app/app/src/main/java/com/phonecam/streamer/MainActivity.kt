@@ -64,6 +64,8 @@ import com.phonecam.streamer.ui.WelcomeDialog
 import org.json.JSONObject
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+import com.phonecam.streamer.streaming.RotationDebouncer
+import com.phonecam.streamer.streaming.RotationPolicy
 
 private const val TAG = "MainActivity"
 
@@ -144,46 +146,23 @@ class MainActivity : AppCompatActivity() {
     // TransformationInfo (see CameraStreamer.onSurfaceRequested) — the
     // recorded/streamed frame comes out upright regardless of how the phone
     // is physically held, independent of what's drawn on screen.
-    // Raw OrientationEventListener readings are noisy right around each
-    // 45/135/225/315 bucket boundary — accelerometer jitter (even from a
-    // steady hand) flips the raw angle back and forth across a boundary,
-    // and without debouncing that used to flip targetRotation just as
-    // fast, each flip pushing a fresh TransformationInfo through CameraX
-    // and visibly glitching the recorded/streamed orientation. Requiring a
-    // candidate rotation to hold for ROTATION_DEBOUNCE_MS before it's
-    // actually applied filters that out — a real, deliberate 90° turn
-    // easily holds that long, a jitter blip at a boundary doesn't.
+    // Deciding *when* a reading is a real turn lives in RotationDebouncer, which
+    // is unit-tested; this only applies the result. Keeping the two apart is
+    // what surfaced the bug where the debounce compared a device bucket against
+    // targetRotation, which carries a quarter-turn offset — see its doc.
+    private val rotationDebouncer = RotationDebouncer(ROTATION_DEBOUNCE_MS)
+
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
-            private var pendingRotation: Int? = null
-            private var pendingSinceMs = 0L
-
             override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) return
-                val rotation = when (orientation) {
-                    in 45 until 135 -> Surface.ROTATION_270
-                    in 135 until 225 -> Surface.ROTATION_180
-                    in 225 until 315 -> Surface.ROTATION_90
-                    else -> Surface.ROTATION_0
-                }
-                if (rotation == currentVideoCapture?.targetRotation) {
-                    pendingRotation = null
-                    return
-                }
-                val now = android.os.SystemClock.elapsedRealtime()
-                if (rotation != pendingRotation) {
-                    pendingRotation = rotation
-                    pendingSinceMs = now
-                    return
-                }
-                if (now - pendingSinceMs >= ROTATION_DEBOUNCE_MS) {
-                    currentVideoCapture?.targetRotation = rotation
-                    // Camera2 has no targetRotation to push this into — the
-                    // equivalent is computed from the sensor's mounting and
-                    // handed to the renderer directly.
-                    if (camera2Active) applyCamera2Rotation(rotation)
-                    pendingRotation = null
-                }
+                val rotation = rotationDebouncer.onOrientationChanged(
+                    orientation, android.os.SystemClock.elapsedRealtime(),
+                ) ?: return
+                currentVideoCapture?.targetRotation = RotationPolicy.landscapeTargetRotation(rotation)
+                // Camera2 has no targetRotation to push this into — the
+                // equivalent is computed from the sensor's mounting and
+                // handed to the renderer directly.
+                if (camera2Active) applyCamera2Rotation(rotation)
             }
         }
     }
@@ -941,6 +920,18 @@ class MainActivity : AppCompatActivity() {
         )
         streamer = newStreamer
 
+        // Pairing + auth. The receiver rejects non-loopback senders without the
+        // PC's token, so Wi-Fi needs one; it is fetched over USB (loopback,
+        // already trusted) and cached. Doing both here means the first USB
+        // session silently arms every later Wi-Fi session.
+        pcConnectExecutor.execute {
+            val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+            PcControl.fetchToken("127.0.0.1")?.let { token ->
+                prefs.edit().putString("pc_token", token).apply()
+            }
+            newStreamer.authToken = prefs.getString("pc_token", "").orEmpty()
+        }
+
         if (shouldUseCamera2(cfg)) {
             newStreamer.metrics.backend = "camera2"
             startCamera2Backend(cfg, newStreamer)
@@ -1032,7 +1023,9 @@ class MainActivity : AppCompatActivity() {
         val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
         val captureSize = Size(width, height)
         val chars = Camera2Capabilities.characteristicsOrNull(this, CAMERA2_CAMERA_ID)
-        val negotiated = chars?.let { Camera2Capabilities.sessionFpsRange(it, captureSize, cfg.fps) }
+        val routedId = Camera2Capabilities.physicalIdFor(this, CAMERA2_CAMERA_ID, captureSize)
+        val negotiated = Camera2Capabilities.characteristicsOrNull(this, routedId ?: CAMERA2_CAMERA_ID)
+            ?.let { Camera2Capabilities.sessionFpsRange(it, captureSize, cfg.fps) }
 
         // The honest ceiling for this backend: what it can really negotiate,
         // not the AE table that caps CameraX at 30.
@@ -1070,9 +1063,14 @@ class MainActivity : AppCompatActivity() {
             binding.camera2PreviewView.visibility =
                 if (previewCap == null) View.GONE else View.VISIBLE
 
-            val previewSize = previewCap?.let { cap ->
+            // 8K only exists on a physical sub-camera, and a viewfinder fed from
+            // the logical camera in the same session would mix two sensors, so
+            // routing forces the preview off.
+            val physicalId = Camera2Capabilities.physicalIdFor(this, CAMERA2_CAMERA_ID, captureSize)
+            val previewSize = if (physicalId != null) null else previewCap?.let { cap ->
                 chars?.let { Camera2Capabilities.previewSizeFor(it, cap) } ?: cap
             }
+            if (physicalId != null) binding.camera2PreviewView.visibility = View.GONE
 
             withCamera2PreviewSurface(previewSize) { previewSurface ->
                 if (!camera2Active || !isStreaming) return@withCamera2PreviewSurface
@@ -1084,6 +1082,7 @@ class MainActivity : AppCompatActivity() {
                     desiredFps = cfg.fps,
                     metrics = activeStreamer.metrics,
                     listener = camera2Listener(activeStreamer),
+                    physicalCameraId = physicalId,
                 )
                 camera2Source = source
                 applyCamera2Rotation(Surface.ROTATION_0)
@@ -1168,13 +1167,9 @@ class MainActivity : AppCompatActivity() {
     private fun applyCamera2Rotation(surfaceRotation: Int) {
         if (camera2AppliedRotation == surfaceRotation) return
         val source = camera2Source ?: return
-        val deviceDegrees = when (surfaceRotation) {
-            Surface.ROTATION_90 -> 90
-            Surface.ROTATION_180 -> 180
-            Surface.ROTATION_270 -> 270
-            else -> 0
-        }
-        streamer?.setRotationDegrees((source.sensorOrientation - deviceDegrees + 360) % 360)
+        streamer?.setRotationDegrees(
+            RotationPolicy.sensorRotationDegrees(source.sensorOrientation, surfaceRotation),
+        )
         camera2AppliedRotation = surfaceRotation
     }
 
@@ -1207,6 +1202,8 @@ class MainActivity : AppCompatActivity() {
         stopStreaming()
         if (wasStreaming) startStreaming()
     }
+
+
 
     private fun morphRecButton(recording: Boolean) {
         val outer = binding.toggleStreamButton
@@ -1410,6 +1407,17 @@ class MainActivity : AppCompatActivity() {
 
             val previewBuilder = Preview.Builder()
                 .setResolutionSelector(previewSelector)
+                // Deliberately NOT setTargetRotation(ROTATION_90) to match the
+                // ViewPort: that tells CameraX "the output is already in the
+                // sensor's own landscape orientation, don't rotate", and the
+                // viewfinder then shows the scene lying on its side. Leaving
+                // the default (ROTATION_0, since this Activity is locked to
+                // portrait) makes CameraX apply
+                //   relativeRotation = sensorOrientation(90) - target(0) = 90
+                // i.e. the 90-degree clockwise rotation the image needs to come
+                // out upright. The ViewPort still needs ROTATION_90 for the
+                // crop geometry - the two serve different purposes and it is
+                // correct for them to differ here.
             applyCamera2Options(previewBuilder, cfg, physicalCameraId, fpsRange)
 
             // 10-bit HLG viewfinder when the user enabled HDR and this camera can do it.
@@ -1444,6 +1452,8 @@ class MainActivity : AppCompatActivity() {
                 mainVideoOutput.targetHeight = targetHeight
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
+                    .setTargetRotation(RotationPolicy.landscapeTargetRotation(
+                        binding.previewView.display?.rotation ?: Surface.ROTATION_0))
                     .setTargetFrameRate(android.util.Range(cfg.fps, cfg.fps))
                 applyPhysicalCameraId(videoCaptureBuilder, physicalCameraId, fpsRange)
                 videoCaptureBuilder.build()
@@ -1451,14 +1461,28 @@ class MainActivity : AppCompatActivity() {
                 null
             }
             currentVideoCapture = videoCapture
+            // The new use case starts from the display's rotation above, not
+            // from whatever the debouncer last applied, so it has to forget —
+            // otherwise a phone held sideways across a rebind keeps the
+            // display-derived rotation until it is physically turned again.
+            rotationDebouncer.reset()
 
             // ViewPort crops every bound use case (preview AND the capture stream that
             // feeds the network encoder) to the same rectangle, so "Composition" actually
             // changes what's sent to the PC — not just a cosmetic letterbox over an
             // uncropped 16:9 sensor feed.
             val (ratioNum, ratioDenom) = StreamConfig.aspectRatioParts(cfg.aspectRatio)
+            // The rotation argument says which orientation the aspect ratio is
+            // expressed in — NOT which way the phone is held. This Activity is
+            // locked to portrait, so display.rotation was always ROTATION_0 and
+            // CameraX read "16:9" as 16:9 *in portrait*, i.e. a tall narrow
+            // slice: measured, a 1080p session delivered 1080x608 and a 4K one
+            // 2160x1216, cropping away the sides of the scene and looking, on
+            // the viewfinder, like the image had been rotated 90 degrees.
+            // The output (encoder and preview alike) is landscape, so the ratio
+            // has to be expressed in a landscape rotation.
             val viewPort = ViewPort.Builder(
-                android.util.Rational(ratioNum, ratioDenom),
+                android.util.Rational(ratioDenom, ratioNum),
                 binding.previewView.display?.rotation ?: android.view.Surface.ROTATION_0,
             ).build()
 

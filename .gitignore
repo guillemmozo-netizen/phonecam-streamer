@@ -15,3 +15,5 @@ android-app/.idea/
 *.iml
 android-app/.artifacts/
 pc_receiver/setup_log.txt
+
+.control_token

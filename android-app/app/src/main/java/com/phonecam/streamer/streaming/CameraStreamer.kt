@@ -13,15 +13,6 @@ import java.util.concurrent.Executors
 
 private const val TAG = "CameraStreamer"
 
-// The PC side is often not quite ready the instant streaming starts — a USB
-// cable was just plugged in and control_server's watcher (2s poll) hasn't
-// pushed the adb reverse tunnels yet, or Wi-Fi services are still spinning
-// up — so a single connect attempt used to fail permanently with no retry.
-// A handful of retries spread over a few seconds self-heals that race
-// without the user having to stop/start streaming again.
-private const val MAX_CONNECT_ATTEMPTS = 5
-private const val RETRY_DELAY_MS = 2000L
-private const val RETRY_POLL_MS = 200L
 
 /**
  * Ties together: camera frame delivery -> reward-tier gating -> H.264 encode
@@ -63,6 +54,7 @@ class CameraStreamer(
 ) {
     private val networkExecutor: Executor = Executors.newSingleThreadExecutor()
     @Volatile private var connection: StreamConnection? = null
+    @Volatile private var supervisor: ConnectionSupervisor<StreamConnection>? = null
     @Volatile private var stopped = false
     private var helloSent = false
 
@@ -136,12 +128,19 @@ class CameraStreamer(
     // keeps every downstream consumer honest about the real frame rate.
     @Volatile var cameraFpsCeiling: Int = Int.MAX_VALUE
 
+    /** PC control token, required by the receiver for Wi-Fi senders. */
+    @Volatile var authToken: String = ""
+
     // Updated live via the TransformationInfoListener registered in
     // onSurfaceRequested() — CameraX pushes a fresh TransformationInfo
     // whenever MainActivity's orientationEventListener changes the bound
     // VideoCapture's targetRotation, so physically rotating the phone while
     // recording corrects the encoded frame without us polling anything.
     @Volatile private var rotationDegrees = 0
+
+    // Set when the encoder is created; sent in Hello so the receiver knows
+    // which decoder to instantiate.
+    @Volatile private var negotiatedCodec = "h264"
 
     /**
      * Per-stage instrumentation (capture/encode/send rates, latencies, drops)
@@ -161,34 +160,48 @@ class CameraStreamer(
     }
 
     private fun connectWithRetry() {
-        // Resolved once per session, off the main thread (this already runs
-        // on networkExecutor) — not per attempt, so a flaky discovery
-        // broadcast on one retry can't make later retries target a
-        // different host mid-session.
+        // Host resolved once per session, off the main thread — not per
+        // attempt, so a flaky discovery broadcast on one retry can't make
+        // later retries target a different host mid-session.
         val host = hostResolver()
-        var attempt = 0
-        while (!stopped && attempt < MAX_CONNECT_ATTEMPTS) {
-            attempt++
-            try {
-                connection = StreamConnection.connect(host, port)
-                Log.i(TAG, "connected to receiver at $host:$port (attempt $attempt/$MAX_CONNECT_ATTEMPTS)")
-                return
-            } catch (e: Exception) {
-                Log.w(TAG, "connect attempt $attempt/$MAX_CONNECT_ATTEMPTS to $host:$port failed: ${e.message}")
-            }
-            if (stopped || attempt >= MAX_CONNECT_ATTEMPTS) return
-            var waited = 0L
-            while (waited < RETRY_DELAY_MS && !stopped) {
-                Thread.sleep(RETRY_POLL_MS)
-                waited += RETRY_POLL_MS
-            }
+        supervisor = ConnectionSupervisor(
+            connect = { StreamConnection.connect(host, port) },
+            closer = { it.close() },
+            // Unlimited: this now also covers mid-stream reconnects (cable
+            // pulled, adb restarted, PC asleep), where giving up strands the
+            // session encoding frames into a void. The user stopping the
+            // stream is what ends it.
+            maxAttempts = 0,
+            onStateChange = { state ->
+                Log.i(TAG, "connection state: $state (host=$host:$port)")
+                // A new socket means the receiver has no Hello yet.
+                if (state == ConnectionState.RECONNECTING) helloSent = false
+            },
+        ).also { sup ->
+            val fresh = sup.ensureConnected { stopped }
+            connection = fresh
         }
+    }
+
+    /**
+     * Re-establishes the socket after a send failure, on the network thread.
+     *
+     * Without this, a dropped connection left the session alive but mute:
+     * frames kept being captured and encoded, every send threw, and nothing
+     * ever tried to reconnect.
+     */
+    private fun reconnect() {
+        val sup = supervisor ?: return
+        sup.markLost()
+        connection = null
+        val fresh = sup.ensureConnected { stopped }
+        connection = fresh
     }
 
     fun stop() {
         stopped = true
         networkExecutor.execute {
-            connection?.close()
+            supervisor?.shutdown() ?: connection?.close()
             connection = null
             helloSent = false
         }
@@ -295,6 +308,7 @@ class CameraStreamer(
                     height = encHeight,
                     fps = targetFps,
                     bitrateBps = streamConfig.videoBitrateBps,
+                    mimeType = mimeTypeFor(encWidth, encHeight),
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "failed to create H.264 encoder at ${encWidth}x$encHeight " +
@@ -304,6 +318,9 @@ class CameraStreamer(
                 return@post
             }
             synchronized(encoderLock) { encoder = activeEncoder }
+            // The PC picks its decoder from this, so it has to be whatever the
+            // encoder really negotiated (h265 above 4K), never a constant.
+            negotiatedCodec = activeEncoder.codecName
 
             val renderer = activeEncoder.renderer
             renderer.setCameraFrameSize(cameraWidth, cameraHeight)
@@ -382,9 +399,10 @@ class CameraStreamer(
                             quality = profile.quality,
                             watermark = profile.watermark,
                             deviceName = android.os.Build.MODEL,
-                            codec = "h264",
+                            codec = negotiatedCodec,
                             videoBitrateBps = streamConfig.videoBitrateBps,
                             syncObs = streamConfig.syncObs,
+                            authToken = authToken,
                         ),
                     )
                     helloSent = true
@@ -402,7 +420,10 @@ class CameraStreamer(
                 metrics.onSent(System.nanoTime() - sendStart, bytes)
             } catch (e: Exception) {
                 metrics.onDrop(StreamMetrics.Drop.SEND_FAILED)
-                Log.e(TAG, "send failed, dropping frame", e)
+                Log.e(TAG, "send failed, reconnecting", e)
+                // Already on networkExecutor, so this serialises with other
+                // sends: no second reconnect can start while this one runs.
+                if (!stopped) reconnect()
             }
         }
     }
