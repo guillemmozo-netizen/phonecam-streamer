@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.util.Log
 import android.util.Range
 import android.util.Size
@@ -151,6 +152,33 @@ object Camera2Capabilities {
             }
             distance * 1000 + (range.upper - range.lower)
         }
+    }
+
+    /**
+     * The physical sub-camera that can actually produce [size], or null when the
+     * logical camera can do it itself.
+     *
+     * 8K only exists on one sensor: measured on an S23 Ultra, `7680x4320` is
+     * absent from logical camera 0's own table but present on physical id 5 (the
+     * 200MP main sensor). Top-level id 56 also lists it but is not enumerable —
+     * `openCamera("56")` throws `IllegalArgumentException: Unknown camera ID` —
+     * so routing an output to the physical id is the only route that works.
+     */
+    fun physicalIdFor(context: Context, cameraId: String, size: Size): String? {
+        val logical = characteristicsOrNull(context, cameraId) ?: return null
+        if (vendorVideoConfigs(logical)?.any { it.width == size.width && it.height == size.height } == true) {
+            return null   // the logical camera handles it; no routing needed
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
+        val physicalIds = try { logical.physicalCameraIds } catch (e: Exception) { emptySet<String>() }
+        for (physicalId in physicalIds) {
+            val chars = characteristicsOrNull(context, physicalId) ?: continue
+            if (vendorVideoConfigs(chars)?.any { it.width == size.width && it.height == size.height } == true) {
+                Log.i(TAG, "${size.width}x${size.height} lives on physical camera $physicalId")
+                return physicalId
+            }
+        }
+        return null
     }
 
     /** Human-readable capability summary for diagnostics/logs. */

@@ -60,6 +60,11 @@ class Camera2CaptureSource(
     private val desiredFps: Int,
     private val metrics: StreamMetrics,
     private val listener: Listener,
+    // Non-null when the requested size only exists on a physical sub-camera
+    // (8K lives on id 5 on an S23 Ultra). The output is then routed there via
+    // OutputConfiguration.setPhysicalCameraId - the only working route, since
+    // that sensor's own top-level id is not enumerable.
+    private val physicalCameraId: String? = null,
 ) {
 
     interface Listener {
@@ -96,7 +101,7 @@ class Camera2CaptureSource(
             listener.onFailed("permission", "CAMERA permission not granted")
             return
         }
-        val chars = Camera2Capabilities.characteristicsOrNull(context, cameraId)
+        val chars = Camera2Capabilities.characteristicsOrNull(context, physicalCameraId ?: cameraId)
         if (chars == null) {
             listener.onFailed("characteristics", "camera $cameraId not available")
             return
@@ -106,7 +111,9 @@ class Camera2CaptureSource(
             listener.onFailed("capability", "no fps range for ${captureSize.width}x${captureSize.height}")
             return
         }
-        Log.i(TAG, "opening camera $cameraId for ${captureSize.width}x${captureSize.height} @ $fpsRange " +
+        Log.i(TAG, "opening camera $cameraId" +
+            (physicalCameraId?.let { " (physical $it)" } ?: "") +
+            " for ${captureSize.width}x${captureSize.height} @ $fpsRange " +
             "(${Camera2Capabilities.describe(chars, captureSize)})")
 
         try {
@@ -141,7 +148,12 @@ class Camera2CaptureSource(
         fpsRange: Range<Int>,
     ) {
         val outputs = buildList {
-            add(OutputConfiguration(encoderSurface))
+            add(OutputConfiguration(encoderSurface).apply {
+                if (physicalCameraId != null) setPhysicalCameraId(physicalCameraId)
+            })
+            // Only the encoder stream is routed to the physical sensor; a
+            // viewfinder from the logical camera in the same session mixes two
+            // different sources, so the caller disables it when routing.
             previewSurface?.let { add(OutputConfiguration(it)) }
         }
 
@@ -255,7 +267,9 @@ class Camera2CaptureSource(
          */
         fun isSupported(context: Context, cameraId: String, size: Size, fps: Int): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
-            val chars = Camera2Capabilities.characteristicsOrNull(context, cameraId) ?: return false
+            val physicalId = Camera2Capabilities.physicalIdFor(context, cameraId, size)
+            val chars = Camera2Capabilities.characteristicsOrNull(context, physicalId ?: cameraId)
+                ?: return false
             if (!Camera2Capabilities.isSizeSupported(chars, size)) return false
             val range = Camera2Capabilities.sessionFpsRange(chars, size, fps) ?: return false
             return range.upper >= fps

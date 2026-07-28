@@ -7,8 +7,20 @@ import android.util.Log
 import com.phonecam.streamer.streaming.gl.EncoderSurfaceRenderer
 
 private const val TAG = "H264Encoder"
-private const val MIME_TYPE = MediaFormat.MIMETYPE_VIDEO_AVC
 private const val I_FRAME_INTERVAL_SECONDS = 2
+
+/**
+ * Above 4K, AVC stops being a sensible choice: this device's AVC encoder
+ * nominally accepts 8K (`c2.qti.avc.encoder`, max 8192x8192) but AVC level 6
+ * support for it is far less dependable than HEVC's, and HEVC halves the
+ * bitrate for the same quality — which matters when the transport is a USB
+ * tunnel. Measured on-device: `c2.qti.hevc.encoder` reports
+ * `sizeSupported(7680x4320)=true` and `areSizeAndRateSupported(...,30)=true`,
+ * and encoded a real 8K30 camera stream at a clean 30.0fps.
+ */
+fun mimeTypeFor(width: Int, height: Int): String =
+    if (width.toLong() * height > 3840L * 2160) MediaFormat.MIMETYPE_VIDEO_HEVC
+    else MediaFormat.MIMETYPE_VIDEO_AVC
 private const val DEQUEUE_TIMEOUT_US = 0L // never block the camera thread waiting on the codec
 
 /**
@@ -37,14 +49,21 @@ class H264Encoder(
     height: Int,
     fps: Int,
     bitrateBps: Int,
+    // Name is historical: this now drives H.265 too (see mimeTypeFor). A rename
+    // to VideoEncoder is pending and purely cosmetic.
+    private val mimeType: String = MediaFormat.MIMETYPE_VIDEO_AVC,
 ) {
-    private val codec: MediaCodec = MediaCodec.createEncoderByType(MIME_TYPE)
+    private val codec: MediaCodec = MediaCodec.createEncoderByType(mimeType)
     private val bufferInfo = MediaCodec.BufferInfo()
     val renderer: EncoderSurfaceRenderer
     private var released = false
 
+    /** What to put in Hello.codec so the PC picks the matching decoder. */
+    val codecName: String =
+        if (mimeType == MediaFormat.MIMETYPE_VIDEO_HEVC) "h265" else "h264"
+
     init {
-        val format = MediaFormat.createVideoFormat(MIME_TYPE, width, height).apply {
+        val format = MediaFormat.createVideoFormat(mimeType, width, height).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
             setInteger(MediaFormat.KEY_BIT_RATE, bitrateBps)
             setInteger(MediaFormat.KEY_FRAME_RATE, fps)

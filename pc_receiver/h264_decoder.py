@@ -84,14 +84,18 @@ class H264Decoder:
     costs 0.9ms and runs at 59.4fps with a fifth of the CPU.
     """
 
-    def __init__(self, output_format: str = "rgb") -> None:
+    def __init__(self, output_format: str = "rgb", codec: str = "h264") -> None:
         if output_format not in ("rgb", "native"):
             raise ValueError(f"unknown output_format {output_format!r}")
         self._output_format = output_format
+        # "h264" or "h265"/"hevc" - whatever Hello.codec announced. The phone
+        # switches to HEVC above 4K (see mimeTypeFor in H264Encoder.kt), so the
+        # decoder has to follow or it decodes nothing at all.
+        self._codec = "hevc" if codec in ("h265", "hevc") else "h264"
         # Only meaningful once a frame has actually come out: the native
         # format depends on which decoder backend was available.
         self.frame_format = "rgb"
-        self.backend, self._ctx = self._create_context()
+        self.backend, self._ctx = self._create_context(self._codec)
         log.info("H264Decoder using backend=%s", self.backend)
         self._decode_calls = 0
         self._decode_time_total = 0.0
@@ -111,7 +115,7 @@ class H264Decoder:
         return frame.to_ndarray(format=frame.format.name)
 
     @staticmethod
-    def _create_context() -> tuple[str, "av.CodecContext"]:
+    def _create_context(codec: str = "h264") -> tuple[str, "av.CodecContext"]:
         """Prefer NVDEC (h264_cuvid) over the software decoder.
 
         Confirmed on-device: plain libavcodec software decode can't keep up
@@ -129,18 +133,19 @@ class H264Decoder:
         it's visible in logs/receiver.log which path a given session actually
         took, instead of silently guessing from GPU utilization alone.
         """
+        hardware = f"{codec}_cuvid"
         try:
-            return "h264_cuvid (NVDEC)", av.CodecContext.create("h264_cuvid", "r")
+            return f"{hardware} (NVDEC)", av.CodecContext.create(hardware, "r")
         except Exception as e:
-            log.warning("h264_cuvid unavailable (%s), falling back to software h264 decode", e)
-            ctx = av.CodecContext.create("h264", "r")
+            log.warning("%s unavailable (%s), falling back to software %s decode", hardware, e, codec)
+            ctx = av.CodecContext.create(codec, "r")
             # Frame-level threading for the software path — the default is a
             # single thread, which leaves most of the CPU idle exactly when
             # this fallback needs it most (no NVDEC = decode competes with
             # everything else on the CPU).
             ctx.thread_type = "AUTO"
             ctx.thread_count = 0
-            return "h264 (software)", ctx
+            return f"{codec} (software)", ctx
 
     def decode(self, data: bytes) -> List[np.ndarray]:
         """Feed one Annex-B chunk (the codec-config NALs sent once up front,

@@ -15,7 +15,13 @@ import kotlin.math.min
 // the user's own Settings choice can only ever pick something at or below this.
 private val TIER_CEILINGS = mapOf(
     "1080p60" to Triple(1920, 1080, 60),
-    "4k60" to Triple(3840, 2160, 60),
+    // Tier key is historical. The premium ceiling used to be a literal
+    // 3840x2160, which silently downscaled an 8K capture to 4K before it ever
+    // reached the encoder — an artificial cap, not a hardware or product one.
+    // It is now the device's own maximum (7680x4320), so the ceiling only
+    // enforces the free/premium split and never overrides what the camera can
+    // actually deliver. The free tier is unchanged.
+    "4k60" to Triple(7680, 4320, 60),
 )
 
 private const val FREE_JPEG_QUALITY = 80
