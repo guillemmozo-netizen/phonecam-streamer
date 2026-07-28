@@ -34,6 +34,12 @@ from pc_receiver.sinks import FrameSink, create_sink
 
 log = logging.getLogger("pc_receiver")
 
+# How long the Hello-triggered OBS sync waits before touching OBS. Both OBS
+# crashes so far happened within ~11s of OBS finishing its module load, while
+# obs-websocket was already answering; this is comfortably past that, and it
+# runs on a daemon thread nobody waits for.
+OBS_SETTLE_SECONDS = 20.0
+
 
 @dataclass
 class ReceiverStats:
@@ -278,9 +284,17 @@ def handle_connection(
         #
         # Nothing downstream depends on the result, so fire-and-forget is the
         # whole fix — no lock, no ordering requirement, no failure path.
+        #
+        # settle_seconds because this is the one caller that can fire seconds
+        # after OBS launched: the phone starting a stream is exactly what makes
+        # a user open OBS. obs-websocket answers before OBS's frontend is
+        # ready, and mutating OBS in that window is what both crash reports
+        # have in common. Nothing waits on this thread, so the delay is free.
         threading.Thread(
-            target=sync_video_settings,
-            args=(hello.width, hello.height, hello.fps, hello.video_bitrate_bps),
+            target=lambda: sync_video_settings(
+                hello.width, hello.height, hello.fps, hello.video_bitrate_bps,
+                settle_seconds=OBS_SETTLE_SECONDS, source="hello",
+            ),
             name="obs-sync",
             daemon=True,
         ).start()

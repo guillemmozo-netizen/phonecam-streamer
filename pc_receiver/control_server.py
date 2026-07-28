@@ -471,6 +471,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             height=height,
             fps=fps,
             allow_scene_requests=allow_scene,
+            # No settle wait: the manager's verdict already means OBS has been
+            # answering for at least a recheck interval, and a user sitting in
+            # the Settings screen is waiting for this to take effect.
+            source="settings",
             bitrate_bps=int(payload.get("video_bitrate_bps", 0)),
             audio_bitrate_bps=int(payload.get("audio_bitrate_bps", 0)),
             sample_rate=int(payload.get("sample_rate", 0)),
