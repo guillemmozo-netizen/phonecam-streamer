@@ -24,7 +24,7 @@ from __future__ import annotations
 import json
 import socket
 import struct
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 
 _LENGTH_STRUCT = struct.Struct(">I")
 MAX_FRAME_BYTES = 32 * 1024 * 1024  # sanity guard against a corrupt length prefix
@@ -56,14 +56,57 @@ class Hello:
     # (matches the toggle's own default), rather than silently opting every
     # existing install out.
     sync_obs: bool = True
+    # Shared secret from the PC, required for non-loopback (i.e. Wi-Fi)
+    # senders. Empty for the USB path, which arrives on loopback and is
+    # exempt - see receiver.handle_connection.
+    auth_token: str = ""
 
     def to_json_bytes(self) -> bytes:
         return json.dumps(asdict(self)).encode("utf-8")
 
     @classmethod
     def from_json_bytes(cls, data: bytes) -> "Hello":
+        """Parses a Hello from untrusted bytes.
+
+        Anything on the network can open this socket, so the payload is
+        treated as hostile: unknown keys are dropped rather than passed to the
+        constructor (cls(**obj) raised TypeError on any unexpected field, which
+        let a single stray key kill the connection - and would break every old
+        receiver the moment a new field is added), types are coerced, and
+        dimensions are bounded. A malformed Hello must fail as a rejected
+        connection, never as a crash or an absurd canvas pushed into OBS.
+        """
         obj = json.loads(data.decode("utf-8"))
-        return cls(**obj)
+        if not isinstance(obj, dict):
+            raise ProtocolError("hello must be a JSON object")
+
+        known = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in obj.items() if k in known}
+
+        def _int(name: str, default: int, low: int, high: int) -> int:
+            try:
+                value = int(filtered.get(name, default))
+            except (TypeError, ValueError):
+                raise ProtocolError(f"hello.{name} is not an integer")
+            if not low <= value <= high:
+                raise ProtocolError(f"hello.{name}={value} out of range {low}..{high}")
+            return value
+
+        # 16..8192 covers every mode the app offers (360p to 8K) with room to
+        # spare; 240fps is the highest the reference device advertises at all.
+        filtered["width"] = _int("width", 0, 16, 8192)
+        filtered["height"] = _int("height", 0, 16, 8192)
+        filtered["fps"] = _int("fps", 30, 1, 240)
+        filtered["video_bitrate_bps"] = _int("video_bitrate_bps", 0, 0, 1_000_000_000)
+
+        for name in ("quality", "device_name", "codec", "auth_token"):
+            if name in filtered:
+                filtered[name] = str(filtered[name])[:256]
+        for name in ("watermark", "sync_obs"):
+            if name in filtered:
+                filtered[name] = bool(filtered[name])
+
+        return cls(**filtered)
 
 
 def _recv_exact(sock: socket.socket, n: int) -> bytes:

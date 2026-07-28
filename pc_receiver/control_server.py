@@ -373,7 +373,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
             return
-        if self.path == "/status":
+        if self.path == "/token":
+            # Loopback only, and _authorised() already enforced that. This is
+            # the pairing step: the phone fetches the token over USB (physical
+            # access + an authorised adb key) and stores it, so a later Wi-Fi
+            # session can authenticate without the user typing anything.
+            peer = self.client_address[0] if self.client_address else ""
+            if peer not in ("127.0.0.1", "::1"):
+                self._json(403, {"error": "token is only served over USB"})
+                return
+            self._json(200, {"token": _auth_token})
+        elif self.path == "/status":
             active = get_status()
             self._json(200, {"running": len(active) > 0, "services": active})
         else:

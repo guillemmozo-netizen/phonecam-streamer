@@ -136,12 +136,19 @@ class CameraStreamer(
     // keeps every downstream consumer honest about the real frame rate.
     @Volatile var cameraFpsCeiling: Int = Int.MAX_VALUE
 
+    /** PC control token, required by the receiver for Wi-Fi senders. */
+    @Volatile var authToken: String = ""
+
     // Updated live via the TransformationInfoListener registered in
     // onSurfaceRequested() — CameraX pushes a fresh TransformationInfo
     // whenever MainActivity's orientationEventListener changes the bound
     // VideoCapture's targetRotation, so physically rotating the phone while
     // recording corrects the encoded frame without us polling anything.
     @Volatile private var rotationDegrees = 0
+
+    // Set when the encoder is created; sent in Hello so the receiver knows
+    // which decoder to instantiate.
+    @Volatile private var negotiatedCodec = "h264"
 
     /**
      * Per-stage instrumentation (capture/encode/send rates, latencies, drops)
@@ -295,6 +302,7 @@ class CameraStreamer(
                     height = encHeight,
                     fps = targetFps,
                     bitrateBps = streamConfig.videoBitrateBps,
+                    mimeType = mimeTypeFor(encWidth, encHeight),
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "failed to create H.264 encoder at ${encWidth}x$encHeight " +
@@ -304,6 +312,9 @@ class CameraStreamer(
                 return@post
             }
             synchronized(encoderLock) { encoder = activeEncoder }
+            // The PC picks its decoder from this, so it has to be whatever the
+            // encoder really negotiated (h265 above 4K), never a constant.
+            negotiatedCodec = activeEncoder.codecName
 
             val renderer = activeEncoder.renderer
             renderer.setCameraFrameSize(cameraWidth, cameraHeight)
@@ -382,9 +393,10 @@ class CameraStreamer(
                             quality = profile.quality,
                             watermark = profile.watermark,
                             deviceName = android.os.Build.MODEL,
-                            codec = "h264",
+                            codec = negotiatedCodec,
                             videoBitrateBps = streamConfig.videoBitrateBps,
                             syncObs = streamConfig.syncObs,
+                            authToken = authToken,
                         ),
                     )
                     helloSent = true

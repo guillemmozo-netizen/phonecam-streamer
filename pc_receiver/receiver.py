@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import secrets
 import socket
 import threading
 import time
@@ -199,6 +201,35 @@ def decode_frame(jpeg_bytes: bytes) -> Optional[np.ndarray]:
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
 
+def _peer_ip(conn: socket.socket) -> str:
+    try:
+        return conn.getpeername()[0]
+    except OSError:
+        return "?"
+
+
+def _load_control_token() -> str:
+    """The token control_server generates. Read per connection rather than
+    cached so rotating it doesn't need a receiver restart."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".control_token")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def _peer_is_authorised(conn: socket.socket, supplied: str) -> bool:
+    if _peer_ip(conn) in ("127.0.0.1", "::1"):
+        return True
+    token = _load_control_token()
+    if not token:
+        # No token on disk means the PC never generated one; refusing every
+        # remote sender is the safe reading, and USB still works.
+        return False
+    return secrets.compare_digest(supplied or "", token)
+
+
 def handle_connection(
     conn: socket.socket,
     sink: FrameSink,
@@ -213,6 +244,16 @@ def handle_connection(
     stats = stats or ReceiverStats()
     reader = FrameReader(conn)
     hello = reader.recv_hello()
+
+    # Same trust model as control_server: loopback (the USB tunnel, which
+    # already required physical access and an authorised adb key) is exempt;
+    # anything arriving over the network has to present the PC's token. Without
+    # this the video socket was open to the whole LAN - anyone could connect and
+    # push frames into the user's virtual camera, or occupy the port so the real
+    # phone couldn't.
+    if not _peer_is_authorised(conn, hello.auth_token):
+        log.warning("rejected unauthorised connection from %s", _peer_ip(conn))
+        raise ProtocolError("unauthorised sender")
     log.info(
         "stream started: %sx%s@%sfps quality=%s watermark=%s device=%s codec=%s",
         hello.width,
@@ -227,7 +268,7 @@ def handle_connection(
     if hello.sync_obs:
         # On its own thread, never inline. This talks to OBS over a WebSocket
         # and blocks for up to its connect timeout when OBS isn't answering
-        # (PC asleep, OBS closed, a firewall dropping rather than refusing) -
+        # (PC asleep, OBS closed, a firewall dropping rather than refusing) —
         # and it sits directly in front of the receive loop, so that stall
         # happens with frames already arriving. They pile up in the socket, the
         # loop then reads a backlog of >= 2 and correctly skips those frames as
@@ -236,7 +277,7 @@ def handle_connection(
         # lost exactly one frame each for this reason.
         #
         # Nothing downstream depends on the result, so fire-and-forget is the
-        # whole fix - no lock, no ordering requirement, no failure path.
+        # whole fix — no lock, no ordering requirement, no failure path.
         threading.Thread(
             target=sync_video_settings,
             args=(hello.width, hello.height, hello.fps, hello.video_bitrate_bps),
@@ -254,8 +295,9 @@ def handle_connection(
     # path can honour this — the JPEG path decodes to RGB by nature.
     sink_prefers = getattr(sink, "preferred_frame_format", "rgb")
     h264_decoder = (
-        H264Decoder(output_format="native" if sink_prefers == "native" else "rgb")
-        if hello.codec == "h264"
+        H264Decoder(output_format="native" if sink_prefers == "native" else "rgb",
+                    codec=hello.codec)
+        if hello.codec in ("h264", "h265", "hevc")
         else None
     )
     frames_skipped_stale = 0

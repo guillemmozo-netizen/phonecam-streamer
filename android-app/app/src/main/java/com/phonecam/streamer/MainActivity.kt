@@ -941,6 +941,18 @@ class MainActivity : AppCompatActivity() {
         )
         streamer = newStreamer
 
+        // Pairing + auth. The receiver rejects non-loopback senders without the
+        // PC's token, so Wi-Fi needs one; it is fetched over USB (loopback,
+        // already trusted) and cached. Doing both here means the first USB
+        // session silently arms every later Wi-Fi session.
+        pcConnectExecutor.execute {
+            val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+            PcControl.fetchToken("127.0.0.1")?.let { token ->
+                prefs.edit().putString("pc_token", token).apply()
+            }
+            newStreamer.authToken = prefs.getString("pc_token", "").orEmpty()
+        }
+
         if (shouldUseCamera2(cfg)) {
             newStreamer.metrics.backend = "camera2"
             startCamera2Backend(cfg, newStreamer)
@@ -1032,7 +1044,9 @@ class MainActivity : AppCompatActivity() {
         val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
         val captureSize = Size(width, height)
         val chars = Camera2Capabilities.characteristicsOrNull(this, CAMERA2_CAMERA_ID)
-        val negotiated = chars?.let { Camera2Capabilities.sessionFpsRange(it, captureSize, cfg.fps) }
+        val routedId = Camera2Capabilities.physicalIdFor(this, CAMERA2_CAMERA_ID, captureSize)
+        val negotiated = Camera2Capabilities.characteristicsOrNull(this, routedId ?: CAMERA2_CAMERA_ID)
+            ?.let { Camera2Capabilities.sessionFpsRange(it, captureSize, cfg.fps) }
 
         // The honest ceiling for this backend: what it can really negotiate,
         // not the AE table that caps CameraX at 30.
@@ -1070,9 +1084,14 @@ class MainActivity : AppCompatActivity() {
             binding.camera2PreviewView.visibility =
                 if (previewCap == null) View.GONE else View.VISIBLE
 
-            val previewSize = previewCap?.let { cap ->
+            // 8K only exists on a physical sub-camera, and a viewfinder fed from
+            // the logical camera in the same session would mix two sensors, so
+            // routing forces the preview off.
+            val physicalId = Camera2Capabilities.physicalIdFor(this, CAMERA2_CAMERA_ID, captureSize)
+            val previewSize = if (physicalId != null) null else previewCap?.let { cap ->
                 chars?.let { Camera2Capabilities.previewSizeFor(it, cap) } ?: cap
             }
+            if (physicalId != null) binding.camera2PreviewView.visibility = View.GONE
 
             withCamera2PreviewSurface(previewSize) { previewSurface ->
                 if (!camera2Active || !isStreaming) return@withCamera2PreviewSurface
@@ -1084,6 +1103,7 @@ class MainActivity : AppCompatActivity() {
                     desiredFps = cfg.fps,
                     metrics = activeStreamer.metrics,
                     listener = camera2Listener(activeStreamer),
+                    physicalCameraId = physicalId,
                 )
                 camera2Source = source
                 applyCamera2Rotation(Surface.ROTATION_0)
@@ -1210,17 +1230,17 @@ class MainActivity : AppCompatActivity() {
 
 
     /**
-     * The stream is always landscape - the encoder is 1920x1080 and OBS wants a
-     * landscape webcam - but targetRotation is expressed relative to the
+     * The stream is always landscape (the encoder is 1920x1080, and OBS wants a
+     * landscape webcam), but targetRotation is expressed relative to the
      * device's natural orientation, which on a phone is portrait. Left as-is,
-     * CameraX reported rotationDegrees=90 ("rotate this to stand upright in
-     * portrait") and the GL renderer duly turned the landscape frame on its
-     * side: correct viewfinder, rotated output in OBS.
+     * CameraX reports rotationDegrees=90 - "rotate this to stand upright in
+     * portrait" - and the GL renderer duly turns the landscape frame on its
+     * side, which is what OBS showed.
      *
      * Shifting the reference by one quarter turn makes "phone held upright"
-     * mean "landscape output, no rotation" - measured, rotationDegrees goes
-     * 90 -> 0 - while keeping the physical-rotation feature intact, since the
-     * offset moves with the phone.
+     * mean "landscape output, no rotation" while keeping the physical-rotation
+     * feature intact: turn the phone and the offset moves with it, so the
+     * encoded frame still comes out upright.
      */
     private fun landscapeTargetRotation(surfaceRotation: Int): Int = when (surfaceRotation) {
         Surface.ROTATION_0 -> Surface.ROTATION_90
@@ -1429,11 +1449,19 @@ class MainActivity : AppCompatActivity() {
             // than just picking 30.
             streamer?.cameraFpsCeiling = fpsRange?.upper ?: cfg.fps
 
-            // Note: deliberately no setTargetRotation here. PreviewView owns
-            // the viewfinder's transform and ignores it, so setting it looks
-            // like it should help and does nothing at all.
             val previewBuilder = Preview.Builder()
                 .setResolutionSelector(previewSelector)
+                // Deliberately NOT setTargetRotation(ROTATION_90) to match the
+                // ViewPort: that tells CameraX "the output is already in the
+                // sensor's own landscape orientation, don't rotate", and the
+                // viewfinder then shows the scene lying on its side. Leaving
+                // the default (ROTATION_0, since this Activity is locked to
+                // portrait) makes CameraX apply
+                //   relativeRotation = sensorOrientation(90) - target(0) = 90
+                // i.e. the 90-degree clockwise rotation the image needs to come
+                // out upright. The ViewPort still needs ROTATION_90 for the
+                // crop geometry - the two serve different purposes and it is
+                // correct for them to differ here.
             applyCamera2Options(previewBuilder, cfg, physicalCameraId, fpsRange)
 
             // 10-bit HLG viewfinder when the user enabled HDR and this camera can do it.
@@ -1483,22 +1511,15 @@ class MainActivity : AppCompatActivity() {
             // changes what's sent to the PC — not just a cosmetic letterbox over an
             // uncropped 16:9 sensor feed.
             val (ratioNum, ratioDenom) = StreamConfig.aspectRatioParts(cfg.aspectRatio)
-            // Two things have to be true at once here, and getting one right
-            // used to break the other.
-            //
-            // The ratio is inverted (denominator first) because the ViewPort
-            // expresses it in the rotation given as the second argument, and
-            // that rotation must stay the display's: PreviewView builds its own
-            // transform from the resulting TransformationInfo, so any mismatch
-            // between the two shows up as a viewfinder rotated 90 degrees.
-            // Passing ROTATION_90 instead fixed the crop but tilted the
-            // viewfinder - measured, both ways round.
-            //
-            // Expressed this way the crop comes out landscape (verified:
-            // 1080p delivers 1920x1080 and 4K delivers 3840x2160, where the
-            // original code delivered 1080x608 and 2160x1216 - a tall slice of
-            // the scene, stretched back up by the renderer) while the Preview
-            // stays consistent with the display.
+            // The rotation argument says which orientation the aspect ratio is
+            // expressed in — NOT which way the phone is held. This Activity is
+            // locked to portrait, so display.rotation was always ROTATION_0 and
+            // CameraX read "16:9" as 16:9 *in portrait*, i.e. a tall narrow
+            // slice: measured, a 1080p session delivered 1080x608 and a 4K one
+            // 2160x1216, cropping away the sides of the scene and looking, on
+            // the viewfinder, like the image had been rotated 90 degrees.
+            // The output (encoder and preview alike) is landscape, so the ratio
+            // has to be expressed in a landscape rotation.
             val viewPort = ViewPort.Builder(
                 android.util.Rational(ratioDenom, ratioNum),
                 binding.previewView.display?.rotation ?: android.view.Surface.ROTATION_0,
