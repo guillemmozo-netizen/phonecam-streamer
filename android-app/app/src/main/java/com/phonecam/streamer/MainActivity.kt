@@ -64,6 +64,7 @@ import com.phonecam.streamer.ui.WelcomeDialog
 import org.json.JSONObject
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+import com.phonecam.streamer.streaming.RotationPolicy
 
 private const val TAG = "MainActivity"
 
@@ -160,12 +161,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == ORIENTATION_UNKNOWN) return
-                val rotation = when (orientation) {
-                    in 45 until 135 -> Surface.ROTATION_270
-                    in 135 until 225 -> Surface.ROTATION_180
-                    in 225 until 315 -> Surface.ROTATION_90
-                    else -> Surface.ROTATION_0
-                }
+                val rotation = RotationPolicy.bucketFor(orientation)
                 if (rotation == currentVideoCapture?.targetRotation) {
                     pendingRotation = null
                     return
@@ -177,7 +173,7 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 if (now - pendingSinceMs >= ROTATION_DEBOUNCE_MS) {
-                    currentVideoCapture?.targetRotation = landscapeTargetRotation(rotation)
+                    currentVideoCapture?.targetRotation = RotationPolicy.landscapeTargetRotation(rotation)
                     // Camera2 has no targetRotation to push this into — the
                     // equivalent is computed from the sensor's mounting and
                     // handed to the renderer directly.
@@ -1188,13 +1184,9 @@ class MainActivity : AppCompatActivity() {
     private fun applyCamera2Rotation(surfaceRotation: Int) {
         if (camera2AppliedRotation == surfaceRotation) return
         val source = camera2Source ?: return
-        val deviceDegrees = when (surfaceRotation) {
-            Surface.ROTATION_90 -> 90
-            Surface.ROTATION_180 -> 180
-            Surface.ROTATION_270 -> 270
-            else -> 0
-        }
-        streamer?.setRotationDegrees((source.sensorOrientation - deviceDegrees + 360) % 360)
+        streamer?.setRotationDegrees(
+            RotationPolicy.sensorRotationDegrees(source.sensorOrientation, surfaceRotation),
+        )
         camera2AppliedRotation = surfaceRotation
     }
 
@@ -1229,25 +1221,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    /**
-     * The stream is always landscape (the encoder is 1920x1080, and OBS wants a
-     * landscape webcam), but targetRotation is expressed relative to the
-     * device's natural orientation, which on a phone is portrait. Left as-is,
-     * CameraX reports rotationDegrees=90 - "rotate this to stand upright in
-     * portrait" - and the GL renderer duly turns the landscape frame on its
-     * side, which is what OBS showed.
-     *
-     * Shifting the reference by one quarter turn makes "phone held upright"
-     * mean "landscape output, no rotation" while keeping the physical-rotation
-     * feature intact: turn the phone and the offset moves with it, so the
-     * encoded frame still comes out upright.
-     */
-    private fun landscapeTargetRotation(surfaceRotation: Int): Int = when (surfaceRotation) {
-        Surface.ROTATION_0 -> Surface.ROTATION_90
-        Surface.ROTATION_90 -> Surface.ROTATION_180
-        Surface.ROTATION_180 -> Surface.ROTATION_270
-        else -> Surface.ROTATION_0
-    }
 
     private fun morphRecButton(recording: Boolean) {
         val outer = binding.toggleStreamButton
@@ -1496,7 +1469,7 @@ class MainActivity : AppCompatActivity() {
                 mainVideoOutput.targetHeight = targetHeight
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
-                    .setTargetRotation(landscapeTargetRotation(
+                    .setTargetRotation(RotationPolicy.landscapeTargetRotation(
                         binding.previewView.display?.rotation ?: Surface.ROTATION_0))
                     .setTargetFrameRate(android.util.Range(cfg.fps, cfg.fps))
                 applyPhysicalCameraId(videoCaptureBuilder, physicalCameraId, fpsRange)
