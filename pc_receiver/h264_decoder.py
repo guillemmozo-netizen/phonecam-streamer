@@ -165,6 +165,8 @@ class H264Decoder:
         A corrupt/undecodable chunk is treated the same as a bad JPEG
         elsewhere in this codebase: skip it, don't crash the connection.
         """
+        if self._ctx is None:
+            return []   # closed: a late frame from a torn-down session
         t0 = time.monotonic()
         try:
             packet = av.Packet(data)
@@ -214,13 +216,19 @@ class H264Decoder:
         right before close().
         """
         try:
-            frames = self._ctx.decode(None)
+            frames = self._ctx.decode(None) if self._ctx is not None else []
         except av.error.FFmpegError:
             return []
         return [_to_rgb(frame) for frame in frames]
 
     def close(self) -> None:
-        try:
-            self._ctx.close()
-        except Exception:
-            pass
+        """Releases the decoder context.
+
+        This used to call self._ctx.close(), which does not exist on PyAV's
+        VideoCodecContext - it raised AttributeError on every single call and
+        the bare `except Exception: pass` swallowed it, so close() had never
+        actually released anything since it was written. Dropping the reference
+        is what PyAV supports: the context frees itself, including any NVDEC
+        surfaces, once nothing holds it.
+        """
+        self._ctx = None
