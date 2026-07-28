@@ -64,6 +64,7 @@ import com.phonecam.streamer.ui.WelcomeDialog
 import org.json.JSONObject
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+import com.phonecam.streamer.streaming.RotationDebouncer
 import com.phonecam.streamer.streaming.RotationPolicy
 
 private const val TAG = "MainActivity"
@@ -145,41 +146,23 @@ class MainActivity : AppCompatActivity() {
     // TransformationInfo (see CameraStreamer.onSurfaceRequested) — the
     // recorded/streamed frame comes out upright regardless of how the phone
     // is physically held, independent of what's drawn on screen.
-    // Raw OrientationEventListener readings are noisy right around each
-    // 45/135/225/315 bucket boundary — accelerometer jitter (even from a
-    // steady hand) flips the raw angle back and forth across a boundary,
-    // and without debouncing that used to flip targetRotation just as
-    // fast, each flip pushing a fresh TransformationInfo through CameraX
-    // and visibly glitching the recorded/streamed orientation. Requiring a
-    // candidate rotation to hold for ROTATION_DEBOUNCE_MS before it's
-    // actually applied filters that out — a real, deliberate 90° turn
-    // easily holds that long, a jitter blip at a boundary doesn't.
+    // Deciding *when* a reading is a real turn lives in RotationDebouncer, which
+    // is unit-tested; this only applies the result. Keeping the two apart is
+    // what surfaced the bug where the debounce compared a device bucket against
+    // targetRotation, which carries a quarter-turn offset — see its doc.
+    private val rotationDebouncer = RotationDebouncer(ROTATION_DEBOUNCE_MS)
+
     private val orientationEventListener by lazy {
         object : OrientationEventListener(this) {
-            private var pendingRotation: Int? = null
-            private var pendingSinceMs = 0L
-
             override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) return
-                val rotation = RotationPolicy.bucketFor(orientation)
-                if (rotation == currentVideoCapture?.targetRotation) {
-                    pendingRotation = null
-                    return
-                }
-                val now = android.os.SystemClock.elapsedRealtime()
-                if (rotation != pendingRotation) {
-                    pendingRotation = rotation
-                    pendingSinceMs = now
-                    return
-                }
-                if (now - pendingSinceMs >= ROTATION_DEBOUNCE_MS) {
-                    currentVideoCapture?.targetRotation = RotationPolicy.landscapeTargetRotation(rotation)
-                    // Camera2 has no targetRotation to push this into — the
-                    // equivalent is computed from the sensor's mounting and
-                    // handed to the renderer directly.
-                    if (camera2Active) applyCamera2Rotation(rotation)
-                    pendingRotation = null
-                }
+                val rotation = rotationDebouncer.onOrientationChanged(
+                    orientation, android.os.SystemClock.elapsedRealtime(),
+                ) ?: return
+                currentVideoCapture?.targetRotation = RotationPolicy.landscapeTargetRotation(rotation)
+                // Camera2 has no targetRotation to push this into — the
+                // equivalent is computed from the sensor's mounting and
+                // handed to the renderer directly.
+                if (camera2Active) applyCamera2Rotation(rotation)
             }
         }
     }
@@ -1478,6 +1461,11 @@ class MainActivity : AppCompatActivity() {
                 null
             }
             currentVideoCapture = videoCapture
+            // The new use case starts from the display's rotation above, not
+            // from whatever the debouncer last applied, so it has to forget —
+            // otherwise a phone held sideways across a rebind keeps the
+            // display-derived rotation until it is physically turned again.
+            rotationDebouncer.reset()
 
             // ViewPort crops every bound use case (preview AND the capture stream that
             // feeds the network encoder) to the same rectangle, so "Composition" actually

@@ -61,3 +61,69 @@ object RotationPolicy {
         else -> Surface.ROTATION_0
     }
 }
+
+/**
+ * Decides when a raw accelerometer reading has held still long enough to act on.
+ *
+ * Raw OrientationEventListener readings are noisy right around each
+ * 45/135/225/315 boundary - accelerometer jitter, even from a steady hand,
+ * flips the raw angle back and forth across it. Applying every reading pushed a
+ * fresh TransformationInfo through CameraX on each flip and visibly glitched
+ * the streamed orientation, so a candidate has to hold for [debounceMs] first:
+ * a deliberate quarter turn easily does, a boundary blip doesn't.
+ *
+ * This lived inline in MainActivity's listener, where it compared the new
+ * *device bucket* against VideoCapture.targetRotation. Those stopped being the
+ * same quantity when targetRotation gained its quarter-turn landscape offset
+ * (see [RotationPolicy.landscapeTargetRotation]), and the mismatch produced two
+ * bugs at once: turning the phone one bucket anticlockwise was silently
+ * dropped, because the new bucket happened to equal the offset already stored
+ * in targetRotation, and a phone lying perfectly still re-applied its rotation
+ * every [debounceMs] forever, because the guard could never match otherwise.
+ * Tracking the last applied bucket here keeps the comparison inside one space.
+ *
+ * Not thread-safe: the listener delivers on the main thread only.
+ */
+class RotationDebouncer(private val debounceMs: Long) {
+
+    private var appliedBucket: Int? = null
+    private var pendingBucket: Int? = null
+    private var pendingSinceMs = 0L
+
+    /**
+     * Feeds one reading. Returns the Surface.ROTATION_* bucket that should now
+     * be applied, or null when nothing has changed yet - which is the common
+     * case, since readings arrive many times a second.
+     */
+    fun onOrientationChanged(orientationDegrees: Int, nowMs: Long): Int? {
+        // OrientationEventListener.ORIENTATION_UNKNOWN (-1), reported when the
+        // phone is flat. bucketFor would call that portrait and turn the stream.
+        if (orientationDegrees < 0) return null
+
+        val bucket = RotationPolicy.bucketFor(orientationDegrees)
+        if (bucket == appliedBucket) {
+            pendingBucket = null
+            return null
+        }
+        if (bucket != pendingBucket) {
+            pendingBucket = bucket
+            pendingSinceMs = nowMs
+            return null
+        }
+        if (nowMs - pendingSinceMs < debounceMs) return null
+
+        pendingBucket = null
+        appliedBucket = bucket
+        return bucket
+    }
+
+    /**
+     * Forgets what was applied, so the next stable reading is pushed even if it
+     * matches. Needed whenever something else takes ownership of the rotation -
+     * a camera rebind starts from the use case's own default, not from here.
+     */
+    fun reset() {
+        appliedBucket = null
+        pendingBucket = null
+    }
+}
