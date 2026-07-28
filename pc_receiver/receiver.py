@@ -435,6 +435,18 @@ def serve_forever(port: int, sink_kind: str, host: str = "127.0.0.1") -> None:
     "started receiver (pid ...)" loop in the control_server log). Binding
     once and isolating each connection's errors here means a single bad
     connection just gets logged, not a process crash.
+
+    handle_connection runs *inline here*, on this one thread, for every
+    connection the process ever serves. That is load-bearing, not incidental:
+    the first decode on any given OS thread makes FFmpeg allocate a semaphore
+    and a waitable timer that are never released when that thread dies.
+    Measured on this PC, 30 sessions handled by this loop cost +2 handles in
+    total (the one-off allocation), while the same 30 sessions each given their
+    own thread cost +60 - exactly the "+2 handles per session, growing
+    linearly" that was chased as a receiver leak and is in fact per *thread*.
+    Moving to a thread-per-connection design to serve several phones at once
+    would reintroduce it for real, and would need the decode to live on a
+    long-lived worker instead.
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
