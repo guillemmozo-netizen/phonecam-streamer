@@ -121,3 +121,39 @@ def test_remote_sender_rejected_when_pc_has_no_token(monkeypatch):
     with pytest.raises(ProtocolError):
         handle_connection(server_sock, NullSink(), max_frames=0)
     server_sock.close()
+
+
+def test_buffered_message_count_does_not_absorb_the_socket_without_limit():
+    """Regression: this used to drain the kernel buffer in full on every frame.
+
+    A sender outrunning the consumer moved the whole surplus into this
+    bytearray - measured at 457 MiB in one object over a 6000-frame session -
+    and reopening the TCP window that way also removed the backpressure the
+    caller depends on.
+    """
+    import struct as _struct
+
+    from pc_receiver.protocol import _MAX_OPPORTUNISTIC_BUFFER, FrameReader
+
+    server_sock, client_sock = socket.socketpair()
+    server_sock.settimeout(5)
+    payload = b"x" * 60_000
+    message = _struct.pack(">I", len(payload)) + payload
+
+    # Push far more than the cap at the reader.
+    sent = 0
+    client_sock.setblocking(False)
+    try:
+        while sent < _MAX_OPPORTUNISTIC_BUFFER * 3:
+            client_sock.sendall(message)
+            sent += len(message)
+    except (BlockingIOError, OSError):
+        pass
+    client_sock.setblocking(True)
+
+    reader = FrameReader(server_sock)
+    reader.buffered_message_count()
+    assert len(reader._buf) <= _MAX_OPPORTUNISTIC_BUFFER + 65536
+
+    client_sock.close()
+    server_sock.close()

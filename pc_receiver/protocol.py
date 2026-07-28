@@ -29,6 +29,13 @@ from dataclasses import asdict, dataclass, fields
 _LENGTH_STRUCT = struct.Struct(">I")
 MAX_FRAME_BYTES = 32 * 1024 * 1024  # sanity guard against a corrupt length prefix
 
+# Ceiling for the opportunistic drain in buffered_message_count(). Large enough
+# to hold several encoded frames at any resolution the app offers, small enough
+# that a fast sender cannot turn this buffer into unbounded process memory.
+# recv_message()'s own _fill() is deliberately not capped - a single frame may
+# legitimately exceed this and still has to be read whole.
+_MAX_OPPORTUNISTIC_BUFFER = 4 * 1024 * 1024
+
 
 class ProtocolError(Exception):
     pass
@@ -194,9 +201,22 @@ class FrameReader:
         the kernel's socket receive buffer) — i.e. how far behind the sender
         this reader currently is. Tops up from the kernel buffer
         (non-blocking) first, since a message can straddle the two."""
+        # Bounded on purpose. This used to drain the kernel buffer in full,
+        # every frame, with no cap - so whenever the sender outran the consumer
+        # the surplus moved into this bytearray instead of staying in the
+        # kernel, and it grew without limit: measured at 457 MiB in a single
+        # object over one 6000-frame session, 530 MB of process RSS.
+        #
+        # It also defeated the very backpressure the caller relies on: emptying
+        # the kernel buffer reopens the TCP window, so the phone was never told
+        # to slow down.
+        #
+        # The caller only needs to know whether it is >= 2 messages behind, so
+        # stop as soon as the cap is reached; anything beyond that stays in the
+        # kernel where it belongs.
         self._sock.setblocking(False)
         try:
-            while True:
+            while len(self._buf) < _MAX_OPPORTUNISTIC_BUFFER:
                 chunk = self._sock.recv(65536)
                 if not chunk:
                     break  # peer closed; let the next recv_message() raise cleanly
