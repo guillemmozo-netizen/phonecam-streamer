@@ -15,12 +15,18 @@ way it does — that's not the hard or differentiating part of this product).
 │   Android app (Kotlin)  │   or plain TCP over Wi-Fi LAN      │   PC receiver (Python)   │
 │                          │ ───────────────────────────────▶  │                          │
 │  CameraX capture         │    length-prefixed H.264 Annex-B   │  TCP server (loopback)   │
-│  RewardManager (tier)    │    access units, see PROTOCOL.md   │  H.264 decode (PyAV)     │
-│  Watermark overlay       │                                     │  pyvirtualcam output ──▶ │ OBS / Zoom / Meet / etc.
-│  H.264 encode (MediaCodec)│                                    │  see other apps as a     │
-│  TCP client              │                                     │  normal webcam device    │
+│  RewardManager (tier)    │    access units + AAC audio, both  │  H.264 decode (PyAV)     │
+│  Watermark overlay       │    timestamped — see PROTOCOL.md   │  AAC decode + A/V sync   │
+│  H.264 encode (MediaCodec)│                                   │  pyvirtualcam output ──▶ │ OBS / Zoom / Meet / etc.
+│  AudioRecord + AAC encode│                                     │  audio ──▶ virtual cable │ see the phone as a normal
+│  TCP client              │                                     │                          │ webcam + microphone
 └─────────────────────────┘                                     └──────────────────────────┘
 ```
+
+Audio shares that one connection rather than opening a second — see
+[AUDIO.md](AUDIO.md) for the whole path, including the virtual audio cable
+the PC side needs to reach a conferencing app, and what A/V sync costs in
+video latency.
 
 The PC-only demo path (`pc_receiver/demo_sender.py`, see below) still speaks
 plain JPEG — it stands in for the phone without needing an H.264 encoder on
@@ -42,7 +48,8 @@ phone, an emulator, or even a JDK.
 | PC demo sender (`pc_receiver/demo_sender.py`) | **Real and exercised end-to-end** — reads the PC webcam if present, else falls back to a synthetic generated pattern (works headless), speaks plain JPEG (Hello.codec="jpeg") |
 | H.264 decode (`pc_receiver/h264_decoder.py`) | **Real**, PyAV/FFmpeg-backed, with its own encode→decode round-trip tests (`pc_receiver/tests/test_h264_decoder.py`) using PyAV to stand in for the phone's encoder |
 | Android app (`android-app/`) | **Compiles and its unit tests pass** (`./gradlew compileDebugKotlin testDebugUnitTest`) wherever a JDK + Android SDK are installed. CameraX capture, RewardManager, watermarking, and the H.264 encoder (`H264Encoder.kt`, MediaCodec) are all written and type-check correctly, but this sandbox has no camera hardware or emulator, so the actual on-device camera → MediaCodec → network path hasn't been run for real yet |
-| Audio capture/transmission, auth on the socket | **Out of scope for this alpha** — see PROTOCOL.md's "deliberately out of scope" section. Settings still has `audio_bitrate`/`audio_codec` controls, but they're decorative: only a local visual level meter exists, nothing is sent to the PC |
+| Audio capture/transmission | **Real** — `AudioRecord` capture, MediaCodec AAC-LC (ADTS-framed) with a raw-PCM fallback, multiplexed onto the existing socket as timestamped chunks, decoded on the PC and played into a virtual audio cable. A/V sync and the audio path are verified end to end on a PC alone (`demo_sender --audio`); the on-device capture half needs a real phone, same as video. Every audio setting now does something real — including "wind filter", a 100Hz low-cut whose frequency response is unit tested. Needs VB-CABLE or VoiceMeeter installed to reach a conferencing app, checked at install time — see [AUDIO.md](AUDIO.md) |
+| Auth on the socket | Token required for non-loopback senders; see PROTOCOL.md |
 | Real AdMob rewarded-ad integration | **Wired up** (`AdMobAdController`) using Google's public test ad unit — real load/show/reward flow, just pointed at test IDs until you register your own AdMob app. See [ADS_SETUP.md](ADS_SETUP.md) |
 | GDPR/UMP consent gate | **Wired up** (`ConsentManager`) — ads are only initialized/requested after `canRequestAds()` is true, per Google's UMP contract. The AdMob-console-side consent message content still needs configuring before a public EU release — see ADS_SETUP.md |
 
@@ -83,6 +90,10 @@ verified end-to-end, independent of whatever happens on the Android side.
    remaining account-creation and console-configuration steps.
 3. **Tune `RewardConfig.seconds_per_ad`** against real usage/retention data
    once there are actual users, per the note in REWARD_MODEL.md.
-4. **Real audio capture/transmission** — Settings already has bitrate/codec
-   controls for it, but there's no capture (AudioRecord), encode, wire
-   protocol support, or PC-side mixing into the virtual cam output yet.
+4. **Validate the audio path on a real device.** Everything from the wire
+   format inwards is exercised on a PC alone (`demo_sender --audio`), but
+   `AudioRecord` capture and the MediaCodec AAC encoder have never run on
+   real hardware — the same gap video had, and the same way to close it.
+   Worth measuring lip-sync on the target PC while doing it: the audio
+   device's own latency dominates the video delay A/V sync applies, and
+   PortAudio's default Windows host API measured 182ms of it.

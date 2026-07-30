@@ -6,10 +6,13 @@ import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import androidx.core.util.Consumer
 import com.phonecam.streamer.StreamConfig
+import com.phonecam.streamer.audio.AudioCapture
 import com.phonecam.streamer.rewards.RewardManager
 import com.phonecam.streamer.rewards.StreamProfile
 import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "CameraStreamer"
 
@@ -52,11 +55,69 @@ class CameraStreamer(
     private val rewardManager: RewardManager,
     private val streamConfig: StreamConfig,
 ) {
-    private val networkExecutor: Executor = Executors.newSingleThreadExecutor()
+    // Single-threaded, and that is load-bearing now that audio shares this
+    // socket: it is the one thread that ever writes to the connection, so
+    // video, audio and the hello can never interleave a length prefix with
+    // somebody else's payload. It is also what serialises reconnects.
+    //
+    // Typed as ExecutorService, not Executor, so it can actually be shut
+    // down. MainActivity builds a *new* CameraStreamer for every single
+    // start/stop of streaming, and this thread is non-daemon — so every
+    // session used to leave one behind alive forever. Fifty start/stop
+    // cycles, fifty parked threads and their stacks, for the lifetime of the
+    // process.
+    private val networkExecutor: ExecutorService = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "CameraStreamerNet").apply { isDaemon = true }
+    }
     @Volatile private var connection: StreamConnection? = null
     @Volatile private var supervisor: ConnectionSupervisor<StreamConnection>? = null
     @Volatile private var stopped = false
     private var helloSent = false
+
+    /**
+     * The microphone half of the session, or null when the user turned audio
+     * off in Settings. [AudioStreamer.start] may still decide there is no
+     * audio (permission refused, no usable microphone), in which case
+     * [audioFormat] stays null and this session streams video exactly as it
+     * did before audio existed.
+     */
+    private val audioStreamer: AudioStreamer? =
+        if (!streamConfig.audioEnabled) null else AudioStreamer(
+            captureConfig = AudioCapture.Config(
+                sampleRate = streamConfig.audioSampleRate,
+                channels = 2,
+                noiseSuppression = streamConfig.noiseReduction,
+            ),
+            requestedCodec = streamConfig.audioCodec,
+            bitrateBps = streamConfig.audioBitrateBps,
+            windFilter = streamConfig.windFilter,
+            send = { ptsUs, packet -> sendAudioPacket(ptsUs, packet) },
+        )
+
+    /**
+     * The audio format actually negotiated, or null for a video-only session.
+     *
+     * Also the switch for the wire framing: non-null means every message
+     * carries a MediaChunk header. Set once, on the network thread, before
+     * the first hello can go out, and never changed afterwards — audio
+     * failing mid-session stops the audio but must not change the framing
+     * under a receiver that has already been told what to expect.
+     */
+    @Volatile private var audioFormat: AudioStreamer.Format? = null
+
+    /**
+     * Set when a reconnect gives us a socket that has never seen the video
+     * encoder's SPS/PPS. Read and cleared on the network thread, where the
+     * next send re-issues the config ahead of the frame.
+     */
+    @Volatile private var needsCodecConfig = false
+
+    /**
+     * nanoTime at which the write currently in flight began, or 0 when the
+     * network thread is idle. Written by the network thread, read by the GL
+     * thread's stall check — see [checkForSendStall].
+     */
+    @Volatile private var sendInFlightSinceNanos = 0L
 
     // All GL/encoder work (SurfaceTexture.OnFrameAvailableListener needs a
     // Handler/Looper, and every EGL/GL call must happen on whichever thread
@@ -142,6 +203,19 @@ class CameraStreamer(
     // which decoder to instantiate.
     @Volatile private var negotiatedCodec = "h264"
 
+    // What the encoder was actually built with, captured once at creation.
+    //
+    // Hello used to recompute these from effectiveTarget() at send time,
+    // which is a different thing: the encoder's size is fixed for the
+    // session, but the reward tier feeding effectiveTarget can change while
+    // it runs. On a reconnect that recomputation could announce a resolution
+    // the encoder is not producing. Reading back what was built removes the
+    // possibility — and gives the audio path the same numbers without
+    // duplicating the calculation.
+    @Volatile private var encoderWidth = 0
+    @Volatile private var encoderHeight = 0
+    @Volatile private var sessionProfile: StreamProfile? = null
+
     /**
      * Per-stage instrumentation (capture/encode/send rates, latencies, drops)
      * — see [StreamMetrics]. Public so the capture backend can record camera-
@@ -156,7 +230,15 @@ class CameraStreamer(
 
     fun start() {
         stopped = false
-        networkExecutor.execute { connectWithRetry() }
+        networkExecutor.execute {
+            // Before connecting, not after: Hello has to announce the real
+            // audio format (which may not be the one requested — see
+            // AudioStreamer.start), and Hello goes out on the first send
+            // after this connects. Opening the microphone here also keeps it
+            // off the UI thread without needing a second one.
+            audioFormat = audioStreamer?.start()
+            connectWithRetry()
+        }
     }
 
     private fun connectWithRetry() {
@@ -174,13 +256,50 @@ class CameraStreamer(
             maxAttempts = 0,
             onStateChange = { state ->
                 Log.i(TAG, "connection state: $state (host=$host:$port)")
-                // A new socket means the receiver has no Hello yet.
-                if (state == ConnectionState.RECONNECTING) helloSent = false
+                // A new socket means a receiver that has been told nothing:
+                // no Hello, and — the part that used to be missed — no
+                // SPS/PPS either. Its decoder is brand new, so without the
+                // config re-sent it decodes precisely nothing, which looked
+                // exactly like a dead camera rather than a dropped link.
+                if (state == ConnectionState.RECONNECTING) {
+                    helloSent = false
+                    needsCodecConfig = true
+                }
             },
         ).also { sup ->
             val fresh = sup.ensureConnected { stopped }
             connection = fresh
         }
+    }
+
+    /**
+     * Breaks a write that has been blocked for too long.
+     *
+     * Runs on the GL thread, which is already being called once per camera
+     * frame — so this costs a volatile read and no extra thread. It has to
+     * run somewhere *other* than the network thread by definition: the whole
+     * problem is that the network thread is stuck inside a write that will
+     * never return on its own.
+     *
+     * Closing the socket from here makes that write throw, which puts the
+     * session on the ordinary reconnect path instead of leaving it silently
+     * dead. Before this, a PC that suspended mid-stream took video, audio
+     * and reconnection with it, with no error anywhere and no recovery short
+     * of the user stopping and restarting the stream.
+     */
+    private fun checkForSendStall() {
+        val startedAt = sendInFlightSinceNanos
+        if (startedAt == 0L) return
+        val stalledMs = (System.nanoTime() - startedAt) / 1_000_000
+        if (stalledMs < SEND_STALL_TIMEOUT_MS) return
+
+        sendInFlightSinceNanos = 0L
+        Log.w(TAG, "a send has been blocked for ${stalledMs}ms — dropping the connection to force a reconnect")
+        metrics.onDrop(StreamMetrics.Drop.SEND_FAILED)
+        // markLost() closes the socket, which is what unblocks the write.
+        // The reconnect itself still happens on the network thread, once
+        // that write has thrown and unwound.
+        supervisor?.markLost()
     }
 
     /**
@@ -196,11 +315,25 @@ class CameraStreamer(
         connection = null
         val fresh = sup.ensureConnected { stopped }
         connection = fresh
+        if (fresh != null) {
+            // The new decoder on the far side needs an IDR to start from, and
+            // the next one is up to I_FRAME_INTERVAL_SECONDS away — that is
+            // two seconds of black after every reconnect, on top of whatever
+            // the reconnect itself cost. Asking for one costs a single larger
+            // frame.
+            synchronized(encoderLock) {
+                if (!stopped) encoder?.requestKeyFrame()
+            }
+        }
     }
 
     fun stop() {
         stopped = true
-        networkExecutor.execute {
+        // Stops the capture thread, so nothing more can be posted here. It
+        // blocks briefly (see AudioStreamer.stop), which is why it is not on
+        // the caller's thread.
+        submitIfAccepting(networkExecutor) { audioStreamer?.stop() }
+        submitIfAccepting(networkExecutor) {
             supervisor?.shutdown() ?: connection?.close()
             connection = null
             helloSent = false
@@ -223,7 +356,24 @@ class CameraStreamer(
             }
         }
         glThread.quitSafely()
+
+        // Shutdown is itself queued, so it runs *after* the audio stop above
+        // has completed and joined the capture thread. Calling it inline here
+        // was a crash: shutdown() only stops new tasks being accepted, it does
+        // not wait for the queued ones, so the still-running capture thread's
+        // next packet hit a shutting-down executor and took the app down with
+        // a RejectedExecutionException (see ExecutorSubmit). Queueing it means
+        // by the time it runs there is no thread left to post anything.
+        //
+        // The shutdown itself is what stops this session's network thread
+        // outliving the session — without it, a user toggling the record
+        // button all evening accumulated one live thread per press.
+        submitIfAccepting(networkExecutor) { networkExecutor.shutdown() }
     }
+
+    /** Blocks until this session's network thread has finished. Test/diagnostic hook. */
+    fun awaitShutdown(timeoutMs: Long = 2_000): Boolean =
+        networkExecutor.awaitTermination(timeoutMs, TimeUnit.MILLISECONDS)
 
     /**
      * CameraX calls this once per VideoCapture bind session (not per frame)
@@ -294,6 +444,9 @@ class CameraStreamer(
         val profile = rewardManager.currentProfile()
         val (encWidth, encHeight, fps) = effectiveTarget(streamConfig, profile)
         targetFps = minOf(fps, cameraFpsCeiling)
+        encoderWidth = encWidth
+        encoderHeight = encHeight
+        sessionProfile = profile
         metrics.encoderSize = "${encWidth}x$encHeight"
         metrics.targetFps = targetFps
 
@@ -343,6 +496,7 @@ class CameraStreamer(
 
         metrics.onCameraFrame()
         metrics.logIfWindowElapsed()
+        checkForSendStall()
 
         val conn = connection
         if (conn == null) {
@@ -387,42 +541,143 @@ class CameraStreamer(
         if (chunks.isNotEmpty()) encodeFailureStreak = 0
         if (chunks.isEmpty()) return
 
-        val (targetWidth, targetHeight, _) = effectiveTarget(streamConfig, profile)
-        networkExecutor.execute {
+        // Same guard as the audio path: the GL thread that calls this also
+        // outlives the network thread at teardown (quitSafely lets queued
+        // frames finish), so a frame can land on a shutting-down executor.
+        submitIfAccepting(networkExecutor) {
+            // A reconnect may have happened while this task sat in the
+            // queue. Sending into the dead socket would throw and trigger a
+            // second, pointless reconnect on a connection that is already
+            // healthy.
+            if (stopped || connection !== conn) return@submitIfAccepting
             try {
-                if (!helloSent) {
-                    conn.sendHello(
-                        Hello(
-                            width = targetWidth,
-                            height = targetHeight,
-                            fps = targetFps,
-                            quality = profile.quality,
-                            watermark = profile.watermark,
-                            deviceName = android.os.Build.MODEL,
-                            codec = negotiatedCodec,
-                            videoBitrateBps = streamConfig.videoBitrateBps,
-                            syncObs = streamConfig.syncObs,
-                            authToken = authToken,
-                        ),
-                    )
-                    helloSent = true
-                }
+                sendHelloIfNeeded(conn)
                 // Timed because a blocking write is the honest measure of
                 // network backpressure: when the far side stops keeping up,
                 // TCP's send buffer fills and this call starts costing
                 // milliseconds it never cost before.
                 val sendStart = System.nanoTime()
+                sendInFlightSinceNanos = sendStart
                 var bytes = 0
-                for (chunk in chunks) {
-                    conn.sendFrame(chunk)
-                    bytes += chunk.size
+                for (chunk in prependCodecConfigIfNeeded(chunks)) {
+                    sendVideoChunk(conn, chunk)
+                    bytes += chunk.data.size
                 }
+                sendInFlightSinceNanos = 0L
                 metrics.onSent(System.nanoTime() - sendStart, bytes)
             } catch (e: Exception) {
+                sendInFlightSinceNanos = 0L
                 metrics.onDrop(StreamMetrics.Drop.SEND_FAILED)
                 Log.e(TAG, "send failed, reconnecting", e)
                 // Already on networkExecutor, so this serialises with other
                 // sends: no second reconnect can start while this one runs.
+                if (!stopped) reconnect()
+            }
+        }
+    }
+
+    /**
+     * Re-issues the encoder's SPS/PPS ahead of [chunks] when the current
+     * socket has never seen it — see [H264Encoder.codecConfig]. A no-op on
+     * the overwhelmingly common path, where the flag is clear.
+     *
+     * Runs on the network thread, the only one that reads or clears the flag.
+     */
+    private fun prependCodecConfigIfNeeded(chunks: List<EncodedChunk>): List<EncodedChunk> {
+        if (!needsCodecConfig) return chunks
+        needsCodecConfig = false
+        // Already leading with config (the encoder happened to re-emit it, as
+        // some do on every keyframe) means there is nothing to add.
+        if (chunks.firstOrNull()?.isConfig == true) return chunks
+        val config = synchronized(encoderLock) { encoder?.codecConfig } ?: return chunks
+        Log.i(TAG, "re-sending codec config (${config.data.size} bytes) to the reconnected receiver")
+        return listOf(config) + chunks
+    }
+
+    /** Bare payload or MediaChunk-tagged, per what Hello announced. */
+    private fun sendVideoChunk(conn: StreamConnection, chunk: EncodedChunk) {
+        if (audioFormat == null) {
+            conn.sendFrame(chunk.data)
+        } else {
+            conn.sendVideoChunk(chunk.presentationTimeUs, chunk.data)
+        }
+    }
+
+    /**
+     * Sends the session's Hello if this socket has not had one yet.
+     *
+     * Only ever called from the network thread, which is why [helloSent]
+     * needs no synchronisation.
+     *
+     * Only the *video* path may call this, and that is load-bearing rather
+     * than stylistic: Hello describes the video geometry, and audio starts
+     * capturing in start() — well before CameraX asks for a surface and the
+     * encoder is built. An audio packet arriving first would send a Hello
+     * with width=0/height=0, which the receiver rejects outright as out of
+     * range (protocol.py bounds them at 16..8192) and drops the connection
+     * for. See [sendAudioPacket], which waits instead.
+     */
+    private fun sendHelloIfNeeded(conn: StreamConnection) {
+        if (helloSent) return
+        val audio = audioFormat
+        val profile = sessionProfile ?: rewardManager.currentProfile()
+        conn.sendHello(
+            Hello(
+                width = encoderWidth,
+                height = encoderHeight,
+                fps = targetFps,
+                quality = profile.quality,
+                watermark = profile.watermark,
+                deviceName = android.os.Build.MODEL,
+                codec = negotiatedCodec,
+                videoBitrateBps = streamConfig.videoBitrateBps,
+                syncObs = streamConfig.syncObs,
+                authToken = authToken,
+                audioCodec = audio?.codec.orEmpty(),
+                audioSampleRate = audio?.sampleRate ?: 0,
+                audioChannels = audio?.channels ?: 0,
+                audioBitrateBps = audio?.bitrateBps ?: 0,
+            ),
+        )
+        helloSent = true
+    }
+
+    /**
+     * Queues one encoded audio packet for the shared socket.
+     *
+     * Called from AudioStreamer's capture thread, so the actual write is
+     * posted to the network thread — see [networkExecutor]'s doc for why
+     * that single owner matters.
+     *
+     * Audio that belongs to a connection we no longer have is dropped rather
+     * than queued. Video can afford to arrive late because the receiver skips
+     * to the freshest frame; audio cannot, and a burst of packets from before
+     * a reconnect would play out seconds behind the picture and desync
+     * everything after it. Silence across the gap is the correct outcome.
+     */
+    private fun sendAudioPacket(ptsUs: Long, packet: ByteArray) {
+        val conn = connection ?: return
+        // submitIfAccepting, not execute: the capture thread outlives the
+        // network thread by a few milliseconds at teardown, and a rejected
+        // packet there is a normal race, not an error. Letting it throw killed
+        // the capture thread — and with it the app — on every stop.
+        submitIfAccepting(networkExecutor) {
+            if (stopped || connection !== conn) return@submitIfAccepting
+            // Audio never sends the Hello — it waits for video to. Capture
+            // starts in start(), several hundred milliseconds before CameraX
+            // hands over a surface and the encoder (and with it the
+            // resolution Hello has to state) exists at all. See
+            // sendHelloIfNeeded. The few packets dropped here are the first
+            // tens of milliseconds of a session, before there is any picture
+            // to be in sync with.
+            if (!helloSent) return@submitIfAccepting
+            try {
+                sendInFlightSinceNanos = System.nanoTime()
+                conn.sendAudioChunk(ptsUs, packet)
+                sendInFlightSinceNanos = 0L
+            } catch (e: Exception) {
+                sendInFlightSinceNanos = 0L
+                Log.e(TAG, "audio send failed, reconnecting", e)
                 if (!stopped) reconnect()
             }
         }

@@ -4,3 +4,7 @@ pyvirtualcam
 av
 websocket-client
 pytest
+# Audio output (PortAudio). Only the --audio-sink device path imports it, so
+# a receiver running video-only, or writing audio to a .wav, still works
+# without it — see pc_receiver/audio_sinks.py.
+sounddevice

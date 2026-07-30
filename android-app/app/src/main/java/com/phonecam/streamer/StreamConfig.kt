@@ -27,6 +27,17 @@ data class StreamConfig(
     val aspectRatio: String,           // "4:3" / "16:9" / "1:1"
     val autofocusSpeed: AutofocusSpeed,
     val audioMeterEnabled: Boolean,
+    // Real streaming audio, as of this version — these four used to be saved
+    // preferences with nothing behind them ("decorative", as the docs put
+    // it): only the on-screen level meter ever touched the microphone, and
+    // nothing was ever sent to the PC. They now drive AudioCapture and
+    // AudioEncoder for real.
+    val audioEnabled: Boolean,
+    val audioSampleRate: Int,
+    val audioBitrateBps: Int,
+    val audioCodec: String,            // "aac" — see createAudioEncoder for what the other choices do
+    val noiseReduction: Boolean,
+    val windFilter: Boolean,           // a ~100Hz low-cut — see HighPassFilter
     // Auto-syncs OBS's canvas resolution/fps/bitrate to match this stream —
     // see pc_receiver/obs_sync.py. On by default; some users run OBS for
     // something else at the same time and don't want it reconfigured out
@@ -122,8 +133,42 @@ data class StreamConfig(
                     else -> AutofocusSpeed.STANDARD
                 },
                 audioMeterEnabled = p.getBoolean("audio_meter", false),
+                audioEnabled = p.getBoolean("audio_enabled", true),
+                audioSampleRate = sampleRateFor(p.getInt("sample_rate", 1)),
+                audioBitrateBps = audioBitrateFor(p.getInt("audio_bitrate", 1)),
+                audioCodec = audioCodecFor(p.getInt("audio_codec", 0)),
+                noiseReduction = p.getBoolean("noise_reduction", false),
+                windFilter = p.getBoolean("wind_filter", false),
                 syncObs = p.getBoolean("sync_obs", true),
             )
+        }
+
+        // Matches SettingsActivity's spinnerSampleRate: 44.1 / 48 (default) / 96 kHz.
+        // A device that won't open the chosen rate falls back inside
+        // AudioCapture rather than losing audio entirely.
+        private fun sampleRateFor(idx: Int): Int = when (idx) {
+            0 -> 44100
+            2 -> 96000
+            else -> 48000
+        }
+
+        // Matches spinnerAudioBitrate: 128 / 192 (default) / 256 / 320 kbps.
+        private fun audioBitrateFor(idx: Int): Int = when (idx) {
+            0 -> 128_000
+            2 -> 256_000
+            3 -> 320_000
+            else -> 192_000
+        }
+
+        // Matches spinnerAudioCodec: AAC (default) / OPUS / FLAC. Only AAC is
+        // implemented for streaming; the other two are carried through as the
+        // user's stated choice and resolved — with a log line — in
+        // createAudioEncoder, rather than being silently rewritten here where
+        // nobody would see it happen.
+        private fun audioCodecFor(idx: Int): String = when (idx) {
+            1 -> "opus"
+            2 -> "flac"
+            else -> "aac"
         }
 
         // Index order matches the Composition spinner: 4:3, 16:9 (default), 1:1, 9:16, 3:4

@@ -10,6 +10,39 @@ private const val TAG = "H264Encoder"
 private const val I_FRAME_INTERVAL_SECONDS = 2
 
 /**
+ * One encoded chunk out of the video encoder.
+ *
+ * [presentationTimeUs] is the codec's own timestamp for this data, not the
+ * time it happened to be drained. The two are not the same: MediaCodec
+ * pipelines a frame or two deep, so stamping chunks on the way out would
+ * attribute one frame's timing to another's picture — visible as jitter in
+ * the PC's A/V alignment, which is measured in exactly these units (see
+ * pc_receiver/av_sync.py).
+ *
+ * [isConfig] marks the SPS/PPS chunk, which is data *about* the stream
+ * rather than a picture in it — see [H264Encoder.codecConfig].
+ */
+data class EncodedChunk(
+    val presentationTimeUs: Long,
+    val data: ByteArray,
+    val isConfig: Boolean,
+) {
+    // data class equality on a ByteArray compares references, which is
+    // never what a caller means. Overridden so tests and any future set/map
+    // use compare contents.
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is EncodedChunk) return false
+        return presentationTimeUs == other.presentationTimeUs &&
+            isConfig == other.isConfig &&
+            data.contentEquals(other.data)
+    }
+
+    override fun hashCode(): Int =
+        (presentationTimeUs.hashCode() * 31 + data.contentHashCode()) * 31 + isConfig.hashCode()
+}
+
+/**
  * Above 4K, AVC stops being a sensible choice: this device's AVC encoder
  * nominally accepts 8K (`c2.qti.avc.encoder`, max 8192x8192) but AVC level 6
  * support for it is far less dependable than HEVC's, and HEVC halves the
@@ -62,6 +95,25 @@ class H264Encoder(
     val codecName: String =
         if (mimeType == MediaFormat.MIMETYPE_VIDEO_HEVC) "h265" else "h264"
 
+    /**
+     * The SPS/PPS chunk, kept from when the encoder first emitted it.
+     *
+     * Held because a session outlives its connections. The encoder produces
+     * this once, at start; every reconnect (cable pulled, PC asleep, receiver
+     * restarted) gives the PC a brand-new decoder that has never seen it, and
+     * an H.264 decoder without SPS/PPS decodes nothing at all. Before this
+     * was kept, a reconnect produced a stream that was still arriving and
+     * still being decoded — into no frames whatsoever, indistinguishable from
+     * a black camera.
+     *
+     * Re-sending it is only half the fix; the other half is
+     * [requestKeyFrame], since a decoder joining mid-GOP has nothing to
+     * anchor to even with the config in hand.
+     */
+    @Volatile
+    var codecConfig: EncodedChunk? = null
+        private set
+
     init {
         val format = MediaFormat.createVideoFormat(mimeType, width, height).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
@@ -98,14 +150,40 @@ class H264Encoder(
      * difference, FFmpeg's Annex-B parser handles it either concatenated or
      * as its own message.
      */
-    fun encode(rotationDegrees: Int, watermark: Boolean, presentationTimeUs: Long): List<ByteArray> {
+    fun encode(rotationDegrees: Int, watermark: Boolean, presentationTimeUs: Long): List<EncodedChunk> {
         if (released) return emptyList()
         renderer.renderCameraFrame(rotationDegrees, watermark, presentationTimeUs)
         return drainOutput()
     }
 
-    private fun drainOutput(): List<ByteArray> {
-        val chunks = mutableListOf<ByteArray>()
+    /**
+     * Asks the encoder to make the next frame a keyframe.
+     *
+     * Called on reconnect. A decoder that joins the stream part-way through a
+     * GOP cannot produce a picture until the next IDR, and at
+     * [I_FRAME_INTERVAL_SECONDS] apart that is up to two seconds of black
+     * after every reconnect. Requesting one costs a single larger frame.
+     *
+     * Safe to call from another thread — MediaCodec.setParameters is
+     * documented as callable at any time on a running codec — but not after
+     * [release], hence the flag check.
+     */
+    fun requestKeyFrame() {
+        if (released) return
+        try {
+            codec.setParameters(
+                android.os.Bundle().apply {
+                    putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0)
+                },
+            )
+        } catch (e: Exception) {
+            // Not fatal: the periodic IDR still arrives, just later.
+            Log.w(TAG, "could not request a keyframe", e)
+        }
+    }
+
+    private fun drainOutput(): List<EncodedChunk> {
+        val chunks = mutableListOf<EncodedChunk>()
         drainOutput@ while (true) {
             val outputIndex = codec.dequeueOutputBuffer(bufferInfo, DEQUEUE_TIMEOUT_US)
             when {
@@ -115,10 +193,13 @@ class H264Encoder(
                 outputIndex >= 0 -> {
                     val outputBuffer = codec.getOutputBuffer(outputIndex)
                     if (outputBuffer != null && bufferInfo.size > 0) {
-                        val chunk = ByteArray(bufferInfo.size)
+                        val data = ByteArray(bufferInfo.size)
                         outputBuffer.position(bufferInfo.offset)
                         outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
-                        outputBuffer.get(chunk)
+                        outputBuffer.get(data)
+                        val isConfig = bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
+                        val chunk = EncodedChunk(bufferInfo.presentationTimeUs, data, isConfig)
+                        if (isConfig) codecConfig = chunk
                         chunks.add(chunk)
                     }
                     codec.releaseOutputBuffer(outputIndex, false)

@@ -28,7 +28,18 @@ data class Hello(
     // receiver requires it for non-loopback senders, so Wi-Fi sessions must
     // carry it; the USB path arrives on loopback and is exempt.
     val authToken: String = "",
+    // "" means this session has no audio and every message after this hello
+    // is a bare video payload, exactly as before audio existed. Non-empty
+    // ("aac"/"pcm_s16le") switches the whole connection to MediaChunk-tagged
+    // messages. Decided once, before the hello goes out, and never changed
+    // mid-connection — the receiver picks its framing from this one field.
+    val audioCodec: String = "",
+    val audioSampleRate: Int = 0,
+    val audioChannels: Int = 0,
+    val audioBitrateBps: Int = 0,
 ) {
+    val hasAudio: Boolean get() = audioCodec.isNotEmpty()
+
     fun toJsonBytes(): ByteArray = JSONObject().apply {
         put("width", width)
         put("height", height)
@@ -40,12 +51,37 @@ data class Hello(
         put("video_bitrate_bps", videoBitrateBps)
         put("sync_obs", syncObs)
         put("auth_token", authToken)
+        put("audio_codec", audioCodec)
+        put("audio_sample_rate", audioSampleRate)
+        put("audio_channels", audioChannels)
+        put("audio_bitrate_bps", audioBitrateBps)
     }.toString().toByteArray(Charsets.UTF_8)
 }
 
 class ProtocolException(message: String) : Exception(message)
 
 private const val MAX_FRAME_BYTES = 32 * 1024 * 1024
+
+/**
+ * Long enough for a sluggish `adb reverse` tunnel to come up, short enough
+ * that a PC which is simply asleep is retried rather than waited on.
+ */
+const val CONNECT_TIMEOUT_MS = 4_000
+
+/**
+ * How long a single write may be outstanding before the connection is
+ * treated as dead.
+ *
+ * Java has no write timeout — SO_TIMEOUT governs reads only — so a blocking
+ * write to a peer that has stopped reading blocks forever once the TCP send
+ * buffer fills. That is precisely what a suspended PC looks like, and it
+ * wedges the one thread that owns the socket: video stops, audio stops, and
+ * no exception is ever thrown, so the reconnect logic never runs either. The
+ * only way out is for another thread to close the socket underneath it (see
+ * CameraStreamer's stall check), which makes the blocked write throw and
+ * puts the session back on the normal reconnect path.
+ */
+const val SEND_STALL_TIMEOUT_MS = 8_000
 
 object StreamProtocol {
 
@@ -75,6 +111,22 @@ class StreamConnection private constructor(
     /** One access unit (H.264) or one whole image (the legacy JPEG demo path). */
     fun sendFrame(frameBytes: ByteArray) = StreamProtocol.sendFrame(out, frameBytes)
 
+    /**
+     * One video access unit, tagged for a connection that also carries audio.
+     *
+     * Every write on this connection — video, audio and the hello — happens
+     * on CameraStreamer's single networkExecutor thread. That is what makes
+     * a shared socket safe without a lock: two threads writing here would
+     * interleave a length prefix with someone else's payload and destroy the
+     * framing for the rest of the session.
+     */
+    fun sendVideoChunk(ptsUs: Long, frameBytes: ByteArray) =
+        StreamProtocol.sendFrame(out, MediaChunk.pack(MediaKind.VIDEO, ptsUs, frameBytes))
+
+    /** One encoded audio packet — see [sendVideoChunk] for the threading rule. */
+    fun sendAudioChunk(ptsUs: Long, packet: ByteArray) =
+        StreamProtocol.sendFrame(out, MediaChunk.pack(MediaKind.AUDIO, ptsUs, packet))
+
     override fun close() {
         socket.close()
     }
@@ -89,8 +141,16 @@ class StreamConnection private constructor(
           * Wi-Fi and no special drivers required. For Wi-Fi mode, [host] is
           * simply the PC's LAN IP instead, same protocol either way.
           */
-        fun connect(host: String, port: Int): StreamConnection {
-            val socket = Socket(host, port)
+        fun connect(host: String, port: Int, connectTimeoutMs: Int = CONNECT_TIMEOUT_MS): StreamConnection {
+            // Explicit connect timeout, rather than `Socket(host, port)`'s
+            // OS default. That default is tens of seconds to minutes on a
+            // network that black-holes packets (PC asleep, wrong subnet
+            // after a Wi-Fi switch), and ConnectionSupervisor cannot poll its
+            // `stopped` flag while parked inside connect() — so stopping a
+            // stream appeared to hang, and the retry backoff never got a
+            // chance to run.
+            val socket = Socket()
+            socket.connect(java.net.InetSocketAddress(host, port), connectTimeoutMs)
             // Every frame is sent as two writes (length prefix, then payload)
             // before a flush — with Nagle's algorithm on (the JVM default),
             // that tiny first write can sit waiting on an ACK for previously
