@@ -30,15 +30,25 @@
          use case, so the Camera2 session needs a surface of its own. GONE (and
          costing nothing) unless that backend is actually running; the two are
          mutually exclusive because only one client can hold the camera. -->
+    <!-- Constrained to the parent, NOT to previewView, and that is load-bearing.
+         With 0dp the size comes entirely from the constraints, and
+         startCamera2Backend sets previewView to GONE before showing this one.
+         ConstraintLayout resolves a GONE view to a zero-size point, so anchoring
+         all four edges to it collapsed this TextureView to 0x0: the camera still
+         rendered into its SurfaceTexture (streaming ran at a full 60fps) but the
+         view drew nothing, which is exactly the "preview goes black the moment
+         you press Start" symptom. Measured on an S23 Ultra: screen brightness
+         0.9 with Camera2 vs 86.2 with CameraX, and neither preview view present
+         in the uiautomator tree because zero-size views are omitted from it. -->
     <TextureView
         android:id="@+id/camera2PreviewView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@id/previewView"
-        app:layout_constraintBottom_toBottomOf="@id/previewView"
-        app:layout_constraintStart_toStartOf="@id/previewView"
-        app:layout_constraintEnd_toEndOf="@id/previewView" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Grid overlay (3x3 rule-of-thirds) -->
     <com.phonecam.streamer.ui.GridOverlay

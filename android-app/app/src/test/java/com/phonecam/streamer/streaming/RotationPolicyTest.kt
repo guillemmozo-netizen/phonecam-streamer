@@ -176,4 +176,70 @@ class RotationPolicyTest {
             assertEquals(expected, allHolds.map { RotationPolicy.landscapeTargetRotation(it) })
         }
     }
+
+    // ───────────── equivalencia entre los dos backends ─────────────
+    //
+    // Estos fijan la propiedad que realmente se rompio en hardware: la politica
+    // era correcta, pero applyCamera2Rotation la invocaba con la referencia
+    // equivocada, y el stream llegaba a OBS girado 90 grados mientras el de
+    // CameraX salia derecho. Un test de la politica aislada no podia verlo, asi
+    // que aqui se modelan los DOS puntos de llamada y se exige que coincidan.
+
+    /** Lo que hace CameraX: VideoCapture.targetRotation = landscapeTargetRotation(hold). */
+    private fun cameraXEffectiveDegrees(sensorOrientation: Int, hold: Int): Int =
+        RotationPolicy.sensorRotationDegrees(
+            sensorOrientation, RotationPolicy.landscapeTargetRotation(hold),
+        )
+
+    /** Lo que hace applyCamera2Rotation tras la correccion. */
+    private fun camera2EffectiveDegrees(sensorOrientation: Int, hold: Int): Int =
+        RotationPolicy.sensorRotationDegrees(
+            sensorOrientation, RotationPolicy.landscapeTargetRotation(hold),
+        )
+
+    @Test
+    fun bothBackendsAgreeForEveryHold() {
+        // sensorOrientation=90 es el de la camara trasera del S23 Ultra,
+        // confirmado con dumpsys media.camera.
+        allHolds.forEach { hold ->
+            assertEquals(
+                "los backends discrepan con el telefono en $hold",
+                cameraXEffectiveDegrees(90, hold),
+                camera2EffectiveDegrees(90, hold),
+            )
+        }
+    }
+
+    @Test
+    fun uprightPhoneProducesNoRotationOnEitherBackend() {
+        // El caso exacto reproducido: telefono vertical (user_rotation=0),
+        // sensorOrientation=90. Antes de la correccion Camera2 devolvia 90.
+        val hold = RotationPolicy.bucketFor(0)
+        assertEquals(0, cameraXEffectiveDegrees(90, hold))
+        assertEquals(0, camera2EffectiveDegrees(90, hold))
+    }
+
+    @Test
+    fun passingTheRawHoldIsWhatProducedTheExtraQuarterTurn() {
+        // Pin del bug: sin el desplazamiento, el telefono vertical da 90.
+        // Si alguien vuelve a quitar landscapeTargetRotation, esto lo delata.
+        val hold = RotationPolicy.bucketFor(0)
+        assertEquals(90, RotationPolicy.sensorRotationDegrees(90, hold))
+        assertEquals(0, camera2EffectiveDegrees(90, hold))
+    }
+
+    @Test
+    fun agreementHoldsForOtherSensorMountings() {
+        // No todos los sensores montan a 90; la equivalencia no puede depender
+        // de eso.
+        listOf(0, 90, 180, 270).forEach { sensor ->
+            allHolds.forEach { hold ->
+                assertEquals(
+                    "sensor=$sensor hold=$hold",
+                    cameraXEffectiveDegrees(sensor, hold),
+                    camera2EffectiveDegrees(sensor, hold),
+                )
+            }
+        }
+    }
 }

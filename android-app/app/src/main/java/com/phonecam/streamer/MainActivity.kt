@@ -183,7 +183,11 @@ class MainActivity : AppCompatActivity() {
     private val audioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
-                startAudioMeter()
+                // Two paths reach this launcher now — the level-meter toggle
+                // and starting a stream — so honour the setting rather than
+                // assuming the meter was what asked, which would pop the
+                // meter up on a user who never enabled it.
+                if ((currentConfig ?: StreamConfig.load(this)).audioMeterEnabled) startAudioMeter()
             } else {
                 AppToast.warning(this, getString(R.string.toast_mic_permission_needed))
             }
@@ -912,6 +916,21 @@ class MainActivity : AppCompatActivity() {
         // on networkExecutor) actually resolves the PC's address or touches
         // the network.
         val cfg = currentConfig ?: StreamConfig.load(this)
+
+        // Asked for here, not only by the level-meter toggle: audio is really
+        // streamed now, so a user with "Record audio" on but the permission
+        // never granted would otherwise get a silent stream with nothing
+        // saying why. Fire-and-forget on purpose — the session has to start
+        // immediately either way, and CameraStreamer already treats a refused
+        // microphone as a video-only session rather than a failure, so the
+        // grant simply takes effect on the next stream.
+        if (cfg.audioEnabled &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+
         val newStreamer = CameraStreamer(
             hostResolver = { resolveStreamHost() },
             port = 8787,
@@ -1167,8 +1186,18 @@ class MainActivity : AppCompatActivity() {
     private fun applyCamera2Rotation(surfaceRotation: Int) {
         if (camera2AppliedRotation == surfaceRotation) return
         val source = camera2Source ?: return
+        // landscapeTargetRotation, not the raw surfaceRotation. CameraX feeds
+        // that same quarter-turn-shifted value into VideoCapture.targetRotation
+        // (see the orientation listener), so its relative rotation comes out as
+        // sensorOrientation(90) - target(90) = 0. Passing the raw rotation here
+        // instead computed 90 - 0 = 90, and the stream reached OBS turned a
+        // quarter turn while CameraX's came out upright. The two backends have
+        // to measure from the same reference or they cannot agree.
         streamer?.setRotationDegrees(
-            RotationPolicy.sensorRotationDegrees(source.sensorOrientation, surfaceRotation),
+            RotationPolicy.sensorRotationDegrees(
+                source.sensorOrientation,
+                RotationPolicy.landscapeTargetRotation(surfaceRotation),
+            ),
         )
         camera2AppliedRotation = surfaceRotation
     }
