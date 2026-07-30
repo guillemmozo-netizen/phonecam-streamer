@@ -158,6 +158,60 @@ def _dimensions_are_sane(width: int, height: int, fps: int) -> bool:
     )
 
 
+# Read-only status requests, one per kind of output that makes resetting the
+# video pipeline unsafe. Same class of request as GetVideoSettings, which this
+# module has always issued without incident.
+_OUTPUT_STATUS_REQUESTS = (
+    ("virtual camera", "GetVirtualCamStatus"),
+    ("recording", "GetRecordStatus"),
+    ("streaming", "GetStreamStatus"),
+)
+
+
+def _active_output(ws) -> Optional[str]:
+    """The name of an OBS output that is currently running, or None.
+
+    ## Why this exists — the definitive cause of the SetVideoSettings crash
+
+    SetVideoSettings lands in OBSBasic::ResetVideo, which tears down and
+    rebuilds OBS's entire video pipeline. OBS's own Settings dialog will not
+    let you do that while an output is running: the resolution and FPS fields
+    are disabled. That is not a UI nicety, it is the reason the operation is
+    safe when the UI performs it.
+
+    This module used to send SetVideoSettings unconditionally, on the
+    assumption — written down at its call site — that "SetVideoSettings always
+    rejects while any output is running". **That assumption is false on OBS
+    32.2.1.** The request went through, reached ResetVideo, and took OBS down
+    with an access violation:
+
+        obs64.exe!OBSBasic::ResetVideo+0x67c
+        obs-websocket.dll!RequestHandler::SetVideoSettings+0xd68
+        obs-websocket.dll!RequestHandler::ProcessRequest+0x196
+        Fault address: ...w32-pthreads.dll
+
+    The pthreads fault address is the tell: ResetVideo was recreating the
+    graphics thread while something still held the old pipeline.
+
+    And PhoneCam is what was holding it. The receiver feeds OBS's virtual
+    camera, and the automatic sync fires OBS_SETTLE_SECONDS *into a live
+    session* — so the one moment it reshapes the pipeline is the one moment
+    the pipeline is guaranteed to be in use. Checking here, instead of
+    trusting OBS to refuse, is what removes that collision.
+
+    A status request that fails or is unrecognised reports None: this must
+    never be the reason a sync does not happen, only the reason a *reset* does
+    not happen.
+    """
+    for label, request_type in _OUTPUT_STATUS_REQUESTS:
+        status = _request(ws, request_type, f"phonecam-{request_type}", {})
+        if not (status.get("requestStatus") or {}).get("result"):
+            continue  # older obs-websocket without this request; treat as unknown
+        if (status.get("responseData") or {}).get("outputActive"):
+            return label
+    return None
+
+
 def _canvas_already_matches(ws, width: int, height: int, fps: int) -> bool:
     """Whether OBS is already shaped the way we are about to ask for.
 
@@ -255,6 +309,19 @@ def sync_video_settings(
             elif _canvas_already_matches(ws, width, height, fps):
                 log.info("obs_sync: OBS canvas already %sx%s@%sfps", width, height, fps)
                 _last_reset, _last_reset_at = requested, clock()
+            elif (busy := _active_output(ws)) is not None:
+                # The hard guard. See _active_output: reshaping the video
+                # pipeline while an output holds it is what crashed OBS, and
+                # OBS does not reliably refuse it on our behalf. Skipping is
+                # not a degraded outcome — OBS's own Settings dialog forbids
+                # exactly this, so there is nothing here we are giving up.
+                log.info(
+                    "obs_sync: not resetting the canvas to %sx%s@%sfps — OBS %s output is "
+                    "running, and changing video settings under a live output crashes OBS "
+                    "(see _active_output). Stop it and change resolution, or let the next "
+                    "sync pick it up.",
+                    width, height, fps, busy,
+                )
             else:
                 log.info(
                     "obs_sync: resetting OBS canvas to %sx%s@%sfps (from %s)",
@@ -272,10 +339,9 @@ def sync_video_settings(
                     _last_reset, _last_reset_at = requested, clock()
                     log.info("obs_sync: OBS canvas set to %sx%s@%sfps", width, height, fps)
                 else:
-                    # Most common cause: OBS has an active output (recording/
-                    # streaming/its own "Start Virtual Camera") —
-                    # SetVideoSettings always rejects while any output is
-                    # running. Not fatal to the rest of the sync.
+                    # Reached only when OBS refuses for some reason the
+                    # pre-flight check above did not cover. Not fatal to the
+                    # rest of the sync.
                     log.warning("obs_sync: SetVideoSettings rejected: %s", video_status.get("comment"))
 
             # Profile parameters below only take effect in Simple output mode,

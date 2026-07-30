@@ -214,12 +214,30 @@ class H264Decoder:
         handful of test frames, or the phone disconnecting almost
         immediately), never come out of decode() at all. Call this once,
         right before close().
+
+        Goes through _to_output, exactly like decode(), and that is not a
+        detail. This used to hardcode _to_rgb while decode() honoured
+        [output_format], so on the real (native/NV12) path the last frames of
+        every session came out in a different layout from every frame before
+        them. VirtualCamSink sizes its camera from the array shape, so an
+        (H*3/2, W) NV12 stream ending in an (H, W, 3) RGB frame made it read
+        the height as two thirds of the picture, decide the resolution had
+        changed, and tear down a perfectly good virtual camera to build a
+        wrongly-sized one — which OBS then refused:
+
+            RuntimeError: 'obs' backend: virtual camera output could not be started
+
+        That exception came out of handle_connection's finally block, so it
+        also skipped the rest of teardown: the decoder context, the audio
+        device and the camera all leaked. 13 occurrences in this machine's
+        receiver.log, every one of them a session that had been streaming
+        perfectly right up to the moment it ended.
         """
         try:
             frames = self._ctx.decode(None) if self._ctx is not None else []
         except av.error.FFmpegError:
             return []
-        return [_to_rgb(frame) for frame in frames]
+        return [self._to_output(frame) for frame in frames]
 
     def close(self) -> None:
         """Releases the decoder context.

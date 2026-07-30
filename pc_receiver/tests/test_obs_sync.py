@@ -336,3 +336,101 @@ def test_a_crashed_obs_that_still_accepts_connections_is_rejected(monkeypatch):
     with pytest.raises(Exception):
         obs_sync.open_connection(4455, "pw")
     assert ws.closed is True
+
+
+# ───────────────── the SetVideoSettings crash guard ─────────────────
+#
+# Crash dump, OBS 32.2.1:
+#     obs64.exe!OBSBasic::ResetVideo+0x67c
+#     obs-websocket.dll!RequestHandler::SetVideoSettings+0xd68
+#     Fault address: ...w32-pthreads.dll
+#
+# The call site used to assume "SetVideoSettings always rejects while any
+# output is running". It does not, so the request reached ResetVideo and tore
+# down the video pipeline under a live output. These pin the pre-flight check
+# that replaced that assumption.
+
+class OutputAwareWs(FakeWs):
+    """A FakeWs that also answers the output-status requests."""
+
+    def __init__(self, active_output=None, knows_status=True, **kwargs):
+        self.active_output = active_output
+        self.knows_status = knows_status
+        super().__init__(**kwargs)
+
+    def send(self, raw):
+        msg = json.loads(raw)["d"]
+        kind = msg["requestType"]
+        status_kinds = {
+            "GetVirtualCamStatus": "virtual camera",
+            "GetRecordStatus": "recording",
+            "GetStreamStatus": "streaming",
+        }
+        if kind in status_kinds:
+            self.requests.append((kind, msg.get("requestData") or {}))
+            if not self.knows_status:
+                self._replies.append(json.dumps({"d": {"requestStatus": {"result": False}}}))
+                return
+            active = self.active_output == status_kinds[kind]
+            self._replies.append(json.dumps({
+                "d": {"requestStatus": {"result": True},
+                      "responseData": {"outputActive": active}},
+            }))
+            return
+        super().send(raw)
+
+
+def sync_against(ws, **kwargs):
+    params = dict(width=1920, height=1080, fps=60, connector=lambda port, pw: ws,
+                  sleeper=lambda s: None)
+    params.update(kwargs)
+    return obs_sync.sync_video_settings(**params)
+
+
+@pytest.mark.parametrize("busy", ["virtual camera", "recording", "streaming"])
+def test_no_video_reset_while_an_output_is_running(busy):
+    """The crash. Any running output means ResetVideo must not be provoked."""
+    ws = OutputAwareWs(active_output=busy)
+
+    assert sync_against(ws) is True
+    assert "SetVideoSettings" not in ws.kinds(), (
+        f"reshaped the video pipeline while the {busy} output was live"
+    )
+
+
+def test_the_reset_still_happens_when_nothing_is_running():
+    ws = OutputAwareWs(active_output=None)
+
+    assert sync_against(ws) is True
+    assert "SetVideoSettings" in ws.kinds(), "the guard blocked a safe reset"
+
+
+def test_the_rest_of_the_sync_still_runs_when_the_reset_is_skipped():
+    """Skipping the dangerous request must not cost the harmless ones."""
+    ws = OutputAwareWs(active_output="virtual camera")
+
+    assert sync_against(ws, bitrate_bps=20_000_000, audio_bitrate_bps=192_000) is True
+    assert "SetProfileParameter" in ws.kinds()
+
+
+def test_an_obs_that_does_not_know_the_status_requests_is_not_blocked():
+    """Older obs-websocket builds lack these requests. Unknown status must not
+    become a reason never to sync again."""
+    ws = OutputAwareWs(active_output=None, knows_status=False)
+
+    assert sync_against(ws) is True
+    assert "SetVideoSettings" in ws.kinds()
+
+
+def test_the_status_check_is_skipped_entirely_when_the_canvas_already_matches():
+    """The cheapest safe path stays cheapest: no reset needed, no questions
+    asked."""
+    ws = OutputAwareWs(active_output=None, video_settings={
+        "baseWidth": 1920, "baseHeight": 1080,
+        "outputWidth": 1920, "outputHeight": 1080,
+        "fpsNumerator": 60, "fpsDenominator": 1,
+    })
+
+    assert sync_against(ws) is True
+    assert "GetVirtualCamStatus" not in ws.kinds()
+    assert "SetVideoSettings" not in ws.kinds()

@@ -116,6 +116,34 @@ ElseIf obsResult = 4 Then
               "Tools > WebSocket Server Settings > Enable WebSocket server."
 End If
 
+' 3b. Check the one part of the audio path that cannot be shipped with this
+' app. Video reaches other programs through pyvirtualcam's system webcam, but
+' nothing here can register a system *microphone* - that is a kernel-mode
+' driver. So the phone's audio is played into a virtual audio cable the user
+' installs once, and their call picks that cable as its microphone.
+'
+' Checked at install time because getting it wrong is silent in the worst
+' way: audio arrives, decodes and plays perfectly - out of the PC's speakers,
+' where the call cannot hear it and the user gets an echo instead. Nothing
+' fails, so nothing would prompt them to look.
+Dim audioResult, audioNote
+audioNote = ""
+audioResult = shell.Run("""" & venvPy & """ -m pc_receiver.check_audio_setup", 0, True)
+If audioResult = 2 Then
+    audioNote = vbCrLf & vbCrLf & "About the phone's microphone: video is ready, " & _
+                "but sending the phone's audio into a call needs a virtual audio " & _
+                "cable, which Windows does not come with. Install VB-CABLE (free) " & _
+                "from https://vb-audio.com/Cable/ and it will be picked up " & _
+                "automatically - then set your call's microphone to ""CABLE Output""." & _
+                vbCrLf & vbCrLf & "Until then everything still works, except the " & _
+                "phone's audio comes out of this PC's speakers instead of reaching " & _
+                "the call."
+ElseIf audioResult = 3 Then
+    audioNote = vbCrLf & vbCrLf & "Note: no audio output device was found on this " & _
+                "PC, so the phone's microphone will not be usable. Video is " & _
+                "unaffected."
+End If
+
 ' 4. Register Windows startup - points at PhoneCam_Service.vbs, a lightweight
 ' watcher (not the full PhoneCam services) that waits for OBS to be running
 ' before starting anything, and stops everything again once OBS closes. So
@@ -145,4 +173,4 @@ MsgBox "PhoneCam is set up." & vbCrLf & vbCrLf & _
        "  - WiFi: just open the app on the same network." & vbCrLf & vbCrLf & _
        "Nothing else to run, ever again." & vbCrLf & vbCrLf & _
        "(OBS with its Virtual Camera must be installed for the phone to " & _
-       "show up as a webcam.)" & obsNote, vbInformation, "PhoneCam Setup - Done"
+       "show up as a webcam.)" & obsNote & audioNote, vbInformation, "PhoneCam Setup - Done"

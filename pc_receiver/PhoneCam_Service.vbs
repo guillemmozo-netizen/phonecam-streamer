@@ -14,6 +14,68 @@ Set wmi = GetObject("winmgmts:\\.\root\cimv2")
 appDir = fso.GetParentFolderName(WScript.ScriptFullName)
 projectRoot = fso.GetParentFolderName(appDir)
 
+' Singleton guard. Two things launch this watcher - the Startup shortcut at
+' login, and the installer's own "launch now" step - so running the installer
+' while already logged in left two of them polling in parallel. Each one
+' starts its own control_server and tracks its own PID, so the machine ended
+' up with two control servers, two discovery servers, two speed test servers
+' and two receivers, all fighting over the same ports. Worse, each watcher's
+' taskkill /T targets only its own tree, so they could kill each other's
+' children in a loop.
+'
+' A lock file plus a process count, because neither alone is enough.
+'
+' CreateTextFile(path, False) fails if the file already exists, which is the
+' closest thing to an atomic create-exclusive available here. But a lock file
+' on its own goes stale the moment this process is killed (taskkill, a reboot,
+' the crash dialog), and a stale lock would then keep the watcher from ever
+' starting again.
+'
+' So the count breaks the tie, and it can do so without this script needing to
+' know its own PID: if the lock is held and *two or more* watcher processes
+' exist, the other one is real and this instance stands down. If the lock is
+' held but this is the only watcher running, the lock is stale from a previous
+' life and is taken over. Both instances evaluate the same rule and exactly one
+' survives - the earlier one, which already owns the lock.
+Function WatcherCount()
+    Dim procs, p, n
+    n = 0
+    On Error Resume Next
+    Set procs = wmi.ExecQuery("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='wscript.exe'")
+    For Each p In procs
+        If InStr(1, p.CommandLine & "", "PhoneCam_Service.vbs", vbTextCompare) > 0 Then
+            n = n + 1
+        End If
+    Next
+    On Error GoTo 0
+    WatcherCount = n
+End Function
+
+Dim lockPath, lockFile, gotLock
+lockPath = appDir & "\.watcher.lock"
+gotLock = False
+On Error Resume Next
+Set lockFile = fso.CreateTextFile(lockPath, False)
+If Err.Number = 0 Then
+    gotLock = True
+    lockFile.WriteLine "PhoneCam watcher"
+    lockFile.Close
+End If
+Err.Clear
+On Error GoTo 0
+
+If Not gotLock Then
+    If WatcherCount() >= 2 Then
+        WScript.Quit 0          ' a live watcher already owns this
+    End If
+    ' Only us running, so the lock is left over from a previous life.
+    On Error Resume Next
+    fso.DeleteFile lockPath, True
+    Set lockFile = fso.CreateTextFile(lockPath, False)
+    If Err.Number = 0 Then lockFile.Close
+    On Error GoTo 0
+End If
+
 If fso.FileExists(appDir & "\.venv\Scripts\pythonw.exe") Then
     pyExe = appDir & "\.venv\Scripts\pythonw.exe"
 ElseIf fso.FileExists(appDir & "\.venv\Scripts\python.exe") Then

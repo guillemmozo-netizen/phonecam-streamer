@@ -116,6 +116,11 @@ _auth_token: str = ""
 
 
 _obs_manager = None
+# The server is threaded now, so two concurrent /obs-status requests really
+# can race here — and losing that race would start two ObsManager threads,
+# each with its own OBS connection, doubling the WebSocket traffic to the
+# component with a crash history.
+_obs_manager_lock = threading.Lock()
 
 
 def obs_manager_snapshot() -> dict:
@@ -125,7 +130,9 @@ def obs_manager_snapshot() -> dict:
     background thread.
     """
     global _obs_manager
-    if _obs_manager is None:
+    with _obs_manager_lock:
+        if _obs_manager is not None:
+            return _obs_manager.snapshot()
         try:
             from pc_receiver.obs_manager import ObsManager
             from pc_receiver.obs_sync import open_connection, read_config
@@ -301,6 +308,34 @@ def setup_adb_reverse(serial: str = None):
     return {"ok": any(r["ok"] for r in per_device.values()), "devices": per_device}
 
 
+def list_reverse_ports(adb: str, serial: str) -> set[int]:
+    """Ports currently forwarded for [serial], straight from adb.
+
+    The watcher needs this because "we set the tunnel up once" and "the
+    tunnel is up" are different facts, and only the second one matters. See
+    watch_usb_devices.
+    """
+    try:
+        result = subprocess.run(
+            [adb, "-s", serial, "reverse", "--list"],
+            capture_output=True, text=True, timeout=5,
+            stdin=subprocess.DEVNULL, creationflags=NO_CONSOLE_FLAGS,
+        )
+    except Exception:
+        return set()
+    ports = set()
+    # Lines look like: "UsbFfs tcp:8787 tcp:8787"
+    for line in result.stdout.split("\n"):
+        for field in line.split():
+            if field.startswith("tcp:"):
+                try:
+                    ports.add(int(field[4:]))
+                except ValueError:
+                    pass
+                break
+    return ports
+
+
 def list_authorized_serials(adb: str) -> set[str]:
     """Serials from `adb devices` in "device" state — excludes "unauthorized"
     (debugging not yet approved on the phone) and "offline"."""
@@ -327,37 +362,61 @@ def watch_usb_devices():
     at startup, since `adb reverse` is only in effect while a given USB
     session is connected and doesn't survive an unplug/replug.
 
-    Only a serial `setup_adb_reverse()` actually succeeded for is remembered
-    as done. A device often shows up in `adb devices` as authorized a beat
-    before its on-device adbd is actually ready to accept `reverse` commands
-    — that raced here before, and because a failed attempt was still marked
-    "handled", the tunnel would then just never come up for the rest of that
-    USB session (confirmed in the wild: `adb reverse` failed for all 4 ports
-    on first contact, then never got retried, so the phone could never reach
-    this PC at all even though everything else was running fine). Now a
-    still-connected-but-not-yet-forwarded serial is retried every poll cycle
-    until it succeeds.
+    The check is "are the tunnels actually up right now", asked of adb every
+    cycle — not "did we set them up once for this serial". Those are
+    different facts, and only the first one is worth acting on.
+
+    This used to track a set of serials it had succeeded for and skip them
+    forever after. That handles a device appearing and a device
+    disconnecting, but not the case in between: the tunnels dying while the
+    phone stays connected. `adb reverse` bindings belong to the adb *server*,
+    so anything that restarts it — `adb kill-server`, a version mismatch from
+    another tool, an adb crash — silently drops every tunnel while `adb
+    devices` still happily lists the phone as "device". The serial stayed
+    marked ready, nothing was ever retried, and the phone could no longer
+    reach this PC at all until someone re-plugged it or restarted the
+    service. Confirmed in the wild: `adb reverse --list` empty, receiver
+    listening and idle, phone streaming into its own loopback.
+
+    A device also often shows up as authorized a beat before its on-device
+    adbd will accept `reverse` commands, so first contact can fail. Asking
+    adb directly covers that case too, with no special handling: the tunnel
+    simply isn't up yet, so it is tried again next cycle.
     """
-    ready_serials: set[str] = set()
+    announced: set[str] = set()
     while True:
         adb = find_adb()
         if adb:
             current = list_authorized_serials(adb)
-            pending = current - ready_serials
-            for serial in pending:
-                print(f"[control] USB device connected: {serial} — setting up reverse tunnels")
+            for serial in current:
+                missing = set(ADB_PORTS) - list_reverse_ports(adb, serial)
+                if not missing:
+                    continue
+                first_time = serial not in announced
+                print(
+                    f"[control] {'USB device connected' if first_time else 'tunnels lost'}: "
+                    f"{serial} — forwarding {sorted(missing)}"
+                )
                 result = setup_adb_reverse(serial)
                 if result["ok"]:
                     print(f"[control] adb reverse ready for {serial}")
-                    ready_serials.add(serial)
+                    announced.add(serial)
                     start_services()
                 else:
                     print(f"[control] adb reverse failed for {serial}, will retry: {result}")
-            ready_serials &= current  # drop anything that disconnected, so a reconnect retries fresh
+            announced &= current  # a reconnect should announce itself again
         time.sleep(USB_POLL_INTERVAL_SECONDS)
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    # socketserver applies this to the accepted socket. Without it a client
+    # that connects and then says nothing — a port scan, or a phone that lost
+    # Wi-Fi mid-request — held its worker indefinitely. That was fatal while
+    # the server was single-threaded and is still worth refusing now that it
+    # is not: threads are not free, and nothing here has any business taking
+    # ten seconds.
+    timeout = 10
+
     def log_message(self, fmt, *args):
         print(f"[control] {args[0]}")
 
@@ -483,11 +542,48 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 
+class ControlServer(http.server.ThreadingHTTPServer):
+    """The control server's socket, with two deliberate deviations from the
+    stdlib defaults.
+
+    **Threading.** The base HTTPServer handles one request at a time, and
+    /obs-sync can block for seconds talking to OBS. One slow or half-open
+    client therefore froze every other request — including the phone's
+    /status polls and the /token fetch that Wi-Fi pairing depends on.
+    Observed: the last line in control_server.log was a bare
+    `POST /obs-sync` with nothing after it.
+
+    **No address reuse.** allow_reuse_address sets SO_REUSEADDR, and on
+    Windows that does not mean "reuse a socket in TIME_WAIT" as it does on
+    Unix — it means *two live processes may bind the same port*, with
+    connections landing on an arbitrary one. That turned a second control
+    server from an error into a silent duplicate, and since each control
+    server spawns its own discovery/speed_test/receiver, the machine ended up
+    running two of everything: confirmed with two control_servers, two
+    discovery_servers, two speed_test_servers and two receivers all live at
+    once, fighting over the same ports.
+
+    Refusing to bind is exactly the right behaviour for a service that must
+    be a singleton, and it makes the port itself the mutex — no lock file to
+    go stale, no PID file to be wrong after a crash.
+    """
+
+    daemon_threads = True
+    allow_reuse_address = False
+
+
 def main():
     redirect_own_output_to_log()
     load_or_create_token()
     print(f"[control] auth token at {AUTH_TOKEN_PATH} (loopback exempt)")
-    server = http.server.HTTPServer((HOST, PORT), Handler)
+    try:
+        server = ControlServer((HOST, PORT), Handler)
+    except OSError as e:
+        # The singleton check. Exiting here — before start_services() — is
+        # what stops a second watcher from spawning a second set of children.
+        print(f"[control] port {PORT} is already in use ({e}); another control server "
+              f"is running. Exiting rather than starting a duplicate.")
+        return
     print(f"[control] PhoneCam Control Server running on port {PORT}")
     print(f"[control] Endpoints: GET /status, POST /start, POST /stop, POST /adb-reverse")
 

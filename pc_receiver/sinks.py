@@ -7,7 +7,8 @@ display attached.
 
 from __future__ import annotations
 
-from typing import List, Protocol
+from collections import deque
+from typing import Deque, Protocol
 
 import numpy as np
 
@@ -28,15 +29,46 @@ class FrameSink(Protocol):
 # that doesn't care keeps working unchanged and keeps receiving RGB.
 
 
+# How many recent frames a null sink keeps. Enough for any assertion a test
+# makes about frame contents, small enough that holding them costs nothing
+# that matters (256 x 1080p RGB is ~1.6GB in the worst case, which is why the
+# cap is on bytes as well — see _RETAINED_BYTES).
+_RETAINED_FRAMES = 256
+_RETAINED_BYTES = 64 * 1024 * 1024
+
+
 class NullSink:
-    """Discards frames; records how many/what shape it received. Test-only."""
+    """Discards frames, retaining only the most recent few for inspection.
+
+    Written as a test double, but it is also `--sink null` on the command
+    line — which is how it ended up being the receiver's fastest memory leak.
+    It used to append every frame it was ever given: at 1080p RGB that is
+    6MB a frame, so a null-sink session grew by ~186MB *per second* and a
+    long one simply died. A soak run caught this exact shape in the audio
+    equivalent within two minutes.
+
+    Bounded retention keeps every existing test working — they assert on a
+    handful of frames — while making the sink genuinely constant-memory.
+    """
 
     def __init__(self) -> None:
-        self.frames: List[np.ndarray] = []
+        self.frames: Deque[np.ndarray] = deque(maxlen=_RETAINED_FRAMES)
+        self.total_frames = 0
         self.closed = False
+        self._retained_bytes = 0
 
     def send(self, frame_rgb: np.ndarray, fps: int) -> None:
+        self.total_frames += 1
+        # A second cap in bytes, because maxlen alone bounds the *count* and
+        # frame size varies by three orders of magnitude between a 64x48 test
+        # frame and 4K NV12.
+        if self._retained_bytes + frame_rgb.nbytes > _RETAINED_BYTES:
+            self.frames.clear()
+            self._retained_bytes = 0
+        if len(self.frames) == self.frames.maxlen and self.frames:
+            self._retained_bytes -= self.frames[0].nbytes
         self.frames.append(frame_rgb)
+        self._retained_bytes += frame_rgb.nbytes
 
     def close(self) -> None:
         self.closed = True
