@@ -53,6 +53,61 @@ phone, an emulator, or even a JDK.
 | Real AdMob rewarded-ad integration | **Wired up** (`AdMobAdController`) using Google's public test ad unit — real load/show/reward flow, just pointed at test IDs until you register your own AdMob app. See [ADS_SETUP.md](ADS_SETUP.md) |
 | GDPR/UMP consent gate | **Wired up** (`ConsentManager`) — ads are only initialized/requested after `canRequestAds()` is true, per Google's UMP contract. The AdMob-console-side consent message content still needs configuring before a public EU release — see ADS_SETUP.md |
 
+## The video geometry chain (sensor → OBS)
+
+Every stage, with what it may change. Measured on an S23 Ultra with the holds
+confirmed in-log; raw evidence in [evidencia/](evidencia/).
+
+| Stage | Where | Changes |
+|---|---|---|
+| Sensor → CameraX | `StreamingVideoOutput.captureOrder` | picks the sensor mode: smallest bucket that COVERS the crop |
+| Sensor → Camera2 | `startCamera2Backend` | asks for the composition's native size directly |
+| ViewPort | `MainActivity` bind | crops to the composition, expressed in the current hold's frame |
+| cropRect | `CameraStreamer` listener → renderer | consumed as texture coordinates |
+| Renderer | `EncoderSurfaceRenderer.drawCamera` | rotates `θ − texRot`, cover-scales, no stretch |
+| Encoder | `effectiveTarget` → `H264Encoder` | `outputSizeFor` ∩ tier pixel budget |
+| Socket → Receiver → Decoder | `receiver.py`, `h264_decoder.py` | nothing: dimensions ride in the stream |
+| Virtual camera | `sinks.py` | sized from the decoded frame |
+| OBS | `obs_sync.py` | canvas from the Hello, source fitted without stretching |
+
+**Resolution is size, composition is shape.** The preset's short edge is
+preserved and the long edge derived from the ratio. At 1080p: 16:9 → 1920×1080,
+4:3 → 1440×1080, 1:1 → 1080×1080, 9:16 → 1080×1920, 3:4 → 1080×1440. At 1440p
+the same rule gives 2560×1440, 1920×1440, 1440×1440, 1440×2560, 1440×1920.
+`StreamConfig.outputSizeFor` is the single source of truth, and
+`CameraStreamer.effectiveTarget` is what both the encoder and the OBS push go
+through, so the size announced is always the size encoded.
+
+**The tier ceiling is a pixel budget, not a box.** A box priced every
+non-landscape composition at a fraction of its tier (9:16 fit only at
+608×1080); a budget spends the same pixels whatever the shape.
+
+**Capture escalates only where a deficit was measured.** The bucket is chosen
+by the needed crop's short edge, except when that pick would not cover the
+crop — which, across the measured matrix, is only "vertical composition held
+landscape" (9:16 and 3:4). There the sensor mode steps up to UHD; measured
+cost at 75 s: 29.99 → 29.97 fps, 0 drops, Thermal Status 0, +2.8 °C, and 4×
+the real pixels. Every 0%-deficit combination keeps its previous behaviour
+exactly, and a test pins that list.
+
+**Rotation is measured from the raw physical hold**, and the renderer applies
+only what the source's texture matrix has not already applied — the direct
+Camera2 path arrives with the sensor mounting already folded in, CameraX's
+processed stream does not.
+
+### Diagnosing geometry on a device
+
+One line per session says what the pipeline really did:
+
+```
+geom[camerax]: θ=90 crop=0,0→1920,1080 buffer=1920x1080 encoder=1080x1920 scale=1.0x1.0
+capture need: 1080x1920 (encoder=1080x1920 hold=1)
+```
+
+Compare `buffer` against `encoder`: fewer pixels in the buffer means the
+renderer is upscaling, which is what `capture need` exists to diagnose on
+phones whose CameraX under-provisions differently from this one.
+
 ## OBS composition sync
 
 With Settings > "Sync OBS settings" on (the default), OBS's canvas is reshaped

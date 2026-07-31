@@ -18,3 +18,16 @@ pc_receiver/setup_log.txt
 
 .control_token
 .watcher.lock
+
+# Artefactos de las campanas de validacion en dispositivo: los volcados de
+# logcat y los APK de comparacion son de un solo uso y pesan decenas de MB.
+# La evidencia que importa vive curada en docs/evidencia/.
+app-*.apk
+logcat_*.txt
+validacion_*.txt
+sesiones_*.txt
+tablas_sensor.txt
+medicion_*.txt
+paridad_*.txt
+larga_*.txt
+ui_now.xml
