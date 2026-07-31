@@ -387,12 +387,49 @@ class CameraStreamer(
      * to the encoder's via the draw viewport, same trick the old
      * CPU-buffer path used.
      */
+    // Rotation the current capture source's texture matrix already carries —
+    // 0 for CameraX (its processing node consumes the HAL transform hint),
+    // the sensor mounting for direct Camera2 (the hint reaches our
+    // SurfaceTexture untouched). Pushed into the renderer per session.
+    @Volatile private var sourceTextureRotation = 0
+
     private fun onSurfaceRequested(request: SurfaceRequest) {
+        sourceTextureRotation = 0
         startEncoderFor(
             cameraWidth = request.resolution.width,
             cameraHeight = request.resolution.height,
             onSurfaceReady = { surface ->
-                request.setTransformationInfoListener(DIRECT_EXECUTOR) { info -> rotationDegrees = info.rotationDegrees }
+                request.setTransformationInfoListener(DIRECT_EXECUTOR) { info ->
+                    rotationDegrees = info.rotationDegrees
+                    // The other half of TransformationInfo, which used to be
+                    // discarded: which rect of the buffer is the composition.
+                    // CameraX only pre-crops when its internal processing node
+                    // is in the pipeline; otherwise the buffer is the full
+                    // sensor frame and this rect is the only thing standing
+                    // between the stream and an uncropped composition. Pushed
+                    // to the live renderer so mid-session updates (a fresh
+                    // TransformationInfo follows every targetRotation change)
+                    // land on the next frame.
+                    val crop = info.cropRect
+                    synchronized(encoderLock) {
+                        encoder?.renderer?.setContentCrop(crop.left, crop.top, crop.right, crop.bottom)
+                    }
+                    // Forensic geometry line: the one datum no log carried and
+                    // three validation rounds needed — what rotation and crop
+                    // this session ACTUALLY applies, and the cover scale that
+                    // follows from them. Fires only when CameraX pushes a new
+                    // TransformationInfo (a handful of times per session).
+                    val scale = com.phonecam.streamer.streaming.gl.ContentGeometry.coverScale(
+                        crop.width(), crop.height(), info.rotationDegrees, encoderWidth, encoderHeight,
+                    )
+                    Log.i(
+                        TAG,
+                        "geom[camerax]: θ=${info.rotationDegrees} " +
+                            "crop=${crop.left},${crop.top}→${crop.right},${crop.bottom} " +
+                            "buffer=${request.resolution.width}x${request.resolution.height} " +
+                            "encoder=${encoderWidth}x$encoderHeight scale=${scale[0]}x${scale[1]}",
+                    )
+                }
                 request.provideSurface(surface, DIRECT_EXECUTOR, Consumer { })
             },
             onFailed = { request.willNotProvideSurface() },
@@ -416,13 +453,26 @@ class CameraStreamer(
     fun attachCamera2Surface(
         cameraWidth: Int,
         cameraHeight: Int,
+        textureRotationDegrees: Int,
         onSurfaceReady: (android.view.Surface) -> Unit,
         onFailed: () -> Unit,
-    ) = startEncoderFor(cameraWidth, cameraHeight, onSurfaceReady, onFailed)
+    ) {
+        sourceTextureRotation = textureRotationDegrees
+        startEncoderFor(cameraWidth, cameraHeight, onSurfaceReady, onFailed)
+    }
 
     /** Camera2 has no TransformationInfo; the caller computes the equivalent and pushes it here. */
     fun setRotationDegrees(degrees: Int) {
         rotationDegrees = degrees
+        // Forensic geometry line, camera2 flavor: this backend has no ViewPort
+        // so the crop is always the full capture; θ and the texture-carried
+        // rotation are the whole story.
+        Log.i(
+            TAG,
+            "geom[camera2]: θ=$degrees texRot=$sourceTextureRotation " +
+                "vertex=${com.phonecam.streamer.streaming.gl.ContentGeometry.vertexRotation(degrees, sourceTextureRotation)} " +
+                "crop=full encoder=${encoderWidth}x$encoderHeight",
+        )
     }
 
     /**
@@ -455,6 +505,25 @@ class CameraStreamer(
                 onFailed()
                 return@post
             }
+            // A rebind mid-session (flip camera, return from Settings)
+            // delivers a fresh SurfaceRequest and lands here a second time.
+            // The previous encoder used to be overwritten without release(),
+            // leaking one hardware MediaCodec + one EGL context per rebind —
+            // and hardware codec instances are a small global pool, so a few
+            // Settings round-trips could exhaust it and every later session
+            // died at the create call below until the process was killed
+            // ("works again after restarting the app"). Release BEFORE
+            // creating, not after: at the pool limit the new create only
+            // succeeds because this freed a slot first. Same thread and lock
+            // discipline as stop(): this block runs on glThread, where every
+            // EGL teardown in release() must happen.
+            synchronized(encoderLock) {
+                encoder?.let {
+                    Log.i(TAG, "releasing previous encoder before rebind replacement")
+                    it.release()
+                    encoder = null
+                }
+            }
             val activeEncoder = try {
                 H264Encoder(
                     width = encWidth,
@@ -477,6 +546,7 @@ class CameraStreamer(
 
             val renderer = activeEncoder.renderer
             renderer.setCameraFrameSize(cameraWidth, cameraHeight)
+            renderer.setTextureRotationDegrees(sourceTextureRotation)
             renderer.setOnFrameAvailableListener({ onFrameAvailable(profile) }, glHandler)
 
             Log.i(TAG, "session: ${metrics.describeSession()} camera=${cameraWidth}x$cameraHeight")
@@ -484,8 +554,23 @@ class CameraStreamer(
         }
     }
 
+    // Watchdog signal: when the camera last delivered a frame. 0 until the
+    // first one arrives, so sessions whose capture never starts (encoder
+    // failure, permission) are NOT reported as frozen — they have their own
+    // failure paths. Measured need: Samsung's CameraService can cut a live
+    // client from outside ("block for PID <app>", observed on-device freezing
+    // a healthy 30fps session solid for 80 seconds) and nothing in-process
+    // gets an error callback on the capture path — the frames just stop.
+    @Volatile private var lastFrameAtMs = 0L
+
+    /** Milliseconds since the camera last delivered a frame, or -1 before the first one. */
+    fun millisSinceLastFrame(): Long =
+        if (lastFrameAtMs == 0L) -1L
+        else android.os.SystemClock.elapsedRealtime() - lastFrameAtMs
+
     /** Runs on glHandler for every camera frame the SurfaceTexture receives. */
     private fun onFrameAvailable(profile: StreamProfile) {
+        lastFrameAtMs = android.os.SystemClock.elapsedRealtime()
         // Unconditional, before anything that might `return` early below —
         // see EncoderSurfaceRenderer.updateCameraTexture's doc for why:
         // skipping this for a throttled/not-yet-connected frame starves the
@@ -686,15 +771,29 @@ class CameraStreamer(
     companion object {
         private val DIRECT_EXECUTOR = Executor { it.run() }
 
-        /** min(user's Settings choice, reward-tier ceiling) — the tier can restrict, never expand. */
+        /**
+         * min(user's Settings choice, reward-tier ceiling) — the tier can
+         * restrict, never expand.
+         *
+         * The size comes from [StreamConfig.outputSizeFor], not from the
+         * resolution preset alone: the composition ratio is what the ViewPort
+         * crops the camera to, so it is what the encoder has to be shaped like
+         * for the frame to arrive unstretched. See that function's doc.
+         *
+         * The ceiling is a PIXEL BUDGET (the tier table's WxH defines how many
+         * pixels, not a box shape) applied with [StreamConfig.fitPixelBudget]:
+         * aspect-neutral, so a vertical or square composition buys the same
+         * quality as the landscape one. The previous box clamp priced 9:16 at
+         * 608x1080 on the free tier — the audited root cause of "vertical is
+         * far more pixelated". For 16:9 requests nothing changes.
+         */
         fun effectiveTarget(streamConfig: StreamConfig, profile: StreamProfile): Triple<Int, Int, Int> {
-            val (userWidth, userHeight) = StreamConfig.pixelSizeFor(streamConfig.qualityLabel)
+            val (userWidth, userHeight) =
+                StreamConfig.outputSizeFor(streamConfig.qualityLabel, streamConfig.aspectRatio)
             val (ceilWidth, ceilHeight, ceilFps) = FrameEncoder.tierCeiling(profile.quality)
-            return Triple(
-                minOf(userWidth, ceilWidth),
-                minOf(userHeight, ceilHeight),
-                minOf(streamConfig.fps, ceilFps),
-            )
+            val (width, height) =
+                StreamConfig.fitPixelBudget(userWidth, userHeight, ceilWidth.toLong() * ceilHeight)
+            return Triple(width, height, minOf(streamConfig.fps, ceilFps))
         }
     }
 }

@@ -99,6 +99,11 @@ class MainActivity : AppCompatActivity() {
     private var recDotAnimator: ObjectAnimator? = null
     private var currentLensFacing = CameraSelector.LENS_FACING_BACK
     private var currentConfig: StreamConfig? = null
+    // The config the ACTIVE streaming session was built from (encoder shape,
+    // Hello announcement). Distinct from currentConfig, which follows every
+    // Settings save; the gap between the two mid-session is exactly the
+    // camera-cropping-new/encoder-shaped-old mismatch — see onResume.
+    private var streamingConfig: StreamConfig? = null
     private var torchOn = false
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private var wasScaling = false
@@ -158,7 +163,12 @@ class MainActivity : AppCompatActivity() {
                 val rotation = rotationDebouncer.onOrientationChanged(
                     orientation, android.os.SystemClock.elapsedRealtime(),
                 ) ?: return
-                currentVideoCapture?.targetRotation = RotationPolicy.landscapeTargetRotation(rotation)
+                // The RAW bucket is the rotation reference — no quarter-turn
+                // shift. Validated on hardware (Round 3 geometry lines): with
+                // the shifted reference, every hold streamed 90° clockwise of
+                // upright on BOTH backends (vertical applied θ=0 where the
+                // content needed 90; horizontal applied 270 where it needed 0).
+                currentVideoCapture?.targetRotation = rotation
                 // Camera2 has no targetRotation to push this into — the
                 // equivalent is computed from the sensor's mounting and
                 // handed to the renderer directly.
@@ -486,7 +496,23 @@ class MainActivity : AppCompatActivity() {
         getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
             .putInt("camera_facing", if (currentLensFacing == CameraSelector.LENS_FACING_FRONT) 1 else 0)
             .apply()
-        startCamera()
+        // Mid-stream, a facing change is a session restart — the same
+        // contract Settings geometry changes follow (StreamConfig.
+        // requiresSessionRestart lists lensFacing), and the only path that
+        // tears the Camera2 backend down. The old bare startCamera() rebind
+        // left camera2Active alive across the flip: the zombie source kept
+        // capturing into a released surface, and the orientation listener
+        // kept overwriting the front stream's rotation with back-sensor
+        // math — two writers, last one wins. stopCamera2Backend has exactly
+        // one call site (stopStreaming), so restarting is what guarantees
+        // the teardown.
+        if (isStreaming) {
+            Log.i(TAG, "camera change while streaming — restarting the session")
+            stopStreaming()
+            startStreaming()
+        } else {
+            startCamera()
+        }
     }
 
     private fun mapProgressToRange(progress: Int, range: Range<Int>): Int {
@@ -606,7 +632,17 @@ class MainActivity : AppCompatActivity() {
                         getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
                             .putInt("lens", lensPrefIndex[spec.lens] ?: 0)
                             .apply()
-                        startCamera() // rebind onto that physical camera
+                        // Same restart contract as flipCamera: a physical-lens
+                        // change mid-stream re-selects the backend (only the
+                        // wide 1x is Camera2-eligible) and must tear the old
+                        // one down — the bare rebind left it running.
+                        if (isStreaming) {
+                            Log.i(TAG, "lens change while streaming — restarting the session")
+                            stopStreaming()
+                            startStreaming()
+                        } else {
+                            startCamera() // rebind onto that physical camera
+                        }
                     } else if (activeDigitalZoom != null) {
                         cam.cameraControl.setZoomRatio(1f) // back to plain 1x
                         buildZoomChips(cam, cfg)
@@ -938,6 +974,11 @@ class MainActivity : AppCompatActivity() {
             streamConfig = cfg,
         )
         streamer = newStreamer
+        // What this session's encoder and Hello were built from. onResume
+        // compares the freshly-saved Settings against it to know whether a
+        // rebind is enough or the session itself is stale — see
+        // StreamConfig.requiresSessionRestart.
+        streamingConfig = cfg
 
         // Pairing + auth. The receiver rejects non-loopback senders without the
         // PC's token, so Wi-Fi needs one; it is fetched over USB (loopback,
@@ -981,6 +1022,7 @@ class MainActivity : AppCompatActivity() {
         streamer?.stop()
         streamer = null
         isStreaming = false
+        streamingConfig = null
         startCamera() // rebind preview-only
         applyStreamBrightness(active = false)
 
@@ -1008,7 +1050,7 @@ class MainActivity : AppCompatActivity() {
     private fun shouldUseCamera2(cfg: StreamConfig): Boolean {
         val enabled = getSharedPreferences("stream_settings", MODE_PRIVATE)
             .getBoolean("experimental_camera2", false)
-        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        val (width, height) = StreamConfig.outputSizeFor(cfg.qualityLabel, cfg.aspectRatio)
         val size = Size(width, height)
         val supported = enabled && Camera2CaptureSource.isSupported(this, CAMERA2_CAMERA_ID, size, cfg.fps)
         val eligible = enabled &&
@@ -1039,7 +1081,10 @@ class MainActivity : AppCompatActivity() {
      */
     @android.annotation.SuppressLint("NewApi") // reached only via shouldUseCamera2 -> isSupported, which gates on API 28
     private fun startCamera2Backend(cfg: StreamConfig, activeStreamer: CameraStreamer) {
-        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        // Composition-aware, and on this backend that is the only thing that
+        // applies it at all: the Camera2 path has no CameraX ViewPort, so the
+        // capture size *is* the streamed frame's shape.
+        val (width, height) = StreamConfig.outputSizeFor(cfg.qualityLabel, cfg.aspectRatio)
         val captureSize = Size(width, height)
         val chars = Camera2Capabilities.characteristicsOrNull(this, CAMERA2_CAMERA_ID)
         val routedId = Camera2Capabilities.physicalIdFor(this, CAMERA2_CAMERA_ID, captureSize)
@@ -1104,14 +1149,37 @@ class MainActivity : AppCompatActivity() {
                     physicalCameraId = physicalId,
                 )
                 camera2Source = source
-                applyCamera2Rotation(Surface.ROTATION_0)
+                // The REAL hold, not an upright assumption. This used to be a
+                // hardcoded ROTATION_0, and the combination with the
+                // debouncer's dedup made it permanent: the idle preview had
+                // already saturated the debouncer with the current bucket, so
+                // with the phone mounted any way but upright the correction
+                // reading was swallowed forever and the 1x streamed a quarter
+                // turn off for the whole session (pinned in
+                // Camera2RotationStateForensicsTest). Capture the known hold,
+                // then reset so the next stable reading re-emits regardless —
+                // the same self-heal the CameraX branch has always had via
+                // startCamera()'s rebind.
+                //
+                // Order: attach FIRST (it records the texture-carried rotation
+                // on the streamer), THEN push the hold. applyCamera2Rotation
+                // logs the geom line, and firing it before the attach printed
+                // texRot=0 — a lie that cost real audit time.
+                val knownBucket = rotationDebouncer.lastAppliedBucket() ?: Surface.ROTATION_0
+                rotationDebouncer.reset()
 
                 activeStreamer.attachCamera2Surface(
                     cameraWidth = captureSize.width,
                     cameraHeight = captureSize.height,
+                    // The HAL folds the sensor mounting into the buffers'
+                    // texture matrix on this path (measured: content upright
+                    // at a vertical hold with zero vertex rotation), so the
+                    // renderer must subtract it — see ContentGeometry.
+                    textureRotationDegrees = source.sensorOrientation,
                     onSurfaceReady = { encoderSurface -> source.start(encoderSurface, previewSurface) },
                     onFailed = { runOnUiThread { fallbackToCameraX("encoder unavailable") } },
                 )
+                applyCamera2Rotation(knownBucket)
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -1149,6 +1217,13 @@ class MainActivity : AppCompatActivity() {
         fun deliver(surface: Surface?) {
             if (delivered) return
             delivered = true
+            // F12: a TextureView stretches its buffer to its bounds, and this
+            // one is pinned to the full portrait screen — a 16:9 preview
+            // stream was forced fullscreen-tall the moment recording started
+            // (screenshot-documented on device). A centered aspect-preserving
+            // fit keeps the viewfinder honest; posted so the view has been
+            // laid out (it was GONE until a moment ago).
+            view.post { applyCamera2PreviewTransform(view, previewSize) }
             onReady(surface)
         }
 
@@ -1164,7 +1239,9 @@ class MainActivity : AppCompatActivity() {
                 deliver(Surface(texture))
             }
 
-            override fun onSurfaceTextureSizeChanged(texture: android.graphics.SurfaceTexture, w: Int, h: Int) {}
+            override fun onSurfaceTextureSizeChanged(texture: android.graphics.SurfaceTexture, w: Int, h: Int) {
+                applyCamera2PreviewTransform(view, previewSize)
+            }
             override fun onSurfaceTextureDestroyed(texture: android.graphics.SurfaceTexture): Boolean = true
             override fun onSurfaceTextureUpdated(texture: android.graphics.SurfaceTexture) {}
         }
@@ -1182,24 +1259,43 @@ class MainActivity : AppCompatActivity() {
      * upright, given how the phone is physically held. CameraX derived this
      * from targetRotation; with Camera2 it has to be computed and pushed into
      * the renderer by hand.
+     *
+     * The reference is the RAW physical bucket. A previous fix routed this
+     * through a quarter-turn shift so both backends would agree — and they
+     * did, but on a reference that was itself 90° off: Round 3's on-device
+     * geometry lines measured θ=0 applied where the content needed 90
+     * (vertical) and θ=270 where it needed 0 (horizontal), i.e. a constant
+     * −90° on every hold. The parity machinery stays; only the shared
+     * reference changes to the one the hardware validated.
      */
     private fun applyCamera2Rotation(surfaceRotation: Int) {
         if (camera2AppliedRotation == surfaceRotation) return
         val source = camera2Source ?: return
-        // landscapeTargetRotation, not the raw surfaceRotation. CameraX feeds
-        // that same quarter-turn-shifted value into VideoCapture.targetRotation
-        // (see the orientation listener), so its relative rotation comes out as
-        // sensorOrientation(90) - target(90) = 0. Passing the raw rotation here
-        // instead computed 90 - 0 = 90, and the stream reached OBS turned a
-        // quarter turn while CameraX's came out upright. The two backends have
-        // to measure from the same reference or they cannot agree.
         streamer?.setRotationDegrees(
-            RotationPolicy.sensorRotationDegrees(
-                source.sensorOrientation,
-                RotationPolicy.landscapeTargetRotation(surfaceRotation),
-            ),
+            RotationPolicy.sensorRotationDegrees(source.sensorOrientation, surfaceRotation),
         )
         camera2AppliedRotation = surfaceRotation
+    }
+
+    /**
+     * Centered aspect-preserving fit for the Camera2 viewfinder (F12): scales
+     * the TextureView's default stretch-to-bounds back down so the preview
+     * stream keeps its shape, letterboxed like the CameraX viewfinder.
+     */
+    private fun applyCamera2PreviewTransform(view: TextureView, bufferSize: Size) {
+        val vw = view.width.toFloat()
+        val vh = view.height.toFloat()
+        if (vw <= 0f || vh <= 0f || bufferSize.width <= 0 || bufferSize.height <= 0) return
+        val scale = minOf(vw / bufferSize.width, vh / bufferSize.height)
+        val matrix = android.graphics.Matrix().apply {
+            setScale(
+                bufferSize.width * scale / vw,
+                bufferSize.height * scale / vh,
+                vw / 2f,
+                vh / 2f,
+            )
+        }
+        view.setTransform(matrix)
     }
 
     private fun stopCamera2Backend() {
@@ -1386,19 +1482,22 @@ class MainActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val (targetWidth, targetHeight) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+            // Composition-aware: the ViewPort below crops the capture to this
+            // ratio, so asking the camera for a differently-shaped target just
+            // means throwing away pixels it was asked to produce. See
+            // StreamConfig.outputSizeFor.
+            val (targetWidth, targetHeight) =
+                StreamConfig.outputSizeFor(cfg.qualityLabel, cfg.aspectRatio)
 
             // The preview genuinely captures at the chosen resolution (down to
             // 360p etc, real pixels in, not a post-processing effect) — only
             // capped downward for very high targets, since pushing a raw 4K/8K
             // surface into PreviewView is what caused the ~0.5s viewfinder lag.
-            val previewWidth: Int
-            val previewHeight: Int
-            if (targetWidth.toLong() * targetHeight > 1920L * 1080) {
-                previewWidth = 1920; previewHeight = 1080
-            } else {
-                previewWidth = targetWidth; previewHeight = targetHeight
-            }
+            // Capped through fitWithin so the cap shrinks the target without
+            // reshaping it — a flat 1920x1080 here would hand a vertical
+            // composition a landscape preview target to fall back from.
+            val (previewWidth, previewHeight) =
+                StreamConfig.fitWithin(targetWidth, targetHeight, 1920, 1080)
             val previewSelector = ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
@@ -1463,6 +1562,12 @@ class MainActivity : AppCompatActivity() {
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
 
+            // The physical hold this bind starts from — read BEFORE the
+            // debouncer reset below, used by both targetRotation and the
+            // ViewPort so rotation and crop share one reference. Null (fresh
+            // launch, phone flat) falls back to upright.
+            val knownBucket = rotationDebouncer.lastAppliedBucket() ?: Surface.ROTATION_0
+
             // VideoCapture (our custom Surface-based output, see StreamingVideoOutput)
             // is only bound while actually streaming: an idle 4K/8K capture stream
             // drags the whole capture session (and the viewfinder) down even though
@@ -1477,12 +1582,27 @@ class MainActivity : AppCompatActivity() {
             val videoCapture = if (isStreaming) {
                 // Decides the ordered candidate list VideoCapture builds from
                 // the VideoOutput's MediaSpec — which outranks the
-                // ResolutionSelector below. See StreamingVideoOutput.targetHeight.
-                mainVideoOutput.targetHeight = targetHeight
+                // ResolutionSelector below. The selection itself is unchanged
+                // (short edge of the need, see shortEdgeOrderIndices); what
+                // the composition×hold calculation buys is the diagnostic
+                // line below, which is how M2's premise was measured and
+                // refuted on device. Pair it with the geom line's buffer= and
+                // encoder= to see, per session, whether this phone's CameraX
+                // under-provisions the capture. On the S23 Ultra it does not.
+                val (needW, needH) = StreamConfig.neededCaptureFor(targetWidth, targetHeight, knownBucket)
+                mainVideoOutput.neededWidth = needW
+                mainVideoOutput.neededHeight = needH
+                Log.i(TAG, "capture need: ${needW}x$needH (encoder=${targetWidth}x$targetHeight hold=$knownBucket)")
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
-                    .setTargetRotation(RotationPolicy.landscapeTargetRotation(
-                        binding.previewView.display?.rotation ?: Surface.ROTATION_0))
+                    // The RAW physical hold, not the display rotation (locked
+                    // to portrait, so always ROTATION_0) and not the old
+                    // quarter-shifted value: Round 3 measured the shift as a
+                    // constant −90° on every hold, on both backends. The
+                    // debouncer's last stable bucket is the best estimate of
+                    // how the phone is held at bind time; the listener keeps
+                    // it updated live from here on.
+                    .setTargetRotation(knownBucket)
                     .setTargetFrameRate(android.util.Range(cfg.fps, cfg.fps))
                 applyPhysicalCameraId(videoCaptureBuilder, physicalCameraId, fpsRange)
                 videoCaptureBuilder.build()
@@ -1490,10 +1610,10 @@ class MainActivity : AppCompatActivity() {
                 null
             }
             currentVideoCapture = videoCapture
-            // The new use case starts from the display's rotation above, not
-            // from whatever the debouncer last applied, so it has to forget —
-            // otherwise a phone held sideways across a rebind keeps the
-            // display-derived rotation until it is physically turned again.
+            // Reset AFTER the bucket was captured above: the next stable
+            // reading re-emits the current hold even if it matches, so the
+            // listener re-applies it to the fresh use case — same self-heal
+            // the Camera2 start sequence uses.
             rotationDebouncer.reset()
 
             // ViewPort crops every bound use case (preview AND the capture stream that
@@ -1501,18 +1621,17 @@ class MainActivity : AppCompatActivity() {
             // changes what's sent to the PC — not just a cosmetic letterbox over an
             // uncropped 16:9 sensor feed.
             val (ratioNum, ratioDenom) = StreamConfig.aspectRatioParts(cfg.aspectRatio)
-            // The rotation argument says which orientation the aspect ratio is
-            // expressed in — NOT which way the phone is held. This Activity is
-            // locked to portrait, so display.rotation was always ROTATION_0 and
-            // CameraX read "16:9" as 16:9 *in portrait*, i.e. a tall narrow
-            // slice: measured, a 1080p session delivered 1080x608 and a 4K one
-            // 2160x1216, cropping away the sides of the scene and looking, on
-            // the viewfinder, like the image had been rotated 90 degrees.
-            // The output (encoder and preview alike) is landscape, so the ratio
-            // has to be expressed in a landscape rotation.
+            // Natural form: the ratio as the user picked it, expressed in the
+            // frame of the CURRENT hold — the same reference targetRotation
+            // uses now. CameraX maps it into sensor space itself. The previous
+            // code inverted the rational to compensate for the quarter-shifted
+            // reference; with the shift gone (measured wrong on hardware), the
+            // inversion goes with it. Held landscape, 16:9 crops the full
+            // sensor; held vertical, 16:9 is the upright wide slice — exactly
+            // what the letterboxed viewfinder shows.
             val viewPort = ViewPort.Builder(
-                android.util.Rational(ratioDenom, ratioNum),
-                binding.previewView.display?.rotation ?: android.view.Surface.ROTATION_0,
+                android.util.Rational(ratioNum, ratioDenom),
+                knownBucket,
             ).build()
 
             fun buildUseCaseGroup(previewUseCase: Preview) = UseCaseGroup.Builder()
@@ -1528,12 +1647,29 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "camera bind failed for ${cfg.qualityLabel}", e)
                 AppToast.warning(this, "${cfg.qualityLabel} not supported by this camera")
-                // Fall back to sensible defaults
                 cameraProvider.unbindAll()
-                val fallbackPreview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(binding.previewView.surfaceProvider)
+                if (isStreaming) {
+                    // The old fallback re-bound buildUseCaseGroup(...), whose
+                    // closure still carried the exact VideoCapture that just
+                    // failed — so when the video use case WAS the problem, the
+                    // "fallback" threw the same exception again, this time
+                    // outside any catch, and the alternative outcome was a
+                    // session left half-alive: record button lit, viewfinder
+                    // fine, nothing streaming. If a stream is up, fail it
+                    // honestly: stopStreaming() resets the UI and rebinds
+                    // preview-only through the normal path (its startCamera
+                    // runs with isStreaming=false, so no video use case — the
+                    // recursion terminates by construction).
+                    stopStreaming()
+                } else {
+                    // Idle: a bare preview with none of the parts that can
+                    // have caused the failure — no video use case, no
+                    // ViewPort, no Camera2Interop options.
+                    val fallbackPreview = Preview.Builder().build().also {
+                        it.setSurfaceProvider(binding.previewView.surfaceProvider)
+                    }
+                    camera = cameraProvider.bindToLifecycle(cameraLifecycleOwner, selector, fallbackPreview)
                 }
-                camera = cameraProvider.bindToLifecycle(cameraLifecycleOwner, selector, buildUseCaseGroup(fallbackPreview))
             }
 
             setupCameraDependentControls(cfg)
@@ -1672,8 +1808,28 @@ class MainActivity : AppCompatActivity() {
         cameraLifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         orientationEventListener.enable()
         applyDisplayPreferences()
-        // Re-apply settings in case the user changed something in Settings
-        if (camera != null) startCamera()
+        // Re-apply settings in case the user changed something in Settings.
+        // If the change touched session geometry while streaming, a bare
+        // rebind is exactly the bug: the camera starts cropping to the new
+        // composition while the encoder (and the Hello the receiver sized
+        // everything from) keeps the shape this session started with — the
+        // stream deforms and only OBS shows it, because the viewfinder
+        // corrects itself. The session restart is announced by the same
+        // UI the record button uses, and costs the same reconnect it would
+        // have cost to stop and start by hand — which was the only correct
+        // manual workaround anyway.
+        if (camera != null) {
+            val sessionCfg = streamingConfig
+            if (isStreaming && sessionCfg != null &&
+                StreamConfig.requiresSessionRestart(sessionCfg, StreamConfig.load(this))
+            ) {
+                Log.i(TAG, "session geometry changed in Settings — restarting the stream")
+                stopStreaming()
+                startStreaming()
+            } else {
+                startCamera()
+            }
+        }
     }
 
     /** DISPLAY settings: keep-awake always, brightness override only while streaming. */
@@ -1698,13 +1854,43 @@ class MainActivity : AppCompatActivity() {
         window.attributes = lp
     }
 
+    // Last time the frozen-capture watchdog restarted the session, so a block
+    // the system re-applies immediately can't put the app in a restart loop.
+    private var lastWatchdogRestartMs = 0L
+
     private fun startUiTicker() {
         uiHandler.post(object : Runnable {
             override fun run() {
                 refreshStatusUi()
+                watchFrozenCapture()
                 uiHandler.postDelayed(this, 1000)
             }
         })
+    }
+
+    /**
+     * Auto-recovery for an externally killed capture. Observed on-device
+     * (hardware validation, 00:40:46): Samsung's CameraService issued
+     * "block for PID <app>" against a healthy 30fps session — frames stopped
+     * cold for 80 seconds, no in-process callback fired, and the stream sat
+     * frozen until a manual restart. The camera churn that provoked it is
+     * gone (camera/lens changes restart the session now), but the block is
+     * the system's call and can recur; when it does, this turns "the user
+     * must notice and restart by hand" into one automatic restart, capped to
+     * once a minute so a persistent block degrades to a log instead of a
+     * restart loop.
+     */
+    private fun watchFrozenCapture() {
+        if (!isStreaming) return
+        val age = streamer?.millisSinceLastFrame() ?: return
+        if (age < 8_000) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastWatchdogRestartMs < 60_000) return
+        lastWatchdogRestartMs = now
+        Log.w(TAG, "capture frozen for ${age}ms — restarting the session (watchdog)")
+        AppToast.warning(this, getString(R.string.toast_capture_frozen_restart))
+        stopStreaming()
+        startStreaming()
     }
 
     private fun refreshStatusUi() {

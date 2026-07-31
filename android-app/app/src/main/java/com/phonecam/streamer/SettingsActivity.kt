@@ -18,6 +18,7 @@ import com.phonecam.streamer.network.PcControl
 import com.phonecam.streamer.network.PcDiscovery
 import com.phonecam.streamer.rewards.RewardManager
 import com.phonecam.streamer.speedtest.SpeedTestManager
+import com.phonecam.streamer.streaming.CameraStreamer
 import com.phonecam.streamer.speedtest.SpeedTestPhase
 import com.phonecam.streamer.ui.ExpandableChoiceRow
 import com.phonecam.streamer.ui.AppToast
@@ -767,7 +768,21 @@ class SettingsActivity : AppCompatActivity() {
         if (!prefs.getBoolean("sync_obs", true)) return
 
         val cfg = StreamConfig.load(this)
-        val (width, height) = StreamConfig.pixelSizeFor(cfg.qualityLabel)
+        // Straight through CameraStreamer.effectiveTarget — the same function
+        // that sizes the real encoder — rather than deriving the numbers a
+        // second time here. This is the size OBS reshapes its canvas to, so
+        // anything it does not account for becomes a mismatched canvas:
+        // composition (picking 4:3 handed OBS a 16:9 canvas for a 4:3 stream)
+        // and the reward-tier ceiling (a free-tier user picking 4K pushed
+        // 3840x2160 while streaming 1920x1080) were both missing.
+        val profile = try {
+            getSharedPreferences("reward_state", MODE_PRIVATE).getString("state_json", null)
+                ?.let { RewardManager.fromJson(JSONObject(it)).currentProfile() }
+                ?: RewardManager().currentProfile()
+        } catch (e: Exception) {
+            RewardManager().currentProfile()
+        }
+        val (width, height, fps) = CameraStreamer.effectiveTarget(cfg, profile)
         val audioBitrateKbps = when (prefs.getInt("audio_bitrate", 1)) {
             0 -> 128; 2 -> 256; 3 -> 320; else -> 192
         }
@@ -781,7 +796,7 @@ class SettingsActivity : AppCompatActivity() {
                 host = host,
                 width = width,
                 height = height,
-                fps = cfg.fps,
+                fps = fps,
                 videoBitrateBps = cfg.videoBitrateBps,
                 audioBitrateBps = audioBitrateKbps * 1000,
                 sampleRate = sampleRate,
