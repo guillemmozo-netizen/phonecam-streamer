@@ -6,8 +6,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Orientation cases, including the three bugs that shipped together and the
- * combinations that only appear while the phone is being turned mid-session.
+ * Orientation cases, pinned to the reference VALIDATED ON HARDWARE.
+ *
+ * History matters here because this file used to pin the opposite: a
+ * quarter-turn "landscape reference" shift, added by an earlier fix and never
+ * validated on a device (the validation record said so explicitly). Round 3 of
+ * the S23 Ultra hardware validation instrumented the real geometry and
+ * measured that shift as a constant −90° error on every hold, on both capture
+ * backends — the exact "stream turned 90° clockwise in OBS" defect it was
+ * meant to fix. The reference is now the raw physical bucket, and the pins
+ * below encode the on-device table:
+ *
+ *     hold vertical   (ROTATION_0)   → θ = 90   (measured: 0 was sideways)
+ *     hold landscape  (ROTATION_90)  → θ = 0    (measured: 270 was wrong)
+ *     hold upside     (ROTATION_180) → θ = 270
+ *     hold landscape' (ROTATION_270) → θ = 180
  */
 class RotationPolicyTest {
 
@@ -15,56 +28,34 @@ class RotationPolicyTest {
         Surface.ROTATION_0, Surface.ROTATION_90, Surface.ROTATION_180, Surface.ROTATION_270,
     )
 
-    // ---------- landscape reference ----------
+    // ---------- the physical reference (device-validated) ----------
 
     @Test
-    fun phoneUprightMeansLandscapeOutputWithNoRotation() {
-        // The regression this pins: without the shift CameraX asked for 90
-        // degrees and the stream came out rotated in OBS while the viewfinder
-        // looked fine.
-        assertEquals(Surface.ROTATION_90, RotationPolicy.landscapeTargetRotation(Surface.ROTATION_0))
-        assertEquals(0, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_90))
-    }
-
-    @Test
-    fun everyOrientationShiftsByExactlyOneQuarterTurn() {
-        listOf(
-            Surface.ROTATION_0 to Surface.ROTATION_90,
-            Surface.ROTATION_90 to Surface.ROTATION_180,
-            Surface.ROTATION_180 to Surface.ROTATION_270,
-            Surface.ROTATION_270 to Surface.ROTATION_0,
-        ).forEach { (input, expected) ->
-            assertEquals(expected, RotationPolicy.landscapeTargetRotation(input))
-        }
-    }
-
-    @Test
-    fun mappingIsABijectionSoNoOrientationIsLost() {
-        assertEquals(4, allHolds.map { RotationPolicy.landscapeTargetRotation(it) }.toSet().size)
-    }
-
-    @Test
-    fun fourSuccessiveTurnsReturnToTheStart() {
-        var r = Surface.ROTATION_0
-        repeat(4) { r = RotationPolicy.landscapeTargetRotation(r) }
-        assertEquals(Surface.ROTATION_0, r)
-    }
-
-    @Test
-    fun unexpectedValueFallsBackInsteadOfPropagatingGarbage() {
-        assertEquals(Surface.ROTATION_0, RotationPolicy.landscapeTargetRotation(99))
-        assertEquals(Surface.ROTATION_0, RotationPolicy.landscapeTargetRotation(-1))
-    }
-
-    // ---------- sensor maths ----------
-
-    @Test
-    fun sensorRotationCoversAllFourHoldsForATypicalBackCamera() {
+    fun theRoundThreeTableIsTheLaw() {
+        // sensorOrientation=90 is the S23 Ultra back wide, the camera the
+        // geometry lines were measured on. If any of these four changes,
+        // either the hardware table was re-measured or someone reintroduced
+        // a shifted reference — go re-read the Round 3 logs before touching.
         assertEquals(90, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_0))
         assertEquals(0, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_90))
         assertEquals(270, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_180))
         assertEquals(180, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_270))
     }
+
+    @Test
+    fun theRemovedQuarterShiftWouldRecreateTheMeasuredBias() {
+        // The regression pin, inverted from what this file used to assert:
+        // shifting the reference one quarter turn (bucket+90, what
+        // landscapeTargetRotation did) yields θ=0 at a vertical hold — the
+        // exact value Round 3 measured streaming sideways. If someone
+        // reintroduces the shift, this is the test that names the ghost.
+        val shiftedVertical = Surface.ROTATION_90 // landscapeTargetRotation(ROTATION_0)
+        assertEquals(0, RotationPolicy.sensorRotationDegrees(90, shiftedVertical))
+        // ...while the raw reference gives the value the content needs:
+        assertEquals(90, RotationPolicy.sensorRotationDegrees(90, Surface.ROTATION_0))
+    }
+
+    // ---------- sensor maths ----------
 
     @Test
     fun sensorRotationHandlesOtherMountings() {
@@ -137,22 +128,29 @@ class RotationPolicyTest {
         assertEquals(RotationPolicy.bucketFor(359), RotationPolicy.bucketFor(0))
     }
 
-    // ---------- composed: turning the phone mid-session ----------
+    // ---------- composed: the full chain from accelerometer to renderer ----------
 
     @Test
     fun everyPhysicalHoldProducesAValidStreamRotation() {
         listOf(0, 90, 180, 270).forEach { degrees ->
             val hold = RotationPolicy.bucketFor(degrees)
-            val target = RotationPolicy.landscapeTargetRotation(hold)
-            val applied = RotationPolicy.sensorRotationDegrees(90, target)
+            val applied = RotationPolicy.sensorRotationDegrees(90, hold)
             assertTrue("hold=$hold applied=$applied", applied % 90 == 0 && applied in 0..270)
         }
     }
 
     @Test
-    fun uprightPhoneNeedsNoCorrectionAtAll() {
-        val target = RotationPolicy.landscapeTargetRotation(RotationPolicy.bucketFor(0))
-        assertEquals(0, RotationPolicy.sensorRotationDegrees(90, target))
+    fun uprightPhoneRotatesTheSensorBufferUpright() {
+        // The vertical-hold case, as the hardware measured it: the landscape
+        // sensor buffer holds a sideways world and needs exactly +90.
+        assertEquals(90, RotationPolicy.sensorRotationDegrees(90, RotationPolicy.bucketFor(0)))
+    }
+
+    @Test
+    fun landscapeHoldNeedsNoRotationAtAll() {
+        // The natural webcam mounting: sensor and world aligned, θ=0, full
+        // FOV, no cover crop. Reading 270° is the bucket for this hold.
+        assertEquals(0, RotationPolicy.sensorRotationDegrees(90, RotationPolicy.bucketFor(270)))
     }
 
     @Test
@@ -160,47 +158,34 @@ class RotationPolicyTest {
         // Repeatedly re-deriving from the same hold must never drift: a
         // reconnect or a resolution change re-runs this path mid-session.
         listOf(0, 90, 180, 270).forEach { degrees ->
-            val first = RotationPolicy.landscapeTargetRotation(RotationPolicy.bucketFor(degrees))
+            val first = RotationPolicy.sensorRotationDegrees(90, RotationPolicy.bucketFor(degrees))
             repeat(5) {
-                assertEquals(first, RotationPolicy.landscapeTargetRotation(RotationPolicy.bucketFor(degrees)))
+                assertEquals(
+                    first,
+                    RotationPolicy.sensorRotationDegrees(90, RotationPolicy.bucketFor(degrees)),
+                )
             }
-        }
-    }
-
-    @Test
-    fun rotationIsIndependentOfResolutionAndFps() {
-        // Resolution and fps changes rebind the camera; the orientation result
-        // must depend only on how the phone is held.
-        val expected = allHolds.map { RotationPolicy.landscapeTargetRotation(it) }
-        repeat(3) {
-            assertEquals(expected, allHolds.map { RotationPolicy.landscapeTargetRotation(it) })
         }
     }
 
     // ───────────── equivalencia entre los dos backends ─────────────
     //
-    // Estos fijan la propiedad que realmente se rompio en hardware: la politica
-    // era correcta, pero applyCamera2Rotation la invocaba con la referencia
-    // equivocada, y el stream llegaba a OBS girado 90 grados mientras el de
-    // CameraX salia derecho. Un test de la politica aislada no podia verlo, asi
-    // que aqui se modelan los DOS puntos de llamada y se exige que coincidan.
+    // La paridad quedó CONFIRMADA en hardware (Ronda 3: ambos backends
+    // aplicaron el mismo θ en el mismo agarre, y el giro físico se propagó en
+    // vivo). Lo que cambió después es la referencia común: cruda, sin
+    // desplazamiento. Estos tests fijan que ambos puntos de llamada siguen
+    // midiendo desde la misma referencia — la validada.
 
-    /** Lo que hace CameraX: VideoCapture.targetRotation = landscapeTargetRotation(hold). */
+    /** Lo que hace CameraX: VideoCapture.targetRotation = bucket crudo. */
     private fun cameraXEffectiveDegrees(sensorOrientation: Int, hold: Int): Int =
-        RotationPolicy.sensorRotationDegrees(
-            sensorOrientation, RotationPolicy.landscapeTargetRotation(hold),
-        )
+        RotationPolicy.sensorRotationDegrees(sensorOrientation, hold)
 
-    /** Lo que hace applyCamera2Rotation tras la correccion. */
+    /** Lo que hace applyCamera2Rotation: la misma referencia cruda. */
     private fun camera2EffectiveDegrees(sensorOrientation: Int, hold: Int): Int =
-        RotationPolicy.sensorRotationDegrees(
-            sensorOrientation, RotationPolicy.landscapeTargetRotation(hold),
-        )
+        RotationPolicy.sensorRotationDegrees(sensorOrientation, hold)
 
     @Test
     fun bothBackendsAgreeForEveryHold() {
-        // sensorOrientation=90 es el de la camara trasera del S23 Ultra,
-        // confirmado con dumpsys media.camera.
         allHolds.forEach { hold ->
             assertEquals(
                 "los backends discrepan con el telefono en $hold",
@@ -211,27 +196,17 @@ class RotationPolicyTest {
     }
 
     @Test
-    fun uprightPhoneProducesNoRotationOnEitherBackend() {
-        // El caso exacto reproducido: telefono vertical (user_rotation=0),
-        // sensorOrientation=90. Antes de la correccion Camera2 devolvia 90.
+    fun uprightPhoneProducesNinetyOnBothBackends() {
+        // El caso que la Ronda 3 midió mal con la referencia desplazada
+        // (aplicaba 0 y el stream salía tumbado): la referencia cruda produce
+        // el +90 que el contenido necesita, en los dos backends.
         val hold = RotationPolicy.bucketFor(0)
-        assertEquals(0, cameraXEffectiveDegrees(90, hold))
-        assertEquals(0, camera2EffectiveDegrees(90, hold))
-    }
-
-    @Test
-    fun passingTheRawHoldIsWhatProducedTheExtraQuarterTurn() {
-        // Pin del bug: sin el desplazamiento, el telefono vertical da 90.
-        // Si alguien vuelve a quitar landscapeTargetRotation, esto lo delata.
-        val hold = RotationPolicy.bucketFor(0)
-        assertEquals(90, RotationPolicy.sensorRotationDegrees(90, hold))
-        assertEquals(0, camera2EffectiveDegrees(90, hold))
+        assertEquals(90, cameraXEffectiveDegrees(90, hold))
+        assertEquals(90, camera2EffectiveDegrees(90, hold))
     }
 
     @Test
     fun agreementHoldsForOtherSensorMountings() {
-        // No todos los sensores montan a 90; la equivalencia no puede depender
-        // de eso.
         listOf(0, 90, 180, 270).forEach { sensor ->
             allHolds.forEach { hold ->
                 assertEquals(

@@ -5,31 +5,18 @@ import android.view.Surface
 /**
  * Orientation maths for the capture pipeline, kept pure so it can be tested.
  *
- * This lived inline in MainActivity with no tests, which is how three separate
- * rotation bugs shipped together: a ViewPort expressing its aspect ratio in the
- * wrong orientation (a 1080p session delivered 1080x608), a Preview
- * targetRotation that PreviewView ignores, and a VideoCapture reference that
- * left the stream rotated in OBS while the viewfinder looked correct.
+ * The rotation reference is the RAW physical hold (the accelerometer bucket).
+ * There used to be a `landscapeTargetRotation` quarter-turn shift here, on the
+ * theory that a landscape output wants a landscape reference; it was removed
+ * after on-device geometry instrumentation (S23 Ultra, Round 3 of the hardware
+ * validation) measured its effect as a constant −90° error on every hold, on
+ * both capture backends: vertical applied θ=0 where the content needed 90,
+ * horizontal applied 270 where it needed 0 — the long-standing "stream turned
+ * 90° clockwise in OBS". With the raw bucket, θ equals what the content needs
+ * at every hold, and the ViewPort can express the user's composition in the
+ * same frame without the inverted-rational compensation.
  */
 object RotationPolicy {
-
-    /**
-     * targetRotation for a landscape output.
-     *
-     * targetRotation is expressed relative to the device's *natural*
-     * orientation, which on a phone is portrait. Used directly, CameraX reports
-     * rotationDegrees=90 - "stand this upright in portrait" - and the GL
-     * renderer turns the landscape frame on its side. Shifting the reference by
-     * one quarter turn makes "phone held upright" mean "landscape output, no
-     * rotation", while keeping physical-rotation tracking intact: turn the
-     * phone and the offset turns with it.
-     */
-    fun landscapeTargetRotation(surfaceRotation: Int): Int = when (surfaceRotation) {
-        Surface.ROTATION_0 -> Surface.ROTATION_90
-        Surface.ROTATION_90 -> Surface.ROTATION_180
-        Surface.ROTATION_180 -> Surface.ROTATION_270
-        else -> Surface.ROTATION_0
-    }
 
     /** Degrees for a Surface.ROTATION_* constant. */
     fun degreesFor(surfaceRotation: Int): Int = when (surfaceRotation) {
@@ -74,13 +61,14 @@ object RotationPolicy {
  *
  * This lived inline in MainActivity's listener, where it compared the new
  * *device bucket* against VideoCapture.targetRotation. Those stopped being the
- * same quantity when targetRotation gained its quarter-turn landscape offset
- * (see [RotationPolicy.landscapeTargetRotation]), and the mismatch produced two
- * bugs at once: turning the phone one bucket anticlockwise was silently
- * dropped, because the new bucket happened to equal the offset already stored
- * in targetRotation, and a phone lying perfectly still re-applied its rotation
- * every [debounceMs] forever, because the guard could never match otherwise.
- * Tracking the last applied bucket here keeps the comparison inside one space.
+ * same quantity when targetRotation carried the (since removed) quarter-turn
+ * landscape offset, and the mismatch produced two bugs at once: turning the
+ * phone one bucket anticlockwise was silently dropped, because the new bucket
+ * happened to equal the offset already stored in targetRotation, and a phone
+ * lying perfectly still re-applied its rotation every [debounceMs] forever,
+ * because the guard could never match otherwise. Tracking the last applied
+ * bucket here keeps the comparison inside one space — and stays valid now that
+ * the offset is gone, since it never depended on the reference itself.
  *
  * Not thread-safe: the listener delivers on the main thread only.
  */
@@ -116,6 +104,17 @@ class RotationDebouncer(private val debounceMs: Long) {
         appliedBucket = bucket
         return bucket
     }
+
+    /**
+     * The bucket most recently applied, or null when none has been since the
+     * last [reset]. This is how a consumer that attaches mid-run (the Camera2
+     * backend) learns the CURRENT hold: it used to assume upright instead,
+     * and because [onOrientationChanged] deliberately swallows readings that
+     * match the applied bucket, a wrong assumption at attach time was never
+     * corrected for the rest of the session — a permanent quarter-turn on
+     * exactly the one lens Camera2 serves.
+     */
+    fun lastAppliedBucket(): Int? = appliedBucket
 
     /**
      * Forgets what was applied, so the next stable reading is pushed even if it

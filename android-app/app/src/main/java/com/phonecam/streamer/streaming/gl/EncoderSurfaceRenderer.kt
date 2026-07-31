@@ -65,19 +65,43 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
 
     // Homogeneous (x, y, 0, 1) per vertex, matching aTexCoord's vec4 attribute
     // in the shader — the OES transform matrix from SurfaceTexture is a full
-    // 4x4 and expects a 4-component vector to multiply against.
-    private val texCoordBuffer = floatBuffer(
-        floatArrayOf(
-            0f, 0f, 0f, 1f,
-            1f, 0f, 0f, 1f,
-            0f, 1f, 0f, 1f,
-            1f, 1f, 0f, 1f,
-        ),
-    )
+    // 4x4 and expects a 4-component vector to multiply against. Rewritten on
+    // the GL thread whenever the declared crop changes (see drawCamera).
+    private val texCoordBuffer = floatBuffer(ContentGeometry.cropTexCoords(0, 0, 0, 0, 0, 0))
     private val fullTexCoordBuffer = floatBuffer(floatArrayOf(0f, 1f, 1f, 1f, 0f, 0f, 1f, 0f))
 
     private val texMatrix = FloatArray(16)
     private val rotationMatrix = FloatArray(16)
+    private val scaleMatrix = FloatArray(16)
+    private val vertexMatrix = FloatArray(16)
+
+    // Camera buffer geometry, pushed by the capture side. The crop is
+    // CameraX's TransformationInfo.cropRect (buffer pixel coordinates); the
+    // Camera2 backend has no ViewPort so it always declares the full buffer.
+    // All volatile: written from capture/listener threads, read on the GL
+    // thread each frame.
+    @Volatile private var cameraWidth = 0
+    @Volatile private var cameraHeight = 0
+    @Volatile private var cropLeft = 0
+    @Volatile private var cropTop = 0
+    @Volatile private var cropRight = 0
+    @Volatile private var cropBottom = 0
+
+    // Rotation the source's SurfaceTexture transform matrix ALREADY applies to
+    // the content. Measured on hardware: the direct Camera2 path folds the
+    // sensor mounting (90 on the S23 Ultra back camera) into its texture
+    // matrix via the HAL's buffer transform hint — content appears upright at
+    // a vertical hold with zero vertex rotation; CameraX's processed stream
+    // consumes the hint and carries none. The vertex matrix must apply only
+    // the DIFFERENCE (see ContentGeometry.vertexRotation), or an
+    // already-straight image gets turned sideways — the exact regression the
+    // hardware validation caught live.
+    @Volatile private var textureRotationDegrees = 0
+
+    // What the texcoord buffer currently encodes — GL-thread only, compared
+    // against the volatiles above so the buffer is rewritten exactly when the
+    // crop really changed and never mid-read.
+    private var appliedCrop = intArrayOf(-1, -1, -1, -1, -1, -1)
 
     init {
         eglCore.makeCurrent(eglSurface)
@@ -119,6 +143,29 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
     /** Sets the size the camera will actually produce frames at — call once before the first frame arrives. */
     fun setCameraFrameSize(width: Int, height: Int) {
         cameraSurfaceTexture.setDefaultBufferSize(width, height)
+        cameraWidth = width
+        cameraHeight = height
+        // Until a crop is declared, the content is the whole buffer.
+        setContentCrop(0, 0, width, height)
+    }
+
+    /**
+     * Declares which pixel rect of the camera buffer is the actual content —
+     * CameraX's TransformationInfo.cropRect. Safe from any thread; the GL
+     * thread picks it up on the next frame. The crop used to be discarded
+     * outright, which silently skipped the composition whenever CameraX
+     * delivered the full buffer and expected the consumer to cut it.
+     */
+    fun setContentCrop(left: Int, top: Int, right: Int, bottom: Int) {
+        cropLeft = left
+        cropTop = top
+        cropRight = right
+        cropBottom = bottom
+    }
+
+    /** How much rotation the source's texture matrix already carries — see the field's doc. */
+    fun setTextureRotationDegrees(degrees: Int) {
+        textureRotationDegrees = degrees
     }
 
     fun setOnFrameAvailableListener(listener: SurfaceTexture.OnFrameAvailableListener, handler: android.os.Handler) {
@@ -188,12 +235,36 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
     }
 
     private fun drawCamera(rotationDegrees: Int) {
-        // CameraX's convention: rotate the buffer clockwise by this many
-        // degrees to reach the desired output orientation. Applied to the
-        // vertex positions (not texcoords) so it composes independently of
-        // the OES transform matrix, which handles this device's own sensor
-        // mounting/buffer convention.
-        Matrix.setRotateM(rotationMatrix, 0, -rotationDegrees.toFloat(), 0f, 0f, 1f)
+        // The vertex matrix applies only what the texture matrix has not
+        // already applied: [rotationDegrees] is the TOTAL rotation the content
+        // needs (CameraX convention: clockwise to reach the output
+        // orientation), and the source's own transform may carry part of it
+        // (Camera2's HAL hint does; see textureRotationDegrees). Applying the
+        // total on top of the carried part is what turned already-straight
+        // Camera2 frames sideways.
+        val vertexDegrees = ContentGeometry.vertexRotation(rotationDegrees, textureRotationDegrees)
+        Matrix.setRotateM(rotationMatrix, 0, -vertexDegrees.toFloat(), 0f, 0f, 1f)
+
+        // The fix for the orientation-dependent stretch: a bare rotation of
+        // the full-surface quad remaps which content axis lands on which
+        // surface axis but never adjusts magnification, so any 90/270 draw
+        // whose target aspect isn't the transpose of the content's came out
+        // deformed (measured 3.16x at 16:9, 1.78x at 4:3 — see
+        // ContentGeometry). Scaling the rotated quad by the cover factors
+        // makes both magnifications equal; when aspects already match both
+        // factors are 1 and this multiply is the identity.
+        val crop = refreshCropTexCoords()
+        val scale = ContentGeometry.coverScale(
+            contentWidth = crop[2] - crop[0],
+            contentHeight = crop[3] - crop[1],
+            rotationDegrees = rotationDegrees,
+            targetWidth = targetWidth,
+            targetHeight = targetHeight,
+        )
+        Matrix.setIdentityM(scaleMatrix, 0)
+        Matrix.scaleM(scaleMatrix, 0, scale[0], scale[1], 1f)
+        // Scale AFTER rotation (in surface space): vertexMatrix = S * R.
+        Matrix.multiplyMM(vertexMatrix, 0, scaleMatrix, 0, rotationMatrix, 0)
 
         GLES20.glUseProgram(cameraProgram)
 
@@ -206,7 +277,7 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
         GLES20.glVertexAttribPointer(cameraTexCoordHandle, 4, GLES20.GL_FLOAT, false, 0, texCoordBuffer)
 
         GLES20.glUniformMatrix4fv(cameraTexMatrixHandle, 1, false, texMatrix, 0)
-        GLES20.glUniformMatrix4fv(cameraRotationMatrixHandle, 1, false, rotationMatrix, 0)
+        GLES20.glUniformMatrix4fv(cameraRotationMatrixHandle, 1, false, vertexMatrix, 0)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, cameraTextureId)
@@ -215,6 +286,34 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         GLES20.glDisableVertexAttribArray(cameraPositionHandle)
         GLES20.glDisableVertexAttribArray(cameraTexCoordHandle)
+    }
+
+    /**
+     * Ensures the texcoord buffer encodes the currently-declared crop, and
+     * returns that crop as [left, top, right, bottom] (falling back to the
+     * full buffer when nothing valid was declared). GL-thread only; rewrites
+     * the shared FloatBuffer exactly when the crop actually changed, so the
+     * capture thread's volatile writes never race a buffer mid-read.
+     */
+    private fun refreshCropTexCoords(): IntArray {
+        var l = cropLeft
+        var t = cropTop
+        var r = cropRight
+        var b = cropBottom
+        val w = cameraWidth
+        val h = cameraHeight
+        if (w <= 0 || h <= 0 || r <= l || b <= t) {
+            l = 0; t = 0; r = if (w > 0) w else 1; b = if (h > 0) h else 1
+        }
+        val changed = appliedCrop[0] != l || appliedCrop[1] != t ||
+            appliedCrop[2] != r || appliedCrop[3] != b ||
+            appliedCrop[4] != w || appliedCrop[5] != h
+        if (changed) {
+            texCoordBuffer.position(0)
+            texCoordBuffer.put(ContentGeometry.cropTexCoords(l, t, r, b, w, h))
+            appliedCrop = intArrayOf(l, t, r, b, w, h)
+        }
+        return intArrayOf(l, t, r, b)
     }
 
     private fun uploadWatermarkTexture() {

@@ -36,9 +36,11 @@ class RotationDebouncerTest {
 
     @Test
     fun turningFromPortraitToLandscapeRightIsApplied() {
-        // ROTATION_90 is exactly the value landscapeTargetRotation stores for
-        // portrait, so the old comparison saw "no change" and dropped this turn
-        // entirely: one of the two directions never rotated the stream.
+        // ROTATION_90 is exactly the value the (since removed) quarter-turn
+        // shift used to store for portrait, so the old comparison saw "no
+        // change" and dropped this turn entirely: one of the two directions
+        // never rotated the stream. The debouncer's own-space tracking fixed
+        // it, and stays valid under the raw reference.
         val d = RotationDebouncer(debounceMs)
         assertEquals(Surface.ROTATION_0, d.hold(portrait, 0))
         assertEquals(Surface.ROTATION_90, d.hold(landscapeRight, 1_000))
