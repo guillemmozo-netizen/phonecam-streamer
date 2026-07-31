@@ -93,8 +93,21 @@ def _request(ws, request_type: str, request_id: str, data: dict) -> dict:
         return {}
 
 
-def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
-    """Makes the phone's source fit the canvas without distortion.
+DEFAULT_SOURCE_NAME = "PhoneCam"
+
+
+def source_name() -> str:
+    """The exact OBS scene-item name this module is allowed to reshape.
+
+    Overridable with PHONECAM_OBS_SOURCE for anyone who has already named
+    their source something else and would rather configure than rename.
+    """
+    configured = os.environ.get("PHONECAM_OBS_SOURCE", "").strip()
+    return configured or DEFAULT_SOURCE_NAME
+
+
+def _fit_phonecam_source(ws, width: int, height: int) -> None:
+    """Makes PhoneCam's own source fit the canvas without distortion.
 
     Matching the canvas to the stream is only half of it: a scene item keeps
     whatever scale it was given when it was added, so after a resolution change
@@ -102,6 +115,29 @@ def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
     bounding box with OBS_BOUNDS_SCALE_INNER makes OBS scale the source to fit
     inside the canvas *preserving aspect ratio* — letterboxing rather than
     distorting, which is what "don't stretch the image" actually requires.
+
+    ## Why the match is exact, and only exact
+
+    This used to take the first scene item with "cam" anywhere in its name,
+    on the reasoning that the virtual camera device name is localised and
+    varies by backend. That reasoning was about finding *our* source; what the
+    rule actually describes is a large share of every capture device anyone
+    owns. "Logitech Webcam", "Elgato Cam Link", "DroidCam Source", "OBS Virtual
+    Camera" and a scene named "Camera 2" all match it, and the first one in
+    the user's scene list wins — so a feature meant to fit the phone's feed
+    could silently rewrite the transform of a webcam it has nothing to do with,
+    in a scene it was never pointed at.
+
+    A scene item is now touched only when its name is exactly [source_name],
+    compared case-insensitively but never as a substring. If nothing matches,
+    nothing is modified and the reason is logged with the names that *were*
+    found, so the fix (rename the source, or set PHONECAM_OBS_SOURCE) is
+    visible rather than guessed at.
+
+    Note this is deliberately a *name* match, not a device match: PhoneCam
+    reaches OBS through pyvirtualcam, whose Windows backend is the OBS Virtual
+    Camera device — so the device identity cannot distinguish our feed from
+    anything else using the same backend. The name the user gave the item can.
 
     The current scene comes from GetSceneList, not from GetCurrentProgramScene,
     which reports it more directly but crashes OBS 32.2.1 with an access
@@ -120,6 +156,8 @@ def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
     Best-effort throughout: if the scene or the source can't be found, the rest
     of the sync is still worth doing.
     """
+    wanted = source_name()
+
     scene_status = _request(ws, "GetSceneList", "phonecam-scene", {})
     scene = (scene_status.get("responseData") or {}).get("currentProgramSceneName")
     if not scene:
@@ -129,25 +167,39 @@ def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
     items = (items_status.get("responseData") or {}).get("sceneItems") or []
     for item in items:
         name = str(item.get("sourceName", ""))
-        # The receiver feeds OBS through a virtual camera, so the scene item is
-        # a video capture device whose name mentions it. Matching loosely on
-        # purpose: the device name is localised and varies by backend.
-        if "cam" not in name.lower():
+        if name.casefold() != wanted.casefold():
             continue
         _request(ws, "SetSceneItemTransform", "phonecam-fit", {
             "sceneName": scene,
             "sceneItemId": item.get("sceneItemId"),
             "sceneItemTransform": {
                 "boundsType": "OBS_BOUNDS_SCALE_INNER",
+                # 0 is OBS_ALIGN_CENTER: the source is centred inside its
+                # bounding box, so a composition narrower or shorter than the
+                # canvas letterboxes evenly instead of hugging one edge.
                 "boundsAlignment": 0,
                 "boundsWidth": float(width),
                 "boundsHeight": float(height),
+                # The bounding box itself is pinned to the canvas origin, which
+                # is only where it looks if the item's *position* alignment is
+                # top-left. An item left on centre alignment would put the box's
+                # centre at (0,0) and hang three quarters of it off-canvas, so
+                # the alignment is set here rather than inherited.
+                "alignment": 5,  # OBS_ALIGN_LEFT | OBS_ALIGN_TOP
                 "positionX": 0.0,
                 "positionY": 0.0,
             },
         })
-        log.info("obs_sync: fitted scene item '%s' to %sx%s without stretching", name, width, height)
+        log.info(
+            "obs_sync: fitted scene item '%s' to %sx%s without stretching", name, width, height,
+        )
         return
+
+    log.warning(
+        "obs_sync: no scene item named '%s' in scene '%s' — leaving every source alone. "
+        "Found: %s. Rename PhoneCam's source to '%s', or set PHONECAM_OBS_SOURCE to its name.",
+        wanted, scene, [str(i.get("sourceName", "")) for i in items] or "nothing", wanted,
+    )
 
 
 def _dimensions_are_sane(width: int, height: int, fps: int) -> bool:
@@ -212,26 +264,170 @@ def _active_output(ws) -> Optional[str]:
     return None
 
 
-def _canvas_already_matches(ws, width: int, height: int, fps: int) -> bool:
-    """Whether OBS is already shaped the way we are about to ask for.
+def _current_canvas(ws) -> Optional[tuple]:
+    """OBS's canvas right now as (baseW, baseH, outW, outH, fps), or None if it
+    could not be read.
 
-    Worth a round trip: the answer is usually yes (nothing changed since the
-    last stream), and skipping the request turns the most dangerous call in this
-    module into a no-op for the common case. A failed or unparseable read just
-    reports False, so the sync proceeds exactly as it did before.
+    Worth the round trip twice over: it decides whether the most dangerous call
+    in this module can be skipped entirely (the usual case — nothing changed
+    since the last stream), and it is the only source for the "from" half of the
+    canvas-updated log line. An unreadable answer is None, which every caller
+    treats as "proceed as before".
     """
     status = _request(ws, "GetVideoSettings", "phonecam-get-video", {})
     data = status.get("responseData") or {}
     try:
+        denominator = int(data["fpsDenominator"]) or 1
         return (
-            int(data["baseWidth"]) == width
-            and int(data["baseHeight"]) == height
-            and int(data["outputWidth"]) == width
-            and int(data["outputHeight"]) == height
-            and int(data["fpsNumerator"]) == fps
-            and int(data["fpsDenominator"]) == 1
+            int(data["baseWidth"]), int(data["baseHeight"]),
+            int(data["outputWidth"]), int(data["outputHeight"]),
+            int(data["fpsNumerator"]) // denominator,
         )
-    except (KeyError, TypeError, ValueError):
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return None
+
+
+def _canvas_matches(canvas: Optional[tuple], width: int, height: int, fps: int) -> bool:
+    return canvas == (width, height, width, height, fps)
+
+
+# ---------------------------------------------------------------- pending ----
+#
+# A canvas change that could not be applied is kept rather than dropped. There
+# are three ordinary ways to arrive at a change nobody can apply yet, and all
+# three used to end with the setting silently lost:
+#
+#   - OBS is closed, or its WebSocket server is off (the user changes the
+#     setting on the phone first and opens OBS afterwards - the common order);
+#   - OBS is open but an output is running, which is the one state where
+#     reshaping the pipeline crashes it (see _active_output). Note PhoneCam's
+#     own feed *is* an output, so every change made mid-session lands here;
+#   - OBS answered and refused.
+#
+# On disk rather than in memory because the receiver is a service that gets
+# restarted, and "apply it on the next connection" has to survive that.
+
+_PENDING_PATH = os.path.join(
+    os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"),
+    "PhoneCam", "obs_pending.json",
+)
+
+# Replay is attempted on every ObsManager tick that finds a pending change, so
+# a change deferred because an output was running applies the moment it stops -
+# no reconnect needed. This bounds that: a change OBS will never accept must
+# not retry until the machine is turned off.
+_MAX_PENDING_ATTEMPTS = 20
+
+_PENDING_LOCK = threading.Lock()
+
+
+def _read_pending() -> Optional[dict]:
+    try:
+        with open(_PENDING_PATH, "r", encoding="utf-8") as f:
+            pending = json.load(f)
+        return pending if isinstance(pending, dict) else None
+    except Exception:
+        return None
+
+
+def _write_pending(pending: Optional[dict]) -> None:
+    """Persists (or clears) the deferred change. Never raises: a read-only or
+    missing profile directory must not take down a sync that otherwise worked."""
+    try:
+        if pending is None:
+            if os.path.exists(_PENDING_PATH):
+                os.remove(_PENDING_PATH)
+            return
+        os.makedirs(os.path.dirname(_PENDING_PATH), exist_ok=True)
+        with open(_PENDING_PATH, "w", encoding="utf-8") as f:
+            json.dump(pending, f)
+    except Exception as e:
+        log.debug("obs_sync: could not persist the pending canvas change: %s", e)
+
+
+def _canvas_key(request: dict) -> tuple:
+    """What makes two deferred changes "the same change" for retry purposes.
+
+    The canvas triple only, not the whole request: the bitrates and sample
+    rate ride along on the same replay but do not reset the pipeline, so a
+    change that differs only in bitrate is still the same canvas change and
+    must keep its attempt count.
+    """
+    return (request.get("width"), request.get("height"), request.get("fps"))
+
+
+def _defer(request: dict, reason: str) -> None:
+    """Remembers a change that could not be applied now.
+
+    Only the newest matters - a user who moves 1080p -> 4K -> 1440p wants
+    1440p, not a queue - so a request for a different canvas replaces the
+    stored one and resets its attempt count.
+
+    A request for the *same* canvas must not, and this is load-bearing rather
+    than tidy: replay_pending increments the count and then calls
+    sync_video_settings, which lands right back here when it fails again.
+    Resetting on the way through made the counter oscillate between 0 and 1,
+    so the give-up threshold was unreachable and a change OBS would never
+    accept retried on every manager tick, forever.
+    """
+    with _PENDING_LOCK:
+        previous = _read_pending() or {}
+        same_canvas = _canvas_key(previous.get("request") or {}) == _canvas_key(request)
+        attempts = previous.get("attempts", 0) if same_canvas else 0
+        _write_pending({"request": request, "attempts": attempts, "reason": reason})
+    log.info(
+        "obs_sync: saved %sx%s@%sfps to apply when OBS can take it (%s)",
+        request["width"], request["height"], request["fps"], reason,
+    )
+
+
+def _clear_pending() -> None:
+    with _PENDING_LOCK:
+        if _read_pending() is not None:
+            _write_pending(None)
+
+
+def has_pending() -> bool:
+    with _PENDING_LOCK:
+        return os.path.exists(_PENDING_PATH) and _read_pending() is not None
+
+
+def replay_pending(allow_scene_requests: bool = False) -> bool:
+    """Re-applies a deferred canvas change. Wired to ObsManager's connected
+    hook in control_server, so obs_manager still knows nothing about *what*
+    gets synced - only that OBS is reachable again.
+
+    Returns whether anything was applied.
+    """
+    with _PENDING_LOCK:
+        pending = _read_pending()
+        if pending is None:
+            return False
+        request = pending.get("request") or {}
+        attempts = int(pending.get("attempts", 0)) + 1
+        if attempts > _MAX_PENDING_ATTEMPTS:
+            log.warning(
+                "obs_sync: giving up on the deferred %sx%s canvas change after %s attempts",
+                request.get("width"), request.get("height"), _MAX_PENDING_ATTEMPTS,
+            )
+            _write_pending(None)
+            return False
+        _write_pending({**pending, "attempts": attempts})
+
+    try:
+        return sync_video_settings(
+            width=int(request["width"]),
+            height=int(request["height"]),
+            fps=int(request["fps"]),
+            bitrate_bps=int(request.get("bitrate_bps", 0)),
+            audio_bitrate_bps=int(request.get("audio_bitrate_bps", 0)),
+            sample_rate=int(request.get("sample_rate", 0)),
+            allow_scene_requests=allow_scene_requests,
+            source="pending",
+        )
+    except (KeyError, TypeError, ValueError) as e:
+        log.warning("obs_sync: discarding an unreadable pending change: %s", e)
+        _clear_pending()
         return False
 
 
@@ -262,6 +458,9 @@ def sync_video_settings(
 
     [source] only ever appears in the log, and exists because when six resets
     arrived in one second there was no way to tell which caller sent them.
+
+    A change that cannot be applied right now is deferred rather than dropped
+    — see the pending section above — and retried by [replay_pending].
     """
     global _last_reset, _last_reset_at
 
@@ -272,11 +471,20 @@ def sync_video_settings(
         )
         return False
 
+    # What would have to be replayed if this attempt cannot land. Built before
+    # anything can fail so every deferral path stores the same shape.
+    deferrable = {
+        "width": width, "height": height, "fps": fps,
+        "bitrate_bps": bitrate_bps, "audio_bitrate_bps": audio_bitrate_bps,
+        "sample_rate": sample_rate,
+    }
+
     if settle_seconds > 0:
         sleeper(settle_seconds)
 
     cfg = _read_obs_websocket_config()
     if not cfg or not cfg.get("server_enabled"):
+        _defer(deferrable, "OBS WebSocket server is off")
         log.info(
             "obs_sync: OBS WebSocket server is off — enable it once in OBS "
             "(Tools > WebSocket Server Settings > Enable WebSocket server) to use auto-sync",
@@ -292,6 +500,7 @@ def sync_video_settings(
         try:
             ws = connect(port, password)
         except Exception as e:
+            _defer(deferrable, f"could not connect to OBS: {e}")
             log.warning("obs_sync: could not connect to OBS (from %s): %s", source, e)
             return False
 
@@ -306,20 +515,26 @@ def sync_video_settings(
                     "obs_sync: skipping repeat reset to %sx%s@%sfps from %s",
                     width, height, fps, source,
                 )
-            elif _canvas_already_matches(ws, width, height, fps):
+            elif _canvas_matches(canvas := _current_canvas(ws), width, height, fps):
                 log.info("obs_sync: OBS canvas already %sx%s@%sfps", width, height, fps)
                 _last_reset, _last_reset_at = requested, clock()
+                _clear_pending()
             elif (busy := _active_output(ws)) is not None:
                 # The hard guard. See _active_output: reshaping the video
                 # pipeline while an output holds it is what crashed OBS, and
                 # OBS does not reliably refuse it on our behalf. Skipping is
                 # not a degraded outcome — OBS's own Settings dialog forbids
                 # exactly this, so there is nothing here we are giving up.
+                #
+                # Deferred rather than dropped: PhoneCam's own feed is a
+                # virtual-camera output, so this is the branch every canvas
+                # change made during a live session takes. Without the pending
+                # store, changing resolution mid-stream did nothing, ever.
+                _defer(deferrable, f"OBS {busy} output is running")
                 log.info(
                     "obs_sync: not resetting the canvas to %sx%s@%sfps — OBS %s output is "
                     "running, and changing video settings under a live output crashes OBS "
-                    "(see _active_output). Stop it and change resolution, or let the next "
-                    "sync pick it up.",
+                    "(see _active_output). Saved; it will be applied once that output stops.",
                     width, height, fps, busy,
                 )
             else:
@@ -337,11 +552,20 @@ def sync_video_settings(
                 }).get("requestStatus", {})
                 if video_status.get("result"):
                     _last_reset, _last_reset_at = requested, clock()
-                    log.info("obs_sync: OBS canvas set to %sx%s@%sfps", width, height, fps)
+                    _clear_pending()
+                    # Both halves of the change, which is what makes this line
+                    # answer "did my resolution change actually reach OBS?" on
+                    # its own. The previous shape is whatever GetVideoSettings
+                    # reported a moment ago; "unknown" only if it was unreadable.
+                    was = f"{canvas[0]}x{canvas[1]}" if canvas else "unknown"
+                    log.info(
+                        "OBS canvas updated: %s -> %sx%s @%sfps", was, width, height, fps,
+                    )
                 else:
                     # Reached only when OBS refuses for some reason the
                     # pre-flight check above did not cover. Not fatal to the
                     # rest of the sync.
+                    _defer(deferrable, "SetVideoSettings rejected")
                     log.warning("obs_sync: SetVideoSettings rejected: %s", video_status.get("comment"))
 
             # Profile parameters below only take effect in Simple output mode,
@@ -379,7 +603,7 @@ def sync_video_settings(
             # requests_allowed) opt in; the Hello path never does, because a
             # stream starting is exactly when OBS may have just been launched.
             if allow_scene_requests:
-                _fit_virtual_camera_source(ws, width, height)
+                _fit_phonecam_source(ws, width, height)
 
             log.info(
                 "obs_sync: synced canvas=%sx%s@%sfps video=%skbps audio=%skbps rate=%sHz",

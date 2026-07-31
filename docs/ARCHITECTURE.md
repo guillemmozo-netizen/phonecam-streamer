@@ -53,6 +53,50 @@ phone, an emulator, or even a JDK.
 | Real AdMob rewarded-ad integration | **Wired up** (`AdMobAdController`) using Google's public test ad unit — real load/show/reward flow, just pointed at test IDs until you register your own AdMob app. See [ADS_SETUP.md](ADS_SETUP.md) |
 | GDPR/UMP consent gate | **Wired up** (`ConsentManager`) — ads are only initialized/requested after `canRequestAds()` is true, per Google's UMP contract. The AdMob-console-side consent message content still needs configuring before a public EU release — see ADS_SETUP.md |
 
+## OBS composition sync
+
+With Settings > "Sync OBS settings" on (the default), OBS's canvas is reshaped
+to match what the phone actually streams, over obs-websocket v5 (built into
+OBS 28+, including 31 and 32; it has to be enabled once under Tools > WebSocket
+Server Settings).
+
+**The frame's shape comes from Composition, not from Resolution.** Resolution
+decides how big the frame is, Composition decides its shape, and the short edge
+is what a preset name refers to. At 1080p:
+
+| Composition | Streamed, and OBS canvas |
+|---|---|
+| 16:9 | 1920x1080 |
+| 4:3 | 1440x1080 |
+| 1:1 | 1080x1080 |
+| 9:16 | 1080x1920 |
+| 3:4 | 1080x1440 |
+
+`StreamConfig.outputSizeFor` is the single source of truth for that, and
+`CameraStreamer.effectiveTarget` is what both the encoder and the Settings push
+to OBS go through — so the size announced to the PC is always the size that was
+encoded, reward-tier ceiling included. The ceiling scales the frame down
+uniformly; it never reshapes it.
+
+**Only PhoneCam's own source is ever modified.** The scene item is matched by
+*exact* name — `PhoneCam` by default, or whatever `PHONECAM_OBS_SOURCE` is set
+to — never by substring. Webcams, capture cards and other streamers' sources
+are never touched, and if no source with that exact name is in the current
+scene, nothing is modified and the reason is logged with the names that were
+found. Name your PhoneCam source `PhoneCam` in OBS for the auto-fit to apply to
+it.
+
+**A change that can't be applied yet is kept, not dropped.** Reshaping OBS's
+video pipeline while any output is running crashes it, and PhoneCam's own feed
+is a virtual-camera output — so a resolution change made mid-session, or while
+OBS is closed, is saved to `%LOCALAPPDATA%\PhoneCam\obs_pending.json` and
+applied on the next connection or as soon as the output stops. The canvas
+change logs both shapes:
+
+```
+OBS canvas updated: 1920x1080 -> 1440x1080 @60fps
+```
+
 ## Proof this actually works today, without a phone
 
 ```bash

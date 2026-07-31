@@ -125,6 +125,18 @@ class ObsManager:
     clock: Callable[[], float] = time.monotonic
     sleeper: Callable[[float], None] = time.sleep
 
+    # Called after every successful connect, with whether scene requests are
+    # safe yet. This is how a canvas change deferred while OBS was closed (or
+    # while an output was running) gets a chance to apply — obs_sync.
+    # replay_pending is wired to it in control_server.
+    #
+    # Kept as an opaque callback on purpose: this module still knows nothing
+    # about *what* gets synced, only that OBS became reachable. It fires on
+    # every successful tick rather than only on the OFFLINE->CONNECTED edge,
+    # because the commonest reason a change is waiting is an output that was
+    # running - and that stops without OBS ever disconnecting.
+    on_connected: Optional[Callable[[bool], None]] = None
+
     _status: ObsStatus = field(default_factory=ObsStatus)
     _lock: threading.Lock = field(default_factory=threading.Lock)
     _backoff: float = INITIAL_BACKOFF_SECONDS
@@ -195,7 +207,21 @@ class ObsManager:
             self._status.last_error = ""
             self._status.connected_since = self.clock()
             self._status.next_retry_in = 0.0
+        self._notify_connected()
         return ObsState.CONNECTED
+
+    def _notify_connected(self) -> None:
+        """Runs the connected hook outside the lock, swallowing anything it
+        throws. The hook talks to OBS over its own socket and can block for
+        seconds; holding _lock across that would stall every snapshot() the
+        phone's status UI makes, and letting it raise would kill the watcher
+        thread over what is only ever a deferred nice-to-have."""
+        if self.on_connected is None:
+            return
+        try:
+            self.on_connected(self.status.scene_requests_allowed)
+        except Exception as e:
+            log.warning("obs_manager: connected hook failed: %s", e)
 
     def wait_interval(self) -> float:
         """How long to idle before the next tick, given the current state."""

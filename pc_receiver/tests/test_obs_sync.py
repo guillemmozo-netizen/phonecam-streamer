@@ -17,7 +17,15 @@ from pc_receiver import obs_sync
 class FakeWs:
     """Records requests and answers them the way obs-websocket would."""
 
-    def __init__(self, video_settings=None, fail_set=False):
+    # The webcam is listed first on purpose. The old rule took the first item
+    # with "cam" anywhere in its name, so this ordering is what makes the
+    # exact-match tests below a real regression pin rather than a coincidence.
+    DEFAULT_SCENE_ITEMS = [
+        {"sourceName": "Logitech Webcam", "sceneItemId": 1},
+        {"sourceName": "PhoneCam", "sceneItemId": 2},
+    ]
+
+    def __init__(self, video_settings=None, fail_set=False, scene_items=None):
         self.requests: list[tuple[str, dict]] = []
         self.closed = False
         self._replies: list[str] = []
@@ -27,6 +35,9 @@ class FakeWs:
             "fpsNumerator": 30, "fpsDenominator": 1,
         }
         self._fail_set = fail_set
+        self._scene_items = (
+            self.DEFAULT_SCENE_ITEMS if scene_items is None else scene_items
+        )
 
     def send(self, raw):
         msg = json.loads(raw)["d"]
@@ -46,7 +57,7 @@ class FakeWs:
         elif kind == "GetSceneList":
             data, ok = {"currentProgramSceneName": "Scene", "scenes": [{"sceneName": "Scene"}]}, True
         elif kind == "GetSceneItemList":
-            data, ok = {"sceneItems": [{"sourceName": "OBS Virtual Camera", "sceneItemId": 1}]}, True
+            data, ok = {"sceneItems": self._scene_items}, True
         else:
             data, ok = {}, True
         self._replies.append(json.dumps({
@@ -64,13 +75,23 @@ class FakeWs:
 
 
 @pytest.fixture(autouse=True)
-def reset_module_state(monkeypatch):
+def reset_module_state(monkeypatch, tmp_path):
     """The coalescing guard is module state, so each test starts clean."""
     obs_sync._last_reset = None
     obs_sync._last_reset_at = 0.0
     monkeypatch.setattr(obs_sync, "_read_obs_websocket_config",
                         lambda: {"server_enabled": True, "server_port": 4455,
                                  "server_password": "pw"})
+    # The pending store is a real file under %LOCALAPPDATA%. Redirected per
+    # test: without this the suite writes to (and deletes from) the developer's
+    # own PhoneCam state, and tests leak deferred changes into each other -
+    # both happened, and the leak was invisible because a later passing test
+    # happened to clear the file again.
+    monkeypatch.setattr(obs_sync, "_PENDING_PATH", str(tmp_path / "obs_pending.json"))
+    # Scene-item matching is exact, and the name is env-overridable — so a
+    # developer who set PHONECAM_OBS_SOURCE for their own OBS must not change
+    # what these tests assert.
+    monkeypatch.delenv("PHONECAM_OBS_SOURCE", raising=False)
     yield
     obs_sync._last_reset = None
     obs_sync._last_reset_at = 0.0
@@ -226,6 +247,72 @@ def test_scene_fit_runs_only_when_explicitly_allowed():
     sync(ws, allow_scene_requests=True)
     assert "GetSceneList" in ws.kinds()
     assert "SetSceneItemTransform" in ws.kinds()
+
+
+# ---------- which source may be reshaped, and which may never be ----------
+
+def _transforms(ws):
+    return [data for kind, data in ws.requests if kind == "SetSceneItemTransform"]
+
+
+def test_only_phonecams_own_source_is_reshaped():
+    """The webcam is first in the scene and its name contains "cam" — the old
+    substring rule reshaped it. Nothing but the exact name may be touched."""
+    ws = FakeWs()
+    sync(ws, allow_scene_requests=True)
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [2]
+
+
+@pytest.mark.parametrize("name", [
+    "Logitech Webcam",       # a real webcam
+    "Elgato Cam Link 4K",    # a capture card
+    "DroidCam Source",       # a competing phone streamer
+    "OBS Virtual Camera",    # the backend PhoneCam itself rides on
+    "Camera 2",              # anything at all with "cam" in it
+    "PhoneCam overlay",      # a near miss: exact means exact, not "starts with"
+    "My PhoneCam",           # and not "ends with" either
+])
+def test_a_source_that_is_not_ours_is_never_touched(name):
+    ws = FakeWs(scene_items=[{"sourceName": name, "sceneItemId": 7}])
+    sync(ws, allow_scene_requests=True)
+    assert _transforms(ws) == []
+
+
+def test_a_missing_source_changes_nothing_and_says_so(caplog):
+    ws = FakeWs(scene_items=[{"sourceName": "Webcam", "sceneItemId": 1}])
+    with caplog.at_level("WARNING"):
+        assert sync(ws, allow_scene_requests=True) is True
+    assert _transforms(ws) == []
+    assert "no scene item named 'PhoneCam'" in caplog.text
+    # The names it did find, so the user can see what to rename.
+    assert "Webcam" in caplog.text
+
+
+def test_the_source_name_is_configurable(monkeypatch):
+    monkeypatch.setenv("PHONECAM_OBS_SOURCE", "Movil del salon")
+    ws = FakeWs(scene_items=[
+        {"sourceName": "PhoneCam", "sceneItemId": 1},
+        {"sourceName": "Movil del salon", "sceneItemId": 2},
+    ])
+    sync(ws, allow_scene_requests=True)
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [2]
+
+
+def test_the_name_match_ignores_case_but_still_demands_the_whole_name():
+    ws = FakeWs(scene_items=[{"sourceName": "phonecam", "sceneItemId": 3}])
+    sync(ws, allow_scene_requests=True)
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [3]
+
+
+def test_the_fit_centres_the_source_and_pins_its_box_to_the_canvas():
+    ws = FakeWs()
+    sync(ws, width=1440, height=1080, allow_scene_requests=True)
+    transform = _transforms(ws)[0]["sceneItemTransform"]
+    assert transform["boundsType"] == "OBS_BOUNDS_SCALE_INNER"  # scale, never stretch
+    assert transform["boundsAlignment"] == 0                    # centred in its box
+    assert transform["alignment"] == 5                          # box pinned top-left
+    assert (transform["boundsWidth"], transform["boundsHeight"]) == (1440.0, 1080.0)
+    assert (transform["positionX"], transform["positionY"]) == (0.0, 0.0)
 
 
 def test_the_request_that_crashes_obs_is_never_sent():
@@ -434,3 +521,144 @@ def test_the_status_check_is_skipped_entirely_when_the_canvas_already_matches():
     assert sync_against(ws) is True
     assert "GetVirtualCamStatus" not in ws.kinds()
     assert "SetVideoSettings" not in ws.kinds()
+
+
+# ---------- the before -> after log line ----------
+
+def test_the_canvas_change_is_logged_with_both_shapes(caplog):
+    """The one line that answers "did my resolution change reach OBS?" without
+    needing the line above it for the previous value."""
+    ws = FakeWs(video_settings={
+        "baseWidth": 1920, "baseHeight": 1080,
+        "outputWidth": 1920, "outputHeight": 1080,
+        "fpsNumerator": 60, "fpsDenominator": 1,
+    })
+    with caplog.at_level("INFO"):
+        assert sync(ws, width=1440, height=1080, fps=60) is True
+    assert "OBS canvas updated: 1920x1080 -> 1440x1080" in caplog.text
+
+
+def test_an_unreadable_previous_shape_still_logs_the_new_one(caplog):
+    ws = FakeWs(video_settings={"baseWidth": "?"})
+    with caplog.at_level("INFO"):
+        assert sync(ws, width=1440, height=1080, fps=60) is True
+    assert "OBS canvas updated: unknown -> 1440x1080" in caplog.text
+
+
+# ---------- deferring a change nobody can apply yet ----------
+
+def test_a_change_made_while_obs_is_closed_is_kept():
+    def refuse(port, pw):
+        raise ConnectionError("nothing listening")
+
+    assert obs_sync.has_pending() is False
+    assert obs_sync.sync_video_settings(
+        width=1440, height=1080, fps=60, connector=refuse, sleeper=lambda s: None,
+    ) is False
+    assert obs_sync.has_pending() is True
+
+
+def test_a_change_made_during_a_live_session_is_kept():
+    """PhoneCam's own feed is a virtual-camera output, so this is the branch
+    every mid-stream resolution change takes. It used to be dropped outright."""
+    ws = OutputAwareWs(active_output="virtual camera")
+
+    assert sync_against(ws, width=1440, height=1080) is True
+    assert "SetVideoSettings" not in ws.kinds()
+    assert obs_sync.has_pending() is True
+
+
+def test_the_websocket_server_being_off_is_kept_too(monkeypatch):
+    monkeypatch.setattr(obs_sync, "_read_obs_websocket_config", lambda: {"server_enabled": False})
+    assert sync(FakeWs()) is False
+    assert obs_sync.has_pending() is True
+
+
+def test_a_change_that_applied_leaves_nothing_pending():
+    assert sync(FakeWs(), width=1440, height=1080) is True
+    assert obs_sync.has_pending() is False
+
+
+def test_a_canvas_that_already_matches_clears_an_older_pending_change():
+    """Whatever was waiting has since been satisfied — by OBS restarting into
+    the right shape, or by the user setting it by hand. Replaying it would be
+    a no-op reset of the whole video pipeline."""
+    obs_sync._defer({"width": 1440, "height": 1080, "fps": 60}, "test")
+    ws = FakeWs(video_settings={
+        "baseWidth": 1440, "baseHeight": 1080,
+        "outputWidth": 1440, "outputHeight": 1080,
+        "fpsNumerator": 60, "fpsDenominator": 1,
+    })
+    assert sync(ws, width=1440, height=1080, fps=60) is True
+    assert obs_sync.has_pending() is False
+
+
+def test_only_the_newest_deferred_change_survives():
+    """A user going 1080p -> 4K -> 1440p wants 1440p, not a queue of three."""
+    for width, height in [(1920, 1080), (3840, 2160), (1440, 1080)]:
+        obs_sync._defer({"width": width, "height": height, "fps": 60}, "test")
+
+    pending = obs_sync._read_pending()
+    assert (pending["request"]["width"], pending["request"]["height"]) == (1440, 1080)
+
+
+def test_repeating_the_same_deferral_does_not_reset_its_attempt_count():
+    """Otherwise a change OBS keeps refusing, re-deferred by each attempt,
+    could never reach the give-up threshold."""
+    request = {"width": 1440, "height": 1080, "fps": 60}
+    obs_sync._defer(request, "test")
+    obs_sync._write_pending({**obs_sync._read_pending(), "attempts": 4})
+    obs_sync._defer(request, "test again")
+    assert obs_sync._read_pending()["attempts"] == 4
+
+
+# ---------- replaying it ----------
+
+def test_replaying_with_nothing_pending_does_nothing():
+    assert obs_sync.replay_pending() is False
+
+
+def test_a_deferred_change_is_applied_on_the_next_connection(monkeypatch):
+    ws = OutputAwareWs(active_output="recording")
+    assert sync_against(ws, width=1440, height=1080) is True
+    assert obs_sync.has_pending() is True
+
+    # OBS is reachable again and its output has stopped.
+    free = OutputAwareWs(active_output=None)
+    monkeypatch.setattr(obs_sync, "open_connection", lambda port, pw: free)
+    obs_sync._last_reset = None
+
+    assert obs_sync.replay_pending() is True
+    applied = [d for k, d in free.requests if k == "SetVideoSettings"][0]
+    assert (applied["baseWidth"], applied["baseHeight"]) == (1440, 1080)
+    assert (applied["outputWidth"], applied["outputHeight"]) == (1440, 1080)
+    assert obs_sync.has_pending() is False
+
+
+def test_a_replay_that_still_cannot_apply_stays_pending(monkeypatch):
+    obs_sync._defer({"width": 1440, "height": 1080, "fps": 60}, "test")
+    busy = OutputAwareWs(active_output="streaming")
+    monkeypatch.setattr(obs_sync, "open_connection", lambda port, pw: busy)
+
+    obs_sync.replay_pending()
+    assert obs_sync.has_pending() is True
+
+
+def test_a_change_obs_will_never_accept_eventually_gives_up(monkeypatch):
+    """Replay runs on every manager tick while something is pending. A change
+    that can never land must not retry until the machine is switched off."""
+    obs_sync._defer({"width": 1440, "height": 1080, "fps": 60}, "test")
+
+    def refuse(port, pw):
+        raise ConnectionError("still nothing")
+
+    monkeypatch.setattr(obs_sync, "open_connection", refuse)
+    for _ in range(obs_sync._MAX_PENDING_ATTEMPTS + 1):
+        obs_sync.replay_pending()
+    assert obs_sync.has_pending() is False
+
+
+def test_an_unreadable_pending_file_is_discarded_rather_than_retried():
+    obs_sync._write_pending({"request": {"width": "wide"}, "attempts": 0})
+    assert obs_sync.replay_pending() is False
+    assert obs_sync.has_pending() is False

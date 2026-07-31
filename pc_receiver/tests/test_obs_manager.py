@@ -300,3 +300,62 @@ def test_scene_requests_blocked_while_not_connected():
         m = manager(cfg)
         m.tick()
         assert m.snapshot()["scene_requests_allowed"] is False
+
+
+# ---------- the connected hook ----------
+#
+# How a canvas change deferred while OBS was unreachable (or while one of its
+# outputs was running) gets applied. control_server wires obs_sync.
+# replay_pending to it; this module stays ignorant of what that does.
+
+def test_the_hook_fires_on_every_successful_connect():
+    """Not just on the offline->connected edge. The commonest reason a change
+    is waiting is an output that was running, and that stops without OBS ever
+    disconnecting - so an edge-triggered hook would never notice."""
+    seen = []
+    m = manager(ENABLED)
+    m.on_connected = seen.append
+
+    m.tick()
+    m.tick()
+    assert len(seen) == 2
+
+
+def test_the_hook_is_told_whether_scene_requests_are_safe():
+    seen = []
+    m = manager(ENABLED)
+    m.on_connected = seen.append
+
+    m.tick()
+    assert seen == [False]        # one connect: still inside the grace period
+    m.tick()
+    assert seen == [False, True]  # two consecutive: scenes are safe now
+
+
+def test_the_hook_never_fires_when_obs_is_unreachable():
+    seen = []
+    for cfg in (None, DISABLED):
+        m = manager(cfg)
+        m.on_connected = seen.append
+        m.tick()
+
+    def refuse(port, password):
+        raise ConnectionRefusedError("closed")
+
+    m = manager(ENABLED, connector=refuse)
+    m.on_connected = seen.append
+    m.tick()
+    assert seen == []
+
+
+def test_a_hook_that_throws_cannot_kill_the_watcher():
+    """It talks to OBS over its own socket. A status watcher must survive
+    anything it does."""
+    def explode(_allowed):
+        raise RuntimeError("obs went away mid-replay")
+
+    m = manager(ENABLED)
+    m.on_connected = explode
+
+    assert m.tick() is ObsState.CONNECTED
+    assert m.snapshot()["connected"] is True

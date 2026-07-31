@@ -135,9 +135,18 @@ def obs_manager_snapshot() -> dict:
             return _obs_manager.snapshot()
         try:
             from pc_receiver.obs_manager import ObsManager
-            from pc_receiver.obs_sync import open_connection, read_config
+            from pc_receiver.obs_sync import open_connection, read_config, replay_pending
 
-            _obs_manager = ObsManager(connector=open_connection, config_reader=read_config)
+            _obs_manager = ObsManager(
+                connector=open_connection,
+                config_reader=read_config,
+                # Applies a canvas change that was made while OBS was closed,
+                # its WebSocket server was off, or one of its outputs was
+                # running. replay_pending is a no-op when nothing is waiting,
+                # which is the normal case. This is the wiring that keeps
+                # obs_manager ignorant of what a "sync" contains.
+                on_connected=replay_pending,
+            )
             _obs_manager.start()
         except Exception as e:
             return {"state": "offline", "connected": False, "hint": f"unavailable: {e}"}
