@@ -31,3 +31,6 @@ medicion_*.txt
 paridad_*.txt
 larga_*.txt
 ui_now.xml
+
+# Artefactos de release candidate (se regeneran con assembleDebug)
+rc/
