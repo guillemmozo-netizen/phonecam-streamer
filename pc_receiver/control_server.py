@@ -449,9 +449,44 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not _auth_token:
             return False
         supplied = self.headers.get("X-FrameCast-Token", "")
-        return secrets.compare_digest(supplied, _auth_token)
+        # Bytes, not str: compare_digest raises TypeError on any non-ASCII
+        # character, which any LAN device could send to leave the request
+        # unanswered and a traceback in the log.
+        return secrets.compare_digest(
+            supplied.encode("utf-8", "replace"), _auth_token.encode("utf-8")
+        )
+
+    def _serve_pairing(self):
+        """Hand the token to one LAN device, if the user opened a window."""
+        peer = self.client_address[0] if self.client_address else "?"
+        if not _auth_token:
+            self._json(503, {"error": "this PC has no token to share"})
+            return
+        if not claim_pairing():
+            self._json(
+                403,
+                {"error": "no pairing window is open",
+                 "hint": "run Pair_Phone.bat on the PC, then try again"},
+            )
+            print(f"[control] pairing refused for {peer}: no window open")
+            return
+        print(f"[control] paired with {peer}")
+        self._json(200, {"token": _auth_token})
 
     def do_GET(self):
+        # /pair is routed *before* the token check, because it exists to hand
+        # out the token: gating it on already having one made the whole Wi-Fi
+        # pairing path dead on arrival, and the unit tests missed it by
+        # exercising the window state directly instead of over HTTP. It does
+        # its own gating - a window has to be open, and opening one is
+        # loopback-only.
+        if self.path == "/pair":
+            self._serve_pairing()
+            return
+        if self.path == "/pair-status":
+            self._json(200, {"seconds_left": pairing_seconds_left()})
+            return
+
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
             return
@@ -467,26 +502,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(403, {"error": "token is only served over USB"})
                 return
             self._json(200, {"token": _auth_token})
-        elif self.path == "/pair":
-            # The Wi-Fi counterpart to /token. Unlike /token this is reachable
-            # from the LAN, which is the whole point - so it is gated on a
-            # window the user opened from this PC, and consumed on success.
-            peer = self.client_address[0] if self.client_address else "?"
-            if not _auth_token:
-                self._json(503, {"error": "this PC has no token to share"})
-                return
-            if not claim_pairing():
-                self._json(
-                    403,
-                    {"error": "no pairing window is open",
-                     "hint": "run Pair_Phone.bat on the PC, then try again"},
-                )
-                print(f"[control] pairing refused for {peer}: no window open")
-                return
-            print(f"[control] paired with {peer}")
-            self._json(200, {"token": _auth_token})
-        elif self.path == "/pair-status":
-            self._json(200, {"seconds_left": pairing_seconds_left()})
         elif self.path == "/status":
             active = get_status()
             self._json(200, {"running": len(active) > 0, "services": active})

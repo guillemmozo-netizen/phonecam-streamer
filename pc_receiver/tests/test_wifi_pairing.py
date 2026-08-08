@@ -200,3 +200,105 @@ def test_seconds_left_counts_down_and_never_goes_negative():
     deadline = control_server.open_pairing_window(120)
     assert control_server.pairing_seconds_left(now=deadline - 30) == 30
     assert control_server.pairing_seconds_left(now=deadline + 999) == 0
+
+
+# ---- pairing over HTTP, from the LAN ----
+#
+# The tests above call open_pairing_window/claim_pairing directly, which is how
+# a shipped-broken /pair endpoint passed review: the state machine was right and
+# unreachable. These go through the real HTTP handler from a non-loopback
+# address, which is the only thing that proves a phone could ever pair.
+
+
+@pytest.fixture
+def control_server_on_lan(lan_address):
+    import http.server
+
+    control_server.load_or_create_token()
+    server = http.server.HTTPServer(("0.0.0.0", 0), control_server.Handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield lan_address, port
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def _get(url: str):
+    import json
+    import urllib.error
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            return response.status, json.loads(response.read().decode())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode() or "{}")
+
+
+def _post(url: str):
+    import json
+    import urllib.error
+    import urllib.request
+
+    request = urllib.request.Request(url, data=b"", method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status, json.loads(response.read().decode())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode() or "{}")
+
+
+def test_a_lan_phone_can_pair_once_the_window_is_open(control_server_on_lan):
+    """The regression that shipped: /pair sat behind the token check, so the
+    endpoint whose whole job is handing out the token required one."""
+    lan, port = control_server_on_lan
+
+    status, _ = _post(f"http://127.0.0.1:{port}/pair/open")
+    assert status == 200
+
+    status, body = _get(f"http://{lan}:{port}/pair")
+    assert status == 200, f"a LAN phone could not pair: {body}"
+    assert body["token"] == control_server._auth_token
+
+
+def test_a_lan_phone_cannot_pair_without_a_window(control_server_on_lan):
+    lan, port = control_server_on_lan
+    status, body = _get(f"http://{lan}:{port}/pair")
+    assert status == 403
+    assert "window" in body.get("error", "")
+
+
+def test_the_window_serves_exactly_one_phone_over_http(control_server_on_lan):
+    lan, port = control_server_on_lan
+    _post(f"http://127.0.0.1:{port}/pair/open")
+    assert _get(f"http://{lan}:{port}/pair")[0] == 200
+    assert _get(f"http://{lan}:{port}/pair")[0] == 403
+
+
+def test_a_lan_device_cannot_open_its_own_pairing_window(control_server_on_lan):
+    """Opening the window is the privileged half — if the LAN could do it, the
+    gate would be decoration."""
+    lan, port = control_server_on_lan
+    status, _ = _post(f"http://{lan}:{port}/pair/open")
+    assert status == 403
+    assert _get(f"http://{lan}:{port}/pair")[0] == 403
+
+
+def test_a_non_ascii_token_header_is_answered_not_crashed(control_server_on_lan):
+    """secrets.compare_digest raises TypeError on non-ASCII, which left the
+    request unanswered and a traceback in the log — triggerable by any LAN
+    device with one byte."""
+    lan, port = control_server_on_lan
+
+    connection = socket.create_connection((lan, port), timeout=5)
+    connection.sendall(
+        "GET /status HTTP/1.1\r\nHost: x\r\n"
+        "X-FrameCast-Token: caf\u00e9\r\nConnection: close\r\n\r\n".encode("latin-1")
+    )
+    response = connection.recv(4096)
+    connection.close()
+    assert response.startswith(b"HTTP/1.0 403") or response.startswith(b"HTTP/1.1 403"), response[:80]
