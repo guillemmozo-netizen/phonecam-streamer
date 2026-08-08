@@ -41,6 +41,16 @@ log = logging.getLogger("pc_receiver")
 # runs on a daemon thread nobody waits for.
 OBS_SETTLE_SECONDS = 20.0
 
+# How long a peer may hold the receiver without saying anything. serve_forever
+# handles one connection at a time, so an unbounded wait here is a denial of
+# service that needs no token: the token is only checked after the Hello is
+# read.
+HANDSHAKE_TIMEOUT_SECONDS = 10.0
+# Generous on purpose. A live stream sends many messages a second, so silence
+# this long means the peer is gone (Wi-Fi dropped without a FIN, phone slept)
+# rather than slow.
+IDLE_TIMEOUT_SECONDS = 30.0
+
 
 @dataclass
 class ReceiverStats:
@@ -268,7 +278,22 @@ def handle_connection(
     """
     stats = stats or ReceiverStats()
     reader = FrameReader(conn)
-    hello = reader.recv_hello()
+
+    # A deadline for the handshake specifically. Everything before the Hello is
+    # unauthenticated by construction — the token is inside it — so this is the
+    # window an anonymous peer gets, and it is the one that has to be short.
+    conn.settimeout(HANDSHAKE_TIMEOUT_SECONDS)
+    try:
+        hello = reader.recv_hello()
+    except socket.timeout as e:
+        raise ProtocolError(
+            f"peer sent no usable hello within {HANDSHAKE_TIMEOUT_SECONDS}s"
+        ) from e
+    # Past the handshake the peer has proven itself, so it gets the longer
+    # budget - but not an unlimited one: a phone whose Wi-Fi drops without
+    # closing the socket looks identical to one that is merely quiet, and only
+    # a deadline tells them apart.
+    conn.settimeout(IDLE_TIMEOUT_SECONDS)
 
     # Same trust model as control_server: loopback (the USB tunnel, which
     # already required physical access and an authorised adb key) is exempt;
@@ -357,6 +382,9 @@ def handle_connection(
         while max_frames is None or stats.frames_received < max_frames:
             try:
                 payload = reader.recv_message()
+            except socket.timeout:
+                log.info("sender went silent for %.0fs; closing", IDLE_TIMEOUT_SECONDS)
+                break
             except ProtocolError:
                 log.info("sender disconnected")
                 break
@@ -533,7 +561,9 @@ def serve_forever(
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((host, port))
-        server.listen(1)
+        # Backlog > 1: while one connection is being timed out and torn down,
+        # the phone's reconnect attempt has to be queued rather than refused.
+        server.listen(8)
         log.info("waiting for stream on %s:%s ...", host, port)
         while True:
             conn, addr = server.accept()

@@ -279,6 +279,12 @@ class FrameReader:
         # The caller only needs to know whether it is >= 2 messages behind, so
         # stop as soon as the cap is reached; anything beyond that stays in the
         # kernel where it belongs.
+        # Saved and restored rather than reset to blocking: setblocking(True)
+        # is settimeout(None), so the obvious version silently cleared whatever
+        # deadline the caller had set. The receiver's idle timeout was disabled
+        # by the first frame that arrived, which is precisely when it stops
+        # being needed and starts being needed again.
+        previous_timeout = self._sock.gettimeout()
         self._sock.setblocking(False)
         try:
             while len(self._buf) < _MAX_OPPORTUNISTIC_BUFFER:
@@ -289,7 +295,7 @@ class FrameReader:
         except BlockingIOError:
             pass
         finally:
-            self._sock.setblocking(True)
+            self._sock.settimeout(previous_timeout)
 
         count = 0
         offset = 0
