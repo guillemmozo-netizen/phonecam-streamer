@@ -225,4 +225,8 @@
     <string name="mic_warning_mono">ไมค์นี้เป็นโมโน — บันทึกช่องสัญญาณเดียว</string>
     <string name="mic_warning_unknown">ไมค์นี้ไม่ได้แจ้งความสามารถ — ใช้การตั้งค่าตามที่เลือกไว้</string>
     <string name="pc_paired">จับคู่กับพีซีแล้ว — พร้อมสตรีมผ่าน Wi-Fi</string>
+    <string name="mic_error_bluetooth_permission">ไมค์บลูทูธต้องได้รับสิทธิ์ — อนุญาตในการตั้งค่า หรือเลือกไมค์อื่น</string>
+    <string name="mic_error_bluetooth_link">ไมค์บลูทูธไม่เชื่อมต่อ — ตรวจสอบว่าเปิดอยู่และจับคู่แล้ว</string>
+    <string name="mic_error_wrong_device">กำลังบันทึกจากไมค์อื่นที่ไม่ใช่ที่เลือกไว้ — หยุดแทนที่จะใช้ตัวที่ผิด</string>
+    <string name="mic_error_unavailable">เปิดไมโครโฟนไม่ได้ — อาจถูกใช้งานโดยแอปอื่น</string>
 </resources>

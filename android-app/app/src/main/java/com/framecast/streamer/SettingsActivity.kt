@@ -1,5 +1,6 @@
 package com.framecast.streamer
 
+import androidx.core.content.ContextCompat
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -31,6 +32,13 @@ class SettingsActivity : AppCompatActivity() {
     /** Microphones as of the last time this screen was opened; index 0 of the
      *  picker is "Automatic", so picker index n maps to micInputs[n - 1]. */
     private var micInputs: List<com.framecast.streamer.audio.MicInput> = emptyList()
+
+    /** Declining is not fatal — AudioCapture refuses the session with a reason
+     *  rather than falling back to the wrong microphone. */
+    private val bluetoothPermissionLauncher =
+        registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) AppToast.warning(this, getString(R.string.mic_error_bluetooth_permission))
+        }
     private val testExecutor = Executors.newSingleThreadExecutor()
     private var copyrightImageUri: Uri? = null
     private var deviceInfo: DeviceCapabilities.DeviceInfo? = null
@@ -274,6 +282,27 @@ class SettingsActivity : AppCompatActivity() {
             "${mic.productName} · ${plan.sampleRate / 1000} kHz · max ${plan.maxBitrateBps / 1000} kbps"
         }
         setupSpinner(binding.spinnerMicrophone, labels)
+        // Asked for at the moment it becomes relevant rather than at launch:
+        // BLUETOOTH_CONNECT is only needed to route to a Bluetooth microphone,
+        // and prompting everyone for it up front would be a permission dialog
+        // most users never need. Without it AudioCapture refuses the session
+        // rather than recording the built-in mic, so declining is safe.
+        val existing = binding.spinnerMicrophone.onChoiceSelectedListener
+        binding.spinnerMicrophone.onChoiceSelectedListener =
+            ExpandableChoiceRow.OnChoiceSelectedListener { row, position ->
+                existing?.onChoiceSelected(row, position)
+                val picked = micInputs.getOrNull(position - 1)
+                if (picked != null &&
+                    (picked.kind == com.framecast.streamer.audio.MicKind.BLUETOOTH_SCO ||
+                        picked.kind == com.framecast.streamer.audio.MicKind.BLUETOOTH_LE) &&
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S &&
+                    ContextCompat.checkSelfPermission(
+                        this, android.Manifest.permission.BLUETOOTH_CONNECT
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                }
+            }
 
         val savedId = prefs.getInt("mic_device_id", -1)
         val savedIndex = inputs.indexOfFirst { it.id == savedId }

@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">Deze microfoon is mono: één kanaal wordt opgenomen</string>
     <string name="mic_warning_unknown">Deze microfoon heeft zijn mogelijkheden niet gemeld: instellingen ongewijzigd toegepast</string>
     <string name="pc_paired">Gekoppeld aan de pc — streamen via wifi is klaar</string>
+    <string name="mic_error_bluetooth_permission">De Bluetooth-microfoon heeft toestemming nodig — geef die in Instellingen</string>
+    <string name="mic_error_bluetooth_link">Bluetooth-microfoon niet verbonden — controleer of hij aan en gekoppeld is</string>
+    <string name="mic_error_wrong_device">Er werd een andere microfoon opgenomen dan gekozen — gestopt in plaats van de verkeerde te gebruiken</string>
+    <string name="mic_error_unavailable">Kon de microfoon niet openen — mogelijk in gebruik door een andere app</string>
 </resources>

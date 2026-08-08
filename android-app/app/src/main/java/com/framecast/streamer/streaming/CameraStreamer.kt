@@ -58,6 +58,9 @@ class CameraStreamer(
     // MainActivity, which is where the microphone preference and the
     // RECORD_AUDIO permission live.
     private val audioSession: com.framecast.streamer.audio.AudioStreamSession? = null,
+    /** Called when the microphone was refused, so the UI can say why instead of
+     *  streaming video with silently wrong audio. */
+    private val onAudioFailure: (com.framecast.streamer.audio.CaptureFailure) -> Unit = {},
     @Volatile private var connection: StreamConnection? = null
     @Volatile private var supervisor: ConnectionSupervisor<StreamConnection>? = null
     @Volatile private var stopped = false
@@ -175,7 +178,7 @@ class CameraStreamer(
      */
     private fun startAudio() {
         val session = audioSession ?: return
-        val ok = session.start(
+        val failure = session.start(
             onConfig = { config ->
                 networkExecutor.execute {
                     val conn = connection ?: return@execute
@@ -198,7 +201,10 @@ class CameraStreamer(
                 }
             },
         )
-        if (!ok) Log.w(TAG, "microphone could not be opened; streaming video only")
+        if (failure != null) {
+            Log.w(TAG, "microphone refused ($failure); streaming video only")
+            onAudioFailure(failure)
+        }
     }
 
     private fun connectWithRetry() {

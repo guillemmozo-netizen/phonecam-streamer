@@ -225,4 +225,8 @@
     <string name="mic_warning_mono">このマイクはモノラルです。1チャンネルで録音します</string>
     <string name="mic_warning_unknown">このマイクは対応情報を返しませんでした。設定はそのまま適用します</string>
     <string name="pc_paired">PCとペア設定しました。Wi-Fi配信の準備ができています</string>
+    <string name="mic_error_bluetooth_permission">Bluetoothマイクには権限が必要です。設定で許可するか、別のマイクを選んでください</string>
+    <string name="mic_error_bluetooth_link">Bluetoothマイクに接続できませんでした。電源とペアリングを確認してください</string>
+    <string name="mic_error_wrong_device">選択したマイクとは別のマイクで録音されていました。誤ったまま続けず停止しました</string>
+    <string name="mic_error_unavailable">マイクを開けませんでした。他のアプリが使用中の可能性があります</string>
 </resources>

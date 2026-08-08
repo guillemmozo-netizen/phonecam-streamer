@@ -37,17 +37,23 @@ class AudioStreamSession private constructor(
     val actualSampleRate: Int get() = capture.actualSampleRate
     val noiseReductionActive: Boolean get() = capture.noiseReductionActive
 
-    fun start(onConfig: (ByteArray) -> Unit, onFrame: (ByteArray) -> Unit): Boolean {
-        val started = capture.start { buffer, length ->
+    /** Null on success, or why capture refused — surfaced to the user. */
+    fun start(onConfig: (ByteArray) -> Unit, onFrame: (ByteArray) -> Unit): CaptureFailure? {
+        // Registered before capture starts: the encoder can emit its config on
+        // the very first buffer, and a listener installed afterwards would miss
+        // it. codecConfig is still re-read below for the case where it arrived
+        // between the two.
+        pendingConfigListener = onConfig
+        val failure = capture.start { buffer, length ->
             encoder.encode(buffer, length, onFrame)
         }
-        if (!started) {
+        if (failure != null) {
+            pendingConfigListener = null
             encoder.release()
-            return false
+            return failure
         }
-        pendingConfigListener = onConfig
         codecConfig?.let(onConfig)
-        return true
+        return null
     }
 
     fun stop() {
@@ -77,6 +83,7 @@ class AudioStreamSession private constructor(
             requestedChannelCount: Int,
             requestedBitrateBps: Int,
             noiseReduction: Boolean,
+            permissions: AudioPermissions,
         ): AudioStreamSession? {
             val target = mic ?: AudioDeviceInventory.defaultInput(context)
             if (target == null) {
@@ -113,7 +120,7 @@ class AudioStreamSession private constructor(
                 return null
             }
 
-            val capture = AudioCapture(context, target, plan, noiseReduction)
+            val capture = AudioCapture(context, target, plan, noiseReduction, permissions)
             return AudioStreamSession(
                 capture = capture,
                 encoder = encoder,

@@ -918,6 +918,7 @@ class MainActivity : AppCompatActivity() {
             rewardManager = rewardManager,
             streamConfig = cfg,
             audioSession = buildAudioSession(),
+            onAudioFailure = { failure -> runOnUiThread { showCaptureFailure(failure) } },
         )
         streamer = newStreamer
 
@@ -1339,9 +1340,50 @@ class MainActivity : AppCompatActivity() {
             requestedChannelCount = 1,
             requestedBitrateBps = bitrateBps,
             noiseReduction = prefs.getBoolean("noise_reduction", false),
+            permissions = audioPermissions(),
         )
         session?.plan?.warnings?.firstOrNull()?.let { showMicWarning(it, session) }
         return session
+    }
+
+    /**
+     * What the app may actually do with audio routing right now.
+     *
+     * bluetoothLinkUp is left false and filled in by AudioCapture, which is the
+     * only place that can answer it — the link has to be brought up first.
+     */
+    private fun audioPermissions() = com.framecast.streamer.audio.AudioPermissions(
+        modifyAudioSettings = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.MODIFY_AUDIO_SETTINGS
+        ) == PackageManager.PERMISSION_GRANTED,
+        // Only a runtime permission from Android 12; below that it is granted
+        // at install time and checkSelfPermission reflects that correctly.
+        bluetoothConnect = android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S ||
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED,
+        bluetoothLinkUp = false,
+    )
+
+    /**
+     * Says why the microphone the user picked is not the one being used.
+     *
+     * Every one of these used to be a swallowed exception and a session that
+     * recorded the built-in mic instead. Reporting is the whole point.
+     */
+    private fun showCaptureFailure(failure: com.framecast.streamer.audio.CaptureFailure) {
+        val message = when (failure) {
+            com.framecast.streamer.audio.CaptureFailure.MISSING_MODIFY_AUDIO_SETTINGS,
+            com.framecast.streamer.audio.CaptureFailure.MISSING_BLUETOOTH_CONNECT ->
+                getString(R.string.mic_error_bluetooth_permission)
+            com.framecast.streamer.audio.CaptureFailure.BLUETOOTH_LINK_NOT_UP ->
+                getString(R.string.mic_error_bluetooth_link)
+            com.framecast.streamer.audio.CaptureFailure.ROUTED_TO_DIFFERENT_DEVICE ->
+                getString(R.string.mic_error_wrong_device)
+            com.framecast.streamer.audio.CaptureFailure.MIC_UNAVAILABLE ->
+                getString(R.string.mic_error_unavailable)
+        }
+        AppToast.error(this, message)
     }
 
     /**

@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">Bu mikrofon mono — tek kanal kaydediliyor</string>
     <string name="mic_warning_unknown">Bu mikrofon yeteneklerini bildirmedi — ayarlar olduğu gibi uygulandı</string>
     <string name="pc_paired">PC ile eşleştirildi — Wi-Fi yayını hazır</string>
+    <string name="mic_error_bluetooth_permission">Bluetooth mikrofon izin gerektiriyor — Ayarlar\'dan verin veya başka mikrofon seçin</string>
+    <string name="mic_error_bluetooth_link">Bluetooth mikrofon bağlanmadı — açık ve eşleşmiş olduğundan emin olun</string>
+    <string name="mic_error_wrong_device">Seçilenden farklı bir mikrofon kaydediliyordu — yanlışını kullanmak yerine durduruldu</string>
+    <string name="mic_error_unavailable">Mikrofon açılamadı — başka bir uygulama kullanıyor olabilir</string>
 </resources>

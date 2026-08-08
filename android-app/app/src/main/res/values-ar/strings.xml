@@ -228,4 +228,8 @@
     <string name="mic_warning_mono">هذا الميكروفون أحادي — يتم تسجيل قناة واحدة</string>
     <string name="mic_warning_unknown">لم يُبلغ هذا الميكروفون عن إمكانياته — تم تطبيق الإعدادات كما هي</string>
     <string name="pc_paired">تم الإقران مع الكمبيوتر — البث عبر Wi-Fi جاهز</string>
+    <string name="mic_error_bluetooth_permission">يحتاج ميكروفون البلوتوث إلى إذن — امنحه من الإعدادات أو اختر ميكروفونًا آخر</string>
+    <string name="mic_error_bluetooth_link">لم يتصل ميكروفون البلوتوث — تأكد من أنه مشغّل ومقترن</string>
+    <string name="mic_error_wrong_device">كان التسجيل من ميكروفون غير الذي اخترته — تم الإيقاف بدلاً من استخدام الخطأ</string>
+    <string name="mic_error_unavailable">تعذّر فتح الميكروفون — قد يكون قيد الاستخدام من تطبيق آخر</string>
 </resources>

@@ -225,4 +225,8 @@
     <string name="mic_warning_mono">此麦克风为单声道 — 只录制一个声道</string>
     <string name="mic_warning_unknown">此麦克风未报告其能力 — 设置按原样应用</string>
     <string name="pc_paired">已与电脑配对 — 可以通过 Wi-Fi 推流了</string>
+    <string name="mic_error_bluetooth_permission">蓝牙麦克风需要权限 — 请在设置中授予，或改选其他麦克风</string>
+    <string name="mic_error_bluetooth_link">蓝牙麦克风未连接 — 请确认已开启并完成配对</string>
+    <string name="mic_error_wrong_device">正在录制的并非所选麦克风 — 已停止，而不是继续用错的</string>
+    <string name="mic_error_unavailable">无法打开麦克风 — 可能正被其他应用占用</string>
 </resources>

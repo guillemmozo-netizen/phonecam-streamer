@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">Dieses Mikrofon ist mono – es wird ein Kanal aufgenommen</string>
     <string name="mic_warning_unknown">Dieses Mikrofon hat seine Fähigkeiten nicht gemeldet – Einstellungen unverändert übernommen</string>
     <string name="pc_paired">Mit dem PC gekoppelt – WLAN-Streaming ist bereit</string>
+    <string name="mic_error_bluetooth_permission">Das Bluetooth-Mikrofon braucht eine Berechtigung – erteile sie in den Einstellungen</string>
+    <string name="mic_error_bluetooth_link">Bluetooth-Mikrofon nicht verbunden – prüfe, ob es an und gekoppelt ist</string>
+    <string name="mic_error_wrong_device">Es wurde ein anderes als das gewählte Mikrofon aufgenommen – gestoppt statt falsch aufzunehmen</string>
+    <string name="mic_error_unavailable">Mikrofon konnte nicht geöffnet werden – vielleicht nutzt es eine andere App</string>
 </resources>

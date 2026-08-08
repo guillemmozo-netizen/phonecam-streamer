@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">Aquest micro és mono: es grava un sol canal</string>
     <string name="mic_warning_unknown">Aquest micro no ha informat de les seves capacitats: s\'apliquen els ajustos tal qual</string>
     <string name="pc_paired">Aparellat amb el PC: ja pots emetre per Wi-Fi</string>
+    <string name="mic_error_bluetooth_permission">El micro Bluetooth necessita permís: concedeix-lo a Configuració o tria un altre micro</string>
+    <string name="mic_error_bluetooth_link">El micro Bluetooth no s\'ha connectat: comprova que està encès i aparellat</string>
+    <string name="mic_error_wrong_device">S\'estava gravant un micro diferent del triat: s\'ha aturat en lloc d\'usar l\'incorrecte</string>
+    <string name="mic_error_unavailable">No s\'ha pogut obrir el micròfon: pot estar en ús per una altra aplicació</string>
 </resources>

@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">यह माइक मोनो है — एक ही चैनल रिकॉर्ड हो रहा है</string>
     <string name="mic_warning_unknown">इस माइक ने अपनी क्षमताएँ नहीं बताईं — सेटिंग्स वैसी ही लागू की गईं</string>
     <string name="pc_paired">पीसी से जोड़ा गया — वाई-फ़ाई स्ट्रीमिंग तैयार है</string>
+    <string name="mic_error_bluetooth_permission">ब्लूटूथ माइक के लिए अनुमति चाहिए — इसे सेटिंग्स में दें या दूसरा माइक चुनें</string>
+    <string name="mic_error_bluetooth_link">ब्लूटूथ माइक कनेक्ट नहीं हुआ — जाँचें कि वह चालू और पेयर है</string>
+    <string name="mic_error_wrong_device">चुने गए माइक से अलग माइक रिकॉर्ड हो रहा था — ग़लत का उपयोग करने के बजाय रोक दिया</string>
+    <string name="mic_error_unavailable">माइक्रोफ़ोन नहीं खुल सका — शायद कोई दूसरा ऐप उसे इस्तेमाल कर रहा है</string>
 </resources>

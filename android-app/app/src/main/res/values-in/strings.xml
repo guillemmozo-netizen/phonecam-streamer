@@ -225,4 +225,8 @@
     <string name="mic_warning_mono">Mikrofon ini mono — merekam satu kanal saja</string>
     <string name="mic_warning_unknown">Mikrofon ini tidak melaporkan kemampuannya — setelan diterapkan apa adanya</string>
     <string name="pc_paired">Terhubung dengan PC — streaming Wi-Fi siap</string>
+    <string name="mic_error_bluetooth_permission">Mikrofon Bluetooth memerlukan izin — berikan di Setelan atau pilih mikrofon lain</string>
+    <string name="mic_error_bluetooth_link">Mikrofon Bluetooth tidak terhubung — pastikan menyala dan sudah dipasangkan</string>
+    <string name="mic_error_wrong_device">Yang terekam mikrofon lain, bukan yang dipilih — dihentikan daripada memakai yang salah</string>
+    <string name="mic_error_unavailable">Tidak bisa membuka mikrofon — mungkin sedang dipakai aplikasi lain</string>
 </resources>

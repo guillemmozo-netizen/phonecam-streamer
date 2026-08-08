@@ -31,6 +31,9 @@ class AudioCapture(
     private val preferredMic: MicInput?,
     private val plan: AudioPlan,
     private val noiseReductionRequested: Boolean,
+    /** What the app is allowed to do; [AudioPermissions.bluetoothLinkUp] is
+     *  determined here rather than supplied. */
+    private val permissions: AudioPermissions,
 ) {
     /** Sample rate the AudioRecord was actually created with. */
     var actualSampleRate: Int = plan.sampleRate
@@ -57,13 +60,31 @@ class AudioCapture(
      * Opens the microphone and starts delivering PCM.
      *
      * [onPcm] is called on a dedicated capture thread with a buffer valid only
-     * for the duration of the call — copy it if you keep it. Returns false if
-     * the microphone could not be opened at all (no permission, device busy).
+     * for the duration of the call — copy it if you keep it.
+     *
+     * Returns null on success, or why it refused. It refuses rather than
+     * falling back to the default input: capture that quietly uses a different
+     * microphone than the one the user chose is the failure this exists to
+     * prevent.
      */
-    fun start(onPcm: (buffer: ByteArray, length: Int) -> Unit): Boolean {
-        if (running) return true
+    fun start(onPcm: (buffer: ByteArray, length: Int) -> Unit): CaptureFailure? {
+        if (running) return null
 
-        if (preferredMic?.kind == MicKind.BLUETOOTH_SCO) startBluetoothSco()
+        // Two passes on purpose. The permission checks must happen before any
+        // SCO call, since those are what throw without them; whether the link
+        // came up can only be known after trying. Passing bluetoothLinkUp=true
+        // here asks the gate the permission question alone.
+        (AudioCaptureGate.beforeStart(preferredMic, permissions.copy(bluetoothLinkUp = true))
+            as? CaptureDecision.Refuse)?.let { return it.failure }
+
+        if (preferredMic?.kind == MicKind.BLUETOOTH_SCO) {
+            val linkUp = startBluetoothSco()
+            (AudioCaptureGate.beforeStart(preferredMic, permissions.copy(bluetoothLinkUp = linkUp))
+                as? CaptureDecision.Refuse)?.let {
+                stopBluetoothSco()
+                return it.failure
+            }
+        }
 
         val channelMask =
             if (plan.channelCount >= 2) AudioFormat.CHANNEL_IN_STEREO else AudioFormat.CHANNEL_IN_MONO
@@ -73,7 +94,7 @@ class AudioCapture(
         if (minBuffer <= 0) {
             Log.w(TAG, "no buffer size for ${plan.sampleRate}Hz/${plan.channelCount}ch")
             stopBluetoothSco()
-            return false
+            return CaptureFailure.MIC_UNAVAILABLE
         }
         // Four times the minimum: the encoder runs on this same thread, and a
         // buffer sized to the bare minimum overruns (dropping audio, audible as
@@ -104,14 +125,14 @@ class AudioCapture(
             // thing to the caller.
             Log.w(TAG, "could not open AudioRecord", e)
             stopBluetoothSco()
-            return false
+            return CaptureFailure.MIC_UNAVAILABLE
         }
 
         if (opened.state != AudioRecord.STATE_INITIALIZED) {
             Log.w(TAG, "AudioRecord did not initialise (state=${opened.state})")
             opened.release()
             stopBluetoothSco()
-            return false
+            return CaptureFailure.MIC_UNAVAILABLE
         }
 
         routeTo(opened, preferredMic)
@@ -128,6 +149,14 @@ class AudioCapture(
         // Routing only resolves once recording has started — before that,
         // getRoutedDevice() returns null on most devices.
         routedDeviceId = opened.routedDevice?.id
+
+        // The check this whole gate exists for: every call succeeded and the
+        // framework handed us a different microphone anyway.
+        (AudioCaptureGate.afterStart(preferredMic, routedDeviceId) as? CaptureDecision.Refuse)?.let {
+            Log.w(TAG, "routed to device $routedDeviceId, not ${preferredMic?.id}; refusing")
+            stop()
+            return it.failure
+        }
 
         thread = Thread({
             val buffer = ByteArray(bufferBytes)
@@ -146,7 +175,7 @@ class AudioCapture(
             }
         }, "framecast-audio-capture").also { it.start() }
 
-        return true
+        return null
     }
 
     fun stop() {
@@ -208,8 +237,8 @@ class AudioCapture(
      * AudioRecord opened before it is up gets routed to the built-in mic and
      * stays there for the whole session.
      */
-    private fun startBluetoothSco() {
-        val manager = audioManager ?: return
+    private fun startBluetoothSco(): Boolean {
+        val manager = audioManager ?: return false
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val device = manager.availableCommunicationDevices
@@ -226,7 +255,7 @@ class AudioCapture(
             }
         }.onFailure { Log.w(TAG, "could not start the Bluetooth voice link", it) }
 
-        if (!scoStarted) return
+        if (!scoStarted) return false
         // Poll rather than listen for ACTION_SCO_AUDIO_STATE_UPDATED: this runs
         // off the main thread already, and a receiver would need registering,
         // unregistering and its own timeout for the same answer.
@@ -235,10 +264,11 @@ class AudioCapture(
             val ready = audioManager
                 ?.getDevices(AudioManager.GET_DEVICES_INPUTS)
                 ?.any { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO } == true
-            if (ready) return
+            if (ready) return true
             Thread.sleep(SCO_POLL_INTERVAL_MS)
         }
         Log.w(TAG, "Bluetooth voice link did not come up in ${SCO_CONNECT_TIMEOUT_MS}ms")
+        return false
     }
 
     private fun stopBluetoothSco() {

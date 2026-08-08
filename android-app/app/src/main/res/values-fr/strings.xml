@@ -226,4 +226,8 @@
     <string name="mic_warning_mono">Ce micro est mono : un seul canal enregistré</string>
     <string name="mic_warning_unknown">Ce micro n\'a pas indiqué ses capacités : réglages appliqués tels quels</string>
     <string name="pc_paired">Appairé avec le PC — le streaming Wi-Fi est prêt</string>
+    <string name="mic_error_bluetooth_permission">Le micro Bluetooth nécessite une autorisation : accordez-la dans les Réglages</string>
+    <string name="mic_error_bluetooth_link">Le micro Bluetooth ne s\'est pas connecté : vérifiez qu\'il est allumé et appairé</string>
+    <string name="mic_error_wrong_device">Un autre micro que celui choisi était utilisé : arrêt plutôt que d\'enregistrer le mauvais</string>
+    <string name="mic_error_unavailable">Impossible d\'ouvrir le microphone : il est peut-être utilisé par une autre application</string>
 </resources>

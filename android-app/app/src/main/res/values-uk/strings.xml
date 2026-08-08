@@ -228,4 +228,8 @@
     <string name="mic_warning_mono">Цей мікрофон монофонічний — записується один канал</string>
     <string name="mic_warning_unknown">Цей мікрофон не повідомив свої можливості — налаштування застосовано без змін</string>
     <string name="pc_paired">Створено пару з ПК — трансляція через Wi-Fi готова</string>
+    <string name="mic_error_bluetooth_permission">Мікрофону Bluetooth потрібен дозвіл — надайте його в налаштуваннях</string>
+    <string name="mic_error_bluetooth_link">Мікрофон Bluetooth не підключився — перевірте, чи увімкнений він і спарений</string>
+    <string name="mic_error_wrong_device">Записувався не той мікрофон, що вибрано — зупинено замість запису з хибного</string>
+    <string name="mic_error_unavailable">Не вдалося відкрити мікрофон — можливо, його використовує інша програма</string>
 </resources>

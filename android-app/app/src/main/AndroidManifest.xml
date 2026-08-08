@@ -4,6 +4,18 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Every AudioManager call that brings up or tears down a Bluetooth voice
+         link needs this: startBluetoothSco, setBluetoothScoOn and
+         setCommunicationDevice. Without it they throw SecurityException, and
+         because AudioCapture has to catch those (they also throw on devices
+         with no Bluetooth hardware) the failure degraded into recording the
+         built-in mic while the UI said "Bluetooth". Normal permission - no
+         runtime prompt. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Android 12+ requires this to enumerate or route to Bluetooth audio
+         devices. Runtime permission, requested only when the user actually
+         picks a Bluetooth microphone - see MainActivity. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
