@@ -227,4 +227,5 @@
     <string name="mic_warning_bitrate">Бітрейт обмежено до %1$d кбіт/с — це максимум для цього мікрофона</string>
     <string name="mic_warning_mono">Цей мікрофон монофонічний — записується один канал</string>
     <string name="mic_warning_unknown">Цей мікрофон не повідомив свої можливості — налаштування застосовано без змін</string>
+    <string name="pc_paired">Створено пару з ПК — трансляція через Wi-Fi готова</string>
 </resources>

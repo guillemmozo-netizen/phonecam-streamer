@@ -353,11 +353,26 @@ class SettingsActivity : AppCompatActivity() {
 
         testExecutor.execute {
             val ip = PcDiscovery.findPc(timeoutMs = 3000)
+            // Finding the PC and being allowed to stream to it are two different
+            // things over Wi-Fi: the receiver rejects any sender that cannot
+            // present the PC's token, and a phone that has never been plugged in
+            // over USB has no other way to get one. So pairing is attempted here,
+            // as part of the one action a Wi-Fi user already performs. It only
+            // succeeds while the user has a pairing window open on the PC, and
+            // failing is the ordinary case — nothing is reported for it, because
+            // an already-paired phone would otherwise be told off every scan.
+            val paired = ip?.let { host ->
+                PcControl.pairOverWifi(host)?.also { token ->
+                    getSharedPreferences("stream_settings", MODE_PRIVATE)
+                        .edit().putString("pc_token", token).apply()
+                }
+            }
             runOnUiThread {
                 binding.discoverButton.isEnabled = true
                 if (ip != null) {
                     binding.inputPcIp.setText(ip)
                     binding.discoverButton.text = getString(R.string.settings_discover_found)
+                    if (paired != null) AppToast.success(this, getString(R.string.pc_paired))
                 } else {
                     binding.discoverButton.text = getString(R.string.settings_discover_not_found)
                 }

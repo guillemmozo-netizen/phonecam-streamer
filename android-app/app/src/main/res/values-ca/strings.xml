@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">Bitrate limitat a %1$d kbps: és el màxim que admet aquest micro</string>
     <string name="mic_warning_mono">Aquest micro és mono: es grava un sol canal</string>
     <string name="mic_warning_unknown">Aquest micro no ha informat de les seves capacitats: s\'apliquen els ajustos tal qual</string>
+    <string name="pc_paired">Aparellat amb el PC: ja pots emetre per Wi-Fi</string>
 </resources>

@@ -134,3 +134,30 @@ Two rules that are easy to get wrong:
 - **Audio is never dropped for backlog.** Video frames are skipped when the
   receiver has fallen behind real time; a dropped audio block is an audible
   gap, and audio is a rounding error next to video on this link anyway.
+
+
+## Wi-Fi pairing
+
+Loopback senders are exempt from authentication because loopback *is* the USB
+tunnel: reaching it already required physical access and an authorised adb key.
+Everything arriving from the network has to present the PC's token in
+`Hello.auth_token`, and the receiver drops the connection otherwise.
+
+That left one gap: a phone that has never been plugged in has no way to obtain
+the token, so "wireless" did not work end to end on a fresh install — discovery
+succeeded, the socket opened, and the Hello was rejected.
+
+`GET /pair` on the control server closes it. Unlike `GET /token` it is
+reachable from the LAN, so it is gated twice:
+
+- **A window has to be open.** `POST /pair/open` opens one for 120 seconds and
+  is loopback-only, so only a process running on the PC can open it. That is
+  what `Pair_Phone.bat` does, and running it is the proof of physical access
+  that a typed pairing code would otherwise stand in for.
+- **The window is single-use.** The first successful `GET /pair` consumes it.
+  The race is to one device rather than to every device on the network for the
+  full two minutes.
+
+The phone attempts pairing as part of Settings → "Find PC", so a Wi-Fi user
+performs one action rather than two. Failure is silent by design: an
+already-paired phone would otherwise be told off on every scan.

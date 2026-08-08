@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">Bit hızı %1$d kbps ile sınırlandı — bu mikrofonun taşıyabileceği en yüksek değer</string>
     <string name="mic_warning_mono">Bu mikrofon mono — tek kanal kaydediliyor</string>
     <string name="mic_warning_unknown">Bu mikrofon yeteneklerini bildirmedi — ayarlar olduğu gibi uygulandı</string>
+    <string name="pc_paired">PC ile eşleştirildi — Wi-Fi yayını hazır</string>
 </resources>

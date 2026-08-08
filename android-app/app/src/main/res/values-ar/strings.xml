@@ -227,4 +227,5 @@
     <string name="mic_warning_bitrate">تم تحديد معدل البت عند %1$d كيلوبت/ث — وهو أقصى ما يدعمه هذا الميكروفون</string>
     <string name="mic_warning_mono">هذا الميكروفون أحادي — يتم تسجيل قناة واحدة</string>
     <string name="mic_warning_unknown">لم يُبلغ هذا الميكروفون عن إمكانياته — تم تطبيق الإعدادات كما هي</string>
+    <string name="pc_paired">تم الإقران مع الكمبيوتر — البث عبر Wi-Fi جاهز</string>
 </resources>

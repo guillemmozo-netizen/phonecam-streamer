@@ -224,4 +224,5 @@
     <string name="mic_warning_bitrate">จำกัดบิตเรตที่ %1$d kbps — สูงสุดที่ไมค์นี้รองรับ</string>
     <string name="mic_warning_mono">ไมค์นี้เป็นโมโน — บันทึกช่องสัญญาณเดียว</string>
     <string name="mic_warning_unknown">ไมค์นี้ไม่ได้แจ้งความสามารถ — ใช้การตั้งค่าตามที่เลือกไว้</string>
+    <string name="pc_paired">จับคู่กับพีซีแล้ว — พร้อมสตรีมผ่าน Wi-Fi</string>
 </resources>

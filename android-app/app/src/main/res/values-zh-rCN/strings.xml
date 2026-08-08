@@ -224,4 +224,5 @@
     <string name="mic_warning_bitrate">码率已限制为 %1$d kbps — 这是此麦克风的上限</string>
     <string name="mic_warning_mono">此麦克风为单声道 — 只录制一个声道</string>
     <string name="mic_warning_unknown">此麦克风未报告其能力 — 设置按原样应用</string>
+    <string name="pc_paired">已与电脑配对 — 可以通过 Wi-Fi 推流了</string>
 </resources>

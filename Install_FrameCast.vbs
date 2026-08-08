@@ -30,6 +30,8 @@ requiredFiles = Array( _
     "pc_receiver\requirements.txt", _
     "pc_receiver\FrameCast_Service.vbs", _
     "pc_receiver\FrameCast_PC.bat", _
+    "pc_receiver\Pair_Phone.bat", _
+    "pc_receiver\pair_phone.py", _
     "pc_receiver\control_server.py", _
     "pc_receiver\receiver.py", _
     "pc_receiver\discovery_server.py", _

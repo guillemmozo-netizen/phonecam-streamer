@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">बिटरेट %1$d kbps तक सीमित — इस माइक की अधिकतम क्षमता यही है</string>
     <string name="mic_warning_mono">यह माइक मोनो है — एक ही चैनल रिकॉर्ड हो रहा है</string>
     <string name="mic_warning_unknown">इस माइक ने अपनी क्षमताएँ नहीं बताईं — सेटिंग्स वैसी ही लागू की गईं</string>
+    <string name="pc_paired">पीसी से जोड़ा गया — वाई-फ़ाई स्ट्रीमिंग तैयार है</string>
 </resources>

@@ -23,6 +23,20 @@ nothing and uses no network ports until it actually sees OBS running.)
 Works no matter where you put this folder, and no matter where OBS is
 installed - nothing here is tied to a specific location.
 
+Streaming over WiFi (no cable):
+  Over USB there is nothing to set up - just plug the phone in. WiFi needs
+  one pairing step, once per phone, because the PC will not accept a stream
+  from the network without proof it is your phone:
+
+    1. Double-click pc_receiver\Pair_Phone.bat on this PC.
+    2. On the phone, open FrameCast > Settings and tap "Find PC".
+    3. Done. The phone says it is paired, and every later WiFi session
+       connects on its own.
+
+  The pairing window lasts 2 minutes and closes as soon as one phone uses
+  it, so it is not left open on your network. FrameCast has to be running
+  for this to work - it runs while OBS is open.
+
 Phone audio (optional):
   Turn on "Record audio" in the app's settings and pick a microphone - the
   phone's own, a USB-C mic, or a Bluetooth headset. The app tells you if the

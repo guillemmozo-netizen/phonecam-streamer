@@ -224,4 +224,5 @@
     <string name="mic_warning_bitrate">Bitrate giới hạn ở %1$d kbps — mức cao nhất micrô này tải được</string>
     <string name="mic_warning_mono">Micrô này là mono — chỉ ghi một kênh</string>
     <string name="mic_warning_unknown">Micrô này không báo khả năng của nó — áp dụng cài đặt như hiện tại</string>
+    <string name="pc_paired">Đã ghép nối với PC — sẵn sàng phát qua Wi-Fi</string>
 </resources>

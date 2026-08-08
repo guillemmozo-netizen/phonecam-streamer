@@ -233,4 +233,5 @@
     <string name="mic_warning_bitrate">Bitrate capped at %1$d kbps — the highest this mic can carry</string>
     <string name="mic_warning_mono">This mic is mono — recording a single channel</string>
     <string name="mic_warning_unknown">This mic didn\'t report its capabilities — settings applied as-is</string>
+    <string name="pc_paired">Paired with the PC — Wi-Fi streaming is ready</string>
 </resources>

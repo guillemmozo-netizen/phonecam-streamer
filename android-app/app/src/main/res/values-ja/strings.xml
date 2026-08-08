@@ -224,4 +224,5 @@
     <string name="mic_warning_bitrate">ビットレートを%1$d kbpsに制限しました。このマイクの上限です</string>
     <string name="mic_warning_mono">このマイクはモノラルです。1チャンネルで録音します</string>
     <string name="mic_warning_unknown">このマイクは対応情報を返しませんでした。設定はそのまま適用します</string>
+    <string name="pc_paired">PCとペア設定しました。Wi-Fi配信の準備ができています</string>
 </resources>

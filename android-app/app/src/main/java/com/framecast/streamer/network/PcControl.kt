@@ -111,6 +111,37 @@ object PcControl {
         }
     }
 
+    /**
+     * Wi-Fi pairing: asks the PC for its token over the LAN.
+     *
+     * Unlike [fetchToken] this reaches the PC on its real address rather than
+     * through the USB tunnel, which is the point — a phone that has never been
+     * plugged in has no other way to obtain the token, and without it the
+     * receiver rejects its Hello as unauthorised. The PC only answers while a
+     * pairing window is open (the user ran Pair_Phone.bat) and closes it on the
+     * first success, so this is not a token any LAN device can ask for at will.
+     *
+     * Returns null when no window is open, which is the ordinary case and not
+     * an error worth shouting about — the caller retries after the user has run
+     * the pairing tool.
+     */
+    fun pairOverWifi(host: String): String? {
+        return try {
+            val conn = URL("http://$host:$PORT/pair").openConnection() as HttpURLConnection
+            conn.connectTimeout = TIMEOUT
+            conn.readTimeout = TIMEOUT
+            if (conn.responseCode != 200) {
+                conn.disconnect()
+                return null
+            }
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            conn.disconnect()
+            JSONObject(body).optString("token").takeIf { it.isNotEmpty() }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun post(host: String, path: String): Boolean {
         return try {
             val conn = URL("http://$host:$PORT$path").openConnection() as HttpURLConnection

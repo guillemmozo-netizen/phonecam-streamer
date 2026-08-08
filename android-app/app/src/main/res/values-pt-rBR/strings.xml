@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">Bitrate limitado a %1$d kbps: o máximo que este microfone suporta</string>
     <string name="mic_warning_mono">Este microfone é mono: gravando um único canal</string>
     <string name="mic_warning_unknown">Este microfone não informou seus recursos: ajustes aplicados como estão</string>
+    <string name="pc_paired">Pareado com o PC — a transmissão por Wi-Fi está pronta</string>
 </resources>

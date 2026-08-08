@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 import time
+from typing import Optional
 
 # This process normally runs headless under pythonw.exe (no console
 # attached at all). Any subprocess call targeting a console-subsystem
@@ -126,6 +127,52 @@ if _audio_device:
 
 AUTH_TOKEN_PATH = os.path.join(script_dir, ".control_token")
 _auth_token: str = ""
+
+# ---- Wi-Fi pairing ----------------------------------------------------------
+#
+# The token is what lets a phone stream over Wi-Fi, and until now the only way
+# to get it was GET /token over the USB tunnel. That makes "cable-free" false
+# for a phone that has never been plugged in: discovery finds the PC, the
+# socket opens, and the receiver rejects the Hello as unauthorised.
+#
+# A pairing window closes that gap without handing the token to the whole LAN.
+# The user runs Pair_Phone.bat once, which POSTs to this server over loopback -
+# something only a process on this PC can do - and opens a short window during
+# which one LAN device may collect the token. It is consumed by the first
+# successful pairing, so the window is not a door left ajar for its full
+# duration: the race is to exactly one device, not to everyone for two minutes.
+#
+# Deliberately not a passwordless permanent opening, and deliberately not a
+# typed code either: a code needs a PC display and a phone keyboard, and the
+# physical act of running the pairing tool already proves what a code would.
+PAIRING_WINDOW_SECONDS = 120
+_pairing_opens_until: float = 0.0
+_pairing_lock = threading.Lock()
+
+
+def open_pairing_window(seconds: int = PAIRING_WINDOW_SECONDS) -> float:
+    """Allow one LAN device to collect the token. Returns the deadline."""
+    global _pairing_opens_until
+    with _pairing_lock:
+        _pairing_opens_until = time.time() + seconds
+        return _pairing_opens_until
+
+
+def pairing_seconds_left(now: Optional[float] = None) -> int:
+    now = time.time() if now is None else now
+    with _pairing_lock:
+        return max(0, int(_pairing_opens_until - now))
+
+
+def claim_pairing(now: Optional[float] = None) -> bool:
+    """Consume the window. True exactly once per opening."""
+    global _pairing_opens_until
+    now = time.time() if now is None else now
+    with _pairing_lock:
+        if now >= _pairing_opens_until:
+            return False
+        _pairing_opens_until = 0.0
+        return True
 
 
 _obs_manager = None
@@ -420,6 +467,26 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(403, {"error": "token is only served over USB"})
                 return
             self._json(200, {"token": _auth_token})
+        elif self.path == "/pair":
+            # The Wi-Fi counterpart to /token. Unlike /token this is reachable
+            # from the LAN, which is the whole point - so it is gated on a
+            # window the user opened from this PC, and consumed on success.
+            peer = self.client_address[0] if self.client_address else "?"
+            if not _auth_token:
+                self._json(503, {"error": "this PC has no token to share"})
+                return
+            if not claim_pairing():
+                self._json(
+                    403,
+                    {"error": "no pairing window is open",
+                     "hint": "run Pair_Phone.bat on the PC, then try again"},
+                )
+                print(f"[control] pairing refused for {peer}: no window open")
+                return
+            print(f"[control] paired with {peer}")
+            self._json(200, {"token": _auth_token})
+        elif self.path == "/pair-status":
+            self._json(200, {"seconds_left": pairing_seconds_left()})
         elif self.path == "/status":
             active = get_status()
             self._json(200, {"running": len(active) > 0, "services": active})
@@ -429,6 +496,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
+            return
+        if self.path == "/pair/open":
+            # Loopback only: opening the window is the privileged half, and
+            # _authorised() exempts loopback precisely because reaching it
+            # already means running on this PC. A LAN caller able to open its
+            # own pairing window would make the whole gate pointless.
+            peer = self.client_address[0] if self.client_address else ""
+            if peer not in ("127.0.0.1", "::1"):
+                self._json(403, {"error": "pairing can only be opened from this PC"})
+                return
+            open_pairing_window()
+            print(f"[control] pairing window open for {PAIRING_WINDOW_SECONDS}s")
+            self._json(200, {"seconds_left": pairing_seconds_left()})
             return
         if self.path == "/start":
             started = start_services()

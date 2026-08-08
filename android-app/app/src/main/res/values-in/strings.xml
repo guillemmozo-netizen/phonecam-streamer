@@ -224,4 +224,5 @@
     <string name="mic_warning_bitrate">Bitrate dibatasi %1$d kbps — maksimum untuk mikrofon ini</string>
     <string name="mic_warning_mono">Mikrofon ini mono — merekam satu kanal saja</string>
     <string name="mic_warning_unknown">Mikrofon ini tidak melaporkan kemampuannya — setelan diterapkan apa adanya</string>
+    <string name="pc_paired">Terhubung dengan PC — streaming Wi-Fi siap</string>
 </resources>

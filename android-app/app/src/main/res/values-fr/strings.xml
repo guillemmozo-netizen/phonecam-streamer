@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">Débit limité à %1$d kbps : le maximum pour ce micro</string>
     <string name="mic_warning_mono">Ce micro est mono : un seul canal enregistré</string>
     <string name="mic_warning_unknown">Ce micro n\'a pas indiqué ses capacités : réglages appliqués tels quels</string>
+    <string name="pc_paired">Appairé avec le PC — le streaming Wi-Fi est prêt</string>
 </resources>

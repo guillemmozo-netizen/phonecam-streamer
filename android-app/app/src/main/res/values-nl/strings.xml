@@ -225,4 +225,5 @@
     <string name="mic_warning_bitrate">Bitrate beperkt tot %1$d kbps: het maximum voor deze microfoon</string>
     <string name="mic_warning_mono">Deze microfoon is mono: één kanaal wordt opgenomen</string>
     <string name="mic_warning_unknown">Deze microfoon heeft zijn mogelijkheden niet gemeld: instellingen ongewijzigd toegepast</string>
+    <string name="pc_paired">Gekoppeld aan de pc — streamen via wifi is klaar</string>
 </resources>
