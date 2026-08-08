@@ -229,4 +229,8 @@
     <string name="mic_error_bluetooth_link">ไมค์บลูทูธไม่เชื่อมต่อ — ตรวจสอบว่าเปิดอยู่และจับคู่แล้ว</string>
     <string name="mic_error_wrong_device">กำลังบันทึกจากไมค์อื่นที่ไม่ใช่ที่เลือกไว้ — หยุดแทนที่จะใช้ตัวที่ผิด</string>
     <string name="mic_error_unavailable">เปิดไมโครโฟนไม่ได้ — อาจถูกใช้งานโดยแอปอื่น</string>
+    <string name="streaming_channel_name">การสตรีม FrameCast</string>
+    <string name="streaming_notification_title">กำลังสตรีมไปยังพีซี</string>
+    <string name="streaming_notification_text">กำลังใช้กล้องและไมโครโฟน</string>
+    <string name="streaming_background_unavailable">สตรีมได้ขณะเปิด FrameCast อยู่ แต่จะหยุดหากสลับแอป</string>
 </resources>

@@ -947,6 +947,25 @@ class MainActivity : AppCompatActivity() {
         binding.recDot.setBackgroundResource(R.drawable.dot_recording)
         startRecDotAnimation()
 
+        // Foreground service before capture starts: from Android 12 a service
+        // cannot enter the foreground once the app is already backgrounded, so
+        // starting it here — while the Activity is definitely visible — is the
+        // only reliable moment.
+        val types = com.framecast.streamer.streaming.ForegroundTypePolicy.typesFor(
+            audioEnabled = getSharedPreferences("stream_settings", MODE_PRIVATE)
+                .getBoolean("audio_enabled", true),
+            cameraGranted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED,
+            micGranted = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED,
+        )
+        if (!com.framecast.streamer.streaming.StreamingService.start(this, types)) {
+            // Streaming still works while the app is on screen; it will stop
+            // when it is not. Saying so beats letting the user discover it.
+            AppToast.warning(this, getString(R.string.streaming_background_unavailable))
+        }
         newStreamer.start()
 
         // Best-effort nudge in case the PC's services aren't up yet (e.g. it just
@@ -961,6 +980,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopStreaming() {
         stopCamera2Backend()
+        com.framecast.streamer.streaming.StreamingService.stop(this)
         streamer?.stop()
         streamer = null
         isStreaming = false
@@ -1877,6 +1897,7 @@ class MainActivity : AppCompatActivity() {
         // The only place cameraLifecycleOwner ever moves down — see its doc.
         cameraLifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         recDotAnimator?.cancel()
+        com.framecast.streamer.streaming.StreamingService.stop(this)
         streamer?.stop()
         stopAudioMeter()
         cameraExecutor.shutdown()

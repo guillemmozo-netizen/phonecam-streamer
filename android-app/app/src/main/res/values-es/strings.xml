@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">El micro Bluetooth no se ha conectado: comprueba que está encendido y emparejado</string>
     <string name="mic_error_wrong_device">Se estaba grabando un micro distinto al elegido: se ha detenido en vez de usar el incorrecto</string>
     <string name="mic_error_unavailable">No se ha podido abrir el micrófono: puede estar en uso por otra app</string>
+    <string name="streaming_channel_name">Emisión de FrameCast</string>
+    <string name="streaming_notification_title">Emitiendo al PC</string>
+    <string name="streaming_notification_text">La cámara y el micrófono están en uso</string>
+    <string name="streaming_background_unavailable">La emisión funciona con FrameCast abierto, pero se detendrá si cambias de app</string>
 </resources>

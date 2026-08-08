@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">ब्लूटूथ माइक कनेक्ट नहीं हुआ — जाँचें कि वह चालू और पेयर है</string>
     <string name="mic_error_wrong_device">चुने गए माइक से अलग माइक रिकॉर्ड हो रहा था — ग़लत का उपयोग करने के बजाय रोक दिया</string>
     <string name="mic_error_unavailable">माइक्रोफ़ोन नहीं खुल सका — शायद कोई दूसरा ऐप उसे इस्तेमाल कर रहा है</string>
+    <string name="streaming_channel_name">FrameCast स्ट्रीमिंग</string>
+    <string name="streaming_notification_title">पीसी पर स्ट्रीम हो रहा है</string>
+    <string name="streaming_notification_text">कैमरा और माइक्रोफ़ोन उपयोग में हैं</string>
+    <string name="streaming_background_unavailable">स्ट्रीमिंग FrameCast खुले रहने पर चलती है, ऐप बदलने पर रुक जाएगी</string>
 </resources>

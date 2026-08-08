@@ -229,4 +229,8 @@
     <string name="mic_error_bluetooth_link">Micrô Bluetooth chưa kết nối — kiểm tra đã bật và ghép nối chưa</string>
     <string name="mic_error_wrong_device">Đang ghi từ micrô khác với micrô đã chọn — đã dừng thay vì dùng nhầm</string>
     <string name="mic_error_unavailable">Không mở được micrô — có thể ứng dụng khác đang dùng</string>
+    <string name="streaming_channel_name">Phát FrameCast</string>
+    <string name="streaming_notification_title">Đang phát tới PC</string>
+    <string name="streaming_notification_text">Camera và micrô đang được dùng</string>
+    <string name="streaming_background_unavailable">Phát hoạt động khi FrameCast đang mở, nhưng sẽ dừng nếu bạn chuyển ứng dụng</string>
 </resources>

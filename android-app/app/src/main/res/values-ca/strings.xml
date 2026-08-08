@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">El micro Bluetooth no s\'ha connectat: comprova que està encès i aparellat</string>
     <string name="mic_error_wrong_device">S\'estava gravant un micro diferent del triat: s\'ha aturat en lloc d\'usar l\'incorrecte</string>
     <string name="mic_error_unavailable">No s\'ha pogut obrir el micròfon: pot estar en ús per una altra aplicació</string>
+    <string name="streaming_channel_name">Emissió de FrameCast</string>
+    <string name="streaming_notification_title">Emetent al PC</string>
+    <string name="streaming_notification_text">La càmera i el micròfon estan en ús</string>
+    <string name="streaming_background_unavailable">L\'emissió funciona amb FrameCast obert, però s\'aturarà si canvies d\'aplicació</string>
 </resources>

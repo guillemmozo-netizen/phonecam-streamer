@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">Bluetooth mikrofon bağlanmadı — açık ve eşleşmiş olduğundan emin olun</string>
     <string name="mic_error_wrong_device">Seçilenden farklı bir mikrofon kaydediliyordu — yanlışını kullanmak yerine durduruldu</string>
     <string name="mic_error_unavailable">Mikrofon açılamadı — başka bir uygulama kullanıyor olabilir</string>
+    <string name="streaming_channel_name">FrameCast yayını</string>
+    <string name="streaming_notification_title">Bilgisayara yayın</string>
+    <string name="streaming_notification_text">Kamera ve mikrofon kullanımda</string>
+    <string name="streaming_background_unavailable">Yayın FrameCast açıkken çalışır, uygulama değiştirirseniz durur</string>
 </resources>

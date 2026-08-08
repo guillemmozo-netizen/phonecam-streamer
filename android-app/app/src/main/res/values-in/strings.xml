@@ -229,4 +229,8 @@
     <string name="mic_error_bluetooth_link">Mikrofon Bluetooth tidak terhubung — pastikan menyala dan sudah dipasangkan</string>
     <string name="mic_error_wrong_device">Yang terekam mikrofon lain, bukan yang dipilih — dihentikan daripada memakai yang salah</string>
     <string name="mic_error_unavailable">Tidak bisa membuka mikrofon — mungkin sedang dipakai aplikasi lain</string>
+    <string name="streaming_channel_name">Streaming FrameCast</string>
+    <string name="streaming_notification_title">Streaming ke PC</string>
+    <string name="streaming_notification_text">Kamera dan mikrofon sedang digunakan</string>
+    <string name="streaming_background_unavailable">Streaming berjalan saat FrameCast terbuka, tetapi berhenti jika berpindah aplikasi</string>
 </resources>

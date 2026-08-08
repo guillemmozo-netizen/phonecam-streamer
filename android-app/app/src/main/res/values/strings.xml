@@ -238,4 +238,8 @@
     <string name="mic_error_bluetooth_link">Bluetooth mic didn\'t connect — check it\'s on and paired, then try again</string>
     <string name="mic_error_wrong_device">Recording from a different mic than the one selected — stopped instead of using the wrong one</string>
     <string name="mic_error_unavailable">Couldn\'t open the microphone — it may be in use by another app</string>
+    <string name="streaming_channel_name">FrameCast streaming</string>
+    <string name="streaming_notification_title">Streaming to your PC</string>
+    <string name="streaming_notification_text">Camera and microphone are in use</string>
+    <string name="streaming_background_unavailable">Streaming works while FrameCast is open, but will stop if you switch apps</string>
 </resources>

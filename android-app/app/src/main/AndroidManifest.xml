@@ -11,6 +11,16 @@
          with no Bluetooth hardware) the failure degraded into recording the
          built-in mic while the UI said "Bluetooth". Normal permission - no
          runtime prompt. -->
+    <!-- Camera and microphone access stops when the app leaves the foreground,
+         so a webcam app needs a foreground service to survive the user opening
+         the very app they wanted to appear in. Android 14+ additionally
+         requires a permission per declared foregroundServiceType. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Android 13+: without it the foreground notification is never shown, and
+         a foreground service the user cannot see reads as a hang. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Android 12+ requires this to enumerate or route to Bluetooth audio
          devices. Runtime permission, requested only when the user actually
@@ -67,6 +77,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Holds the process in a state where CameraX and AudioRecord are
+             allowed to keep running while FrameCast is not on screen. The
+             capture pipeline itself stays with MainActivity; the types are
+             chosen at runtime from what is actually granted (see
+             ForegroundTypePolicy) because declaring one without its permission
+             makes startForeground throw on Android 14+. -->
+        <service
+            android:name=".streaming.StreamingService"
+            android:exported="false"
+            android:foregroundServiceType="camera|microphone" />
 
         <activity
             android:name=".SettingsActivity"

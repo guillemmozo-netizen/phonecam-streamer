@@ -45,3 +45,51 @@ def test_modify_audio_settings_is_declared(manifest):
 def test_bluetooth_connect_is_declared(manifest):
     """Android 12+ needs it to enumerate and route to Bluetooth audio devices."""
     assert "android.permission.BLUETOOTH_CONNECT" in _permissions(manifest)
+
+
+# ---- H1: foreground service ----
+
+
+def _service(manifest: ET.Element):
+    application = manifest.find("application")
+    assert application is not None
+    for service in application.findall("service"):
+        if service.get(f"{ANDROID_NS}name", "").endswith("StreamingService"):
+            return service
+    return None
+
+
+def test_a_streaming_foreground_service_is_declared(manifest):
+    """Without one, Android stops camera and microphone access the moment the
+    app leaves the foreground — i.e. the moment the user opens the app they
+    wanted to be a webcam in."""
+    assert _service(manifest) is not None, "no StreamingService declared"
+
+
+def test_the_service_declares_camera_and_microphone_types(manifest):
+    """Android 14+ rejects startForeground for a capture use without the
+    matching foregroundServiceType."""
+    types = _service(manifest).get(f"{ANDROID_NS}foregroundServiceType", "")
+    assert "camera" in types
+    assert "microphone" in types
+
+
+def test_the_service_is_not_exported(manifest):
+    """Nothing outside the app has any business starting the capture pipeline."""
+    assert _service(manifest).get(f"{ANDROID_NS}exported") == "false"
+
+
+def test_foreground_service_permissions_are_declared(manifest):
+    declared = _permissions(manifest)
+    for permission in (
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_CAMERA",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+    ):
+        assert permission in declared, f"{permission} missing"
+
+
+def test_post_notifications_is_declared(manifest):
+    """Android 13+ needs it or the foreground notification is never shown, and
+    a foreground service with an invisible notification looks like a hang."""
+    assert "android.permission.POST_NOTIFICATIONS" in _permissions(manifest)

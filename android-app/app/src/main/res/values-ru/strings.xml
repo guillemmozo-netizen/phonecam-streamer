@@ -232,4 +232,8 @@
     <string name="mic_error_bluetooth_link">Микрофон Bluetooth не подключился — проверьте, включён ли он и сопряжён</string>
     <string name="mic_error_wrong_device">Записывался не тот микрофон, что выбран — остановлено вместо записи с неверного</string>
     <string name="mic_error_unavailable">Не удалось открыть микрофон — возможно,он занят другим приложением</string>
+    <string name="streaming_channel_name">Трансляция FrameCast</string>
+    <string name="streaming_notification_title">Трансляция на ПК</string>
+    <string name="streaming_notification_text">Камера и микрофон используются</string>
+    <string name="streaming_background_unavailable">Трансляция работает, пока FrameCast открыт, и остановится при переключении приложений</string>
 </resources>

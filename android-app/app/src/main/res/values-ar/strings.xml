@@ -232,4 +232,8 @@
     <string name="mic_error_bluetooth_link">لم يتصل ميكروفون البلوتوث — تأكد من أنه مشغّل ومقترن</string>
     <string name="mic_error_wrong_device">كان التسجيل من ميكروفون غير الذي اخترته — تم الإيقاف بدلاً من استخدام الخطأ</string>
     <string name="mic_error_unavailable">تعذّر فتح الميكروفون — قد يكون قيد الاستخدام من تطبيق آخر</string>
+    <string name="streaming_channel_name">بث FrameCast</string>
+    <string name="streaming_notification_title">جارٍ البث إلى الكمبيوتر</string>
+    <string name="streaming_notification_text">الكاميرا والميكروفون قيد الاستخدام</string>
+    <string name="streaming_background_unavailable">يعمل البث أثناء فتح FrameCast، لكنه سيتوقف إذا بدّلت التطبيقات</string>
 </resources>

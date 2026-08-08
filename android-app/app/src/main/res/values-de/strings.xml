@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">Bluetooth-Mikrofon nicht verbunden – prüfe, ob es an und gekoppelt ist</string>
     <string name="mic_error_wrong_device">Es wurde ein anderes als das gewählte Mikrofon aufgenommen – gestoppt statt falsch aufzunehmen</string>
     <string name="mic_error_unavailable">Mikrofon konnte nicht geöffnet werden – vielleicht nutzt es eine andere App</string>
+    <string name="streaming_channel_name">FrameCast-Übertragung</string>
+    <string name="streaming_notification_title">Übertragung an den PC</string>
+    <string name="streaming_notification_text">Kamera und Mikrofon werden verwendet</string>
+    <string name="streaming_background_unavailable">Die Übertragung läuft, solange FrameCast offen ist, und stoppt beim App-Wechsel</string>
 </resources>

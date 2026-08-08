@@ -229,4 +229,8 @@
     <string name="mic_error_bluetooth_link">蓝牙麦克风未连接 — 请确认已开启并完成配对</string>
     <string name="mic_error_wrong_device">正在录制的并非所选麦克风 — 已停止，而不是继续用错的</string>
     <string name="mic_error_unavailable">无法打开麦克风 — 可能正被其他应用占用</string>
+    <string name="streaming_channel_name">FrameCast 推流</string>
+    <string name="streaming_notification_title">正在推流到电脑</string>
+    <string name="streaming_notification_text">正在使用摄像头和麦克风</string>
+    <string name="streaming_background_unavailable">FrameCast 打开时可推流，切换到其他应用会停止</string>
 </resources>

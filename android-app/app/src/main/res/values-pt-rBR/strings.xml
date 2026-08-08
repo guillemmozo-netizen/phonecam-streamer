@@ -230,4 +230,8 @@
     <string name="mic_error_bluetooth_link">O microfone Bluetooth não conectou: verifique se está ligado e pareado</string>
     <string name="mic_error_wrong_device">Estava gravando um microfone diferente do escolhido: parado em vez de usar o errado</string>
     <string name="mic_error_unavailable">Não foi possível abrir o microfone: pode estar em uso por outro app</string>
+    <string name="streaming_channel_name">Transmissão FrameCast</string>
+    <string name="streaming_notification_title">Transmitindo para o PC</string>
+    <string name="streaming_notification_text">Câmera e microfone em uso</string>
+    <string name="streaming_background_unavailable">A transmissão funciona com o FrameCast aberto, mas para se você trocar de app</string>
 </resources>

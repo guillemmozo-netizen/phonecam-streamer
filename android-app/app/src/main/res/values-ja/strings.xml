@@ -229,4 +229,8 @@
     <string name="mic_error_bluetooth_link">Bluetoothマイクに接続できませんでした。電源とペアリングを確認してください</string>
     <string name="mic_error_wrong_device">選択したマイクとは別のマイクで録音されていました。誤ったまま続けず停止しました</string>
     <string name="mic_error_unavailable">マイクを開けませんでした。他のアプリが使用中の可能性があります</string>
+    <string name="streaming_channel_name">FrameCast 配信</string>
+    <string name="streaming_notification_title">PCへ配信中</string>
+    <string name="streaming_notification_text">カメラとマイクを使用中です</string>
+    <string name="streaming_background_unavailable">FrameCastを開いている間は配信できますが、他のアプリに切り替えると停止します</string>
 </resources>
