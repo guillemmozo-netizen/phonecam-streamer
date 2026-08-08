@@ -403,12 +403,19 @@
                     app:label="@string/settings_aspect_ratio" />
                 <View style="@style/Separator" />
 
-                <!-- 2. Codec -->
+                <!-- 2. Codec — HIDDEN, see docs/PLANNED.md.
+                     The picker offered H.264/H.265/AV1 but nothing read the
+                     preference: the codec is chosen by resolution in
+                     H264Encoder.mimeTypeFor (HEVC above 4K, AVC otherwise),
+                     and AV1 isn't implemented at all. Hidden rather than
+                     deleted so re-enabling it is this attribute plus the code
+                     that makes the choice actually reach the encoder. -->
                 <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerVideoCodec"
+                    android:visibility="gone"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_video_codec" />
-                <View style="@style/Separator" />
+                <View style="@style/Separator" android:visibility="gone" />
 
                 <!-- 3. Bitrate -->
                 <com.framecast.streamer.ui.ExpandableChoiceRow
@@ -506,8 +513,13 @@
 
                 <View style="@style/Separator" />
 
-                <!-- 5. HDR -->
-                <LinearLayout style="@style/SettingRow">
+                <!-- 5. HDR — HIDDEN, see docs/PLANNED.md.
+                     Only ever reached the viewfinder: MainActivity binds a
+                     10-bit HLG preview when it's on, but H264Encoder has no
+                     Main10 profile or colour-transfer handling, so the PC
+                     receives 8-bit SDR either way. The capture-side code is
+                     left intact behind this flag. -->
+                <LinearLayout style="@style/SettingRow" android:visibility="gone">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                         android:layout_weight="1" android:text="@string/settings_hdr"
                         android:textColor="@color/text_primary" android:textSize="16sp" />
@@ -515,7 +527,7 @@
                         android:id="@+id/switchHdr"
                         android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
-                <View style="@style/Separator" />
+                <View style="@style/Separator" android:visibility="gone" />
 
                 <!-- 6. Stabilization -->
                 <LinearLayout style="@style/SettingRow">
@@ -582,6 +594,13 @@
                 </LinearLayout>
                 <View style="@style/Separator" />
 
+                <!-- 8b. Microphone -->
+                <com.framecast.streamer.ui.ExpandableChoiceRow
+                    android:id="@+id/spinnerMicrophone"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    app:label="@string/settings_microphone" />
+                <View style="@style/Separator" />
+
                 <!-- 9. Sample rate -->
                 <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerSampleRate"
@@ -614,8 +633,12 @@
                 </LinearLayout>
                 <View style="@style/Separator" />
 
-                <!-- 13. Wind filter -->
-                <LinearLayout style="@style/SettingRow">
+                <!-- 13. Wind filter — HIDDEN, see docs/PLANNED.md.
+                     Nothing read the preference, and unlike noise reduction
+                     there is no standard Android API behind it: wind rejection
+                     is either a vendor parameter or a high-pass filter you
+                     write yourself. -->
+                <LinearLayout style="@style/SettingRow" android:visibility="gone">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                         android:layout_weight="1" android:text="@string/settings_wind_filter"
                         android:textColor="@color/text_primary" android:textSize="16sp" />
@@ -623,7 +646,7 @@
                         android:id="@+id/switchWindFilter"
                         android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
-                <View style="@style/Separator" />
+                <View style="@style/Separator" android:visibility="gone" />
 
                 <!-- 13b. Audio level meter (2 bars) on the camera screen -->
                 <LinearLayout style="@style/SettingRow">
@@ -778,15 +801,23 @@
                     app:label="@string/settings_connection_mode" />
                 <View style="@style/Separator" />
 
-                <!-- 18. Protocol -->
+                <!-- 18. Protocol — HIDDEN, see docs/PLANNED.md.
+                     Offered TCP/UDP/WebRTC; only TCP exists and nothing read
+                     the preference. (The UDP in PcDiscovery is the discovery
+                     broadcast, not the stream.) -->
                 <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerProtocol"
+                    android:visibility="gone"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_protocol" />
-                <View style="@style/Separator" />
+                <View style="@style/Separator" android:visibility="gone" />
 
-                <!-- 19. Low latency -->
-                <LinearLayout style="@style/SettingRow">
+                <!-- 19. Low latency — HIDDEN, see docs/PLANNED.md.
+                     Nothing read the preference. What actually lowers latency
+                     is unconditional anyway: a zero dequeue timeout in
+                     H264Encoder, CBR, and the receiver dropping stale frames.
+                     The toggle implied it was optional. -->
+                <LinearLayout style="@style/SettingRow" android:visibility="gone">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                         android:layout_weight="1" android:text="@string/settings_low_latency"
                         android:textColor="@color/text_primary" android:textSize="16sp" />
@@ -794,7 +825,7 @@
                         android:id="@+id/switchLowLatency"
                         android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
-                <View style="@style/Separator" />
+                <View style="@style/Separator" android:visibility="gone" />
 
                 <!-- 20. Auto reconnect -->
                 <LinearLayout style="@style/SettingRow">

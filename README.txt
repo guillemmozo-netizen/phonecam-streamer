@@ -23,6 +23,27 @@ nothing and uses no network ports until it actually sees OBS running.)
 Works no matter where you put this folder, and no matter where OBS is
 installed - nothing here is tied to a specific location.
 
+Phone audio (optional):
+  Turn on "Record audio" in the app's settings and pick a microphone - the
+  phone's own, a USB-C mic, or a Bluetooth headset. The app tells you if the
+  mic can't do the sample rate you picked, and Bluetooth mics are capped at
+  16 kHz by Bluetooth itself, not by this app.
+
+  Windows has no virtual audio device of its own (OBS's virtual camera is
+  video only), so by default the audio just plays out of your speakers. To
+  make the phone's mic selectable as an input in Zoom/Meet/Teams/OBS, install
+  VB-CABLE (free, https://vb-audio.com/Cable/), then set this once and it
+  applies every time FrameCast starts:
+
+      setx FRAMECAST_AUDIO_DEVICE cable
+
+  (Open a new window afterwards - setx only affects windows opened later.)
+  Then pick "CABLE Output" as the microphone in Zoom/Meet/Teams/OBS.
+
+  To see the exact output device names on your PC:
+
+      pc_receiver\.venv\Scripts\python -m pc_receiver.receiver --list-audio-devices
+
 Requirements:
   - Python 3.9+ installed, with "Add python.exe to PATH" checked during
     install (https://www.python.org/downloads/). The installer tells you

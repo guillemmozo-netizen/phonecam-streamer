@@ -216,4 +216,13 @@
     <string name="speedtest_uploading">Pujant al PC…</string>
     <string name="speedtest_downloading">Baixant del PC…</string>
     <string name="speedtest_cleaning_up">Netejant…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Micròfon</string>
+    <string name="mic_auto">Automàtic</string>
+    <string name="mic_warning_bluetooth">Els micros Bluetooth estan limitats a 16 kHz: qualitat de veu, no de música</string>
+    <string name="mic_warning_sample_rate">Aquest micro no admet la freqüència triada: gravant a %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Bitrate limitat a %1$d kbps: és el màxim que admet aquest micro</string>
+    <string name="mic_warning_mono">Aquest micro és mono: es grava un sol canal</string>
+    <string name="mic_warning_unknown">Aquest micro no ha informat de les seves capacitats: s\'apliquen els ajustos tal qual</string>
 </resources>

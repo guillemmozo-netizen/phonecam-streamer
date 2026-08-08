@@ -97,3 +97,40 @@ still work unchanged).
 - **Single connection at a time.** The receiver accepts one client; a second
   connection attempt while one is active will just hang until the first
   disconnects. Fine for "one phone, one PC" alpha use.
+
+
+## Audio (optional, negotiated in Hello)
+
+Audio is off unless the phone sets `audio: true` in Hello. That is not a
+courtesy to old clients — it decides the framing of everything after Hello:
+
+- **`audio: false`** — every message is one encoded video frame, exactly as
+  described above. Unchanged, and what `demo_sender.py` and the test suite
+  still produce.
+- **`audio: true`** — audio and video share the socket, so every message now
+  begins with a one-byte type:
+
+  | Byte | Meaning |
+  |------|---------|
+  | `0x01` | video frame (the payload the message used to carry whole) |
+  | `0x02` | AAC `AudioSpecificConfig` (MediaCodec's `csd-0`) |
+  | `0x03` | AAC access unit |
+
+  The type byte lives *inside* the length-prefixed payload, so the framing
+  itself is identical and only the interpretation changes.
+
+Hello carries `audio_codec` (always `"aac"`), `audio_sample_rate`,
+`audio_channels` and `audio_bitrate_bps`, describing what the phone actually
+resolved — not what its settings requested. A Bluetooth microphone reports
+16 kHz here however the user's settings are configured, because that is what a
+Bluetooth voice link can carry (see `MicrophonePolicy` on the phone).
+
+Two rules that are easy to get wrong:
+
+- **The config message is mandatory and repeated.** The stream is raw access
+  units with no ADTS headers, so a decoder that never saw `0x02` cannot decode
+  a single frame. The phone re-sends it on every reconnect, because a reconnect
+  gives the PC a fresh decoder.
+- **Audio is never dropped for backlog.** Video frames are skipped when the
+  receiver has fallen behind real time; a dropped audio block is an audible
+  gap, and audio is a rounding error next to video on this link anyway.

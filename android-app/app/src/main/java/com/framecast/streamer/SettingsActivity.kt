@@ -27,6 +27,10 @@ import kotlin.math.roundToInt
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
+
+    /** Microphones as of the last time this screen was opened; index 0 of the
+     *  picker is "Automatic", so picker index n maps to micInputs[n - 1]. */
+    private var micInputs: List<com.framecast.streamer.audio.MicInput> = emptyList()
     private val testExecutor = Executors.newSingleThreadExecutor()
     private var copyrightImageUri: Uri? = null
     private var deviceInfo: DeviceCapabilities.DeviceInfo? = null
@@ -176,6 +180,7 @@ class SettingsActivity : AppCompatActivity() {
                 getString(R.string.af_speed_action), getString(R.string.af_speed_macro),
             ),
         )
+        setupMicrophoneSpinner()
         setupSpinner(binding.spinnerSampleRate, listOf("44.1 kHz", "48 kHz", "96 kHz"))
         setupSpinner(binding.spinnerAudioBitrate, listOf("128 kbps", "192 kbps", "256 kbps", "320 kbps"))
         setupSpinner(binding.spinnerAudioCodec, listOf("AAC", "OPUS", "FLAC"))
@@ -226,6 +231,55 @@ class SettingsActivity : AppCompatActivity() {
             }
 
         binding.btnPickCopyrightImage.setOnClickListener { pickImage.launch("image/*") }
+    }
+
+    /**
+     * Lists the microphones actually attached right now, each with what it can
+     * really do at the currently selected sample rate.
+     *
+     * Rebuilt every time this screen opens rather than cached: a USB mic or a
+     * Bluetooth headset can appear and disappear between two visits, and a
+     * picker offering a device that is no longer plugged in is worse than one
+     * that is a moment out of date.
+     *
+     * The label carries the resolved rate and the bitrate ceiling next to the
+     * name, which is the point of the whole row — "why does my Bluetooth mic
+     * sound like a phone call" gets answered before it is asked.
+     */
+    private fun setupMicrophoneSpinner() {
+        val inputs = com.framecast.streamer.audio.AudioDeviceInventory.inputs(this)
+        micInputs = inputs
+
+        val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+        val requestedSampleRate = when (prefs.getInt("sample_rate", 1)) {
+            0 -> 44_100
+            2 -> 96_000
+            else -> 48_000
+        }
+        val requestedBitrateBps = when (prefs.getInt("audio_bitrate", 1)) {
+            0 -> 128_000
+            2 -> 256_000
+            3 -> 320_000
+            else -> 192_000
+        }
+
+        val labels = mutableListOf(getString(R.string.mic_auto))
+        labels += inputs.map { mic ->
+            val plan = com.framecast.streamer.audio.MicrophonePolicy.plan(
+                mic = mic,
+                requestedSampleRate = requestedSampleRate,
+                requestedChannelCount = 1,
+                requestedBitrateBps = requestedBitrateBps,
+            )
+            "${mic.productName} · ${plan.sampleRate / 1000} kHz · max ${plan.maxBitrateBps / 1000} kbps"
+        }
+        setupSpinner(binding.spinnerMicrophone, labels)
+
+        val savedId = prefs.getInt("mic_device_id", -1)
+        val savedIndex = inputs.indexOfFirst { it.id == savedId }
+        // +1 for the "Automatic" entry; -1 (not found, including a device that
+        // has since been unplugged) lands on it, which is the right fallback.
+        binding.spinnerMicrophone.setSelection(if (savedIndex >= 0) savedIndex + 1 else 0)
     }
 
     private fun guardProSpinner(row: ExpandableChoiceRow, proIndices: Set<Int>, fallback: Int) {
@@ -713,6 +767,12 @@ class SettingsActivity : AppCompatActivity() {
         prefs.putBoolean("audio_enabled", binding.switchAudio.isChecked)
         prefs.putInt("sample_rate", binding.spinnerSampleRate.selectedItemPosition)
         prefs.putInt("audio_bitrate", binding.spinnerAudioBitrate.selectedItemPosition)
+        // Stored as the platform's device id, not the picker index: the index
+        // means nothing once a device is unplugged and the list reshuffles.
+        // Index 0 is "Automatic", which stores -1 and lets MainActivity use
+        // whatever the system default input is at streaming time.
+        val micIndex = binding.spinnerMicrophone.selectedItemPosition - 1
+        prefs.putInt("mic_device_id", micInputs.getOrNull(micIndex)?.id ?: -1)
         prefs.putInt("audio_codec", binding.spinnerAudioCodec.selectedItemPosition)
         prefs.putBoolean("noise_reduction", binding.switchNoiseReduction.isChecked)
         prefs.putBoolean("wind_filter", binding.switchWindFilter.isChecked)

@@ -13,3 +13,10 @@ opencv-python-headless
 pyvirtualcam
 av
 websocket-client
+
+# Plays the phone's microphone out of a PC output device (audio_sink.py).
+# Windows has no virtual audio device of its own, so routing that audio into
+# Zoom/Meet/OBS is done by pointing this at VB-CABLE — see README.txt. Audio is
+# off unless the phone enables it, and a PC with no sound card just logs and
+# carries on with video, so this is not a hard runtime requirement.
+sounddevice

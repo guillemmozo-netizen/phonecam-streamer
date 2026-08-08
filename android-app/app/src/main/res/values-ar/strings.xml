@@ -218,4 +218,13 @@
     <string name="speedtest_uploading">جارٍ الرفع إلى الكمبيوتر…</string>
     <string name="speedtest_downloading">جارٍ التنزيل من الكمبيوتر…</string>
     <string name="speedtest_cleaning_up">جارٍ التنظيف…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">الميكروفون</string>
+    <string name="mic_auto">تلقائي</string>
+    <string name="mic_warning_bluetooth">ميكروفونات البلوتوث محدودة بـ 16 كيلوهرتز — جودة صوت المكالمات لا الموسيقى</string>
+    <string name="mic_warning_sample_rate">هذا الميكروفون لا يدعم التردد المحدد — التسجيل بـ %1$.1f كيلوهرتز</string>
+    <string name="mic_warning_bitrate">تم تحديد معدل البت عند %1$d كيلوبت/ث — وهو أقصى ما يدعمه هذا الميكروفون</string>
+    <string name="mic_warning_mono">هذا الميكروفون أحادي — يتم تسجيل قناة واحدة</string>
+    <string name="mic_warning_unknown">لم يُبلغ هذا الميكروفون عن إمكانياته — تم تطبيق الإعدادات كما هي</string>
 </resources>

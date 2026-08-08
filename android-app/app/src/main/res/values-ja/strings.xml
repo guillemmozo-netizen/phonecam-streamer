@@ -215,4 +215,13 @@
     <string name="speedtest_uploading">PCへアップロード中…</string>
     <string name="speedtest_downloading">PCからダウンロード中…</string>
     <string name="speedtest_cleaning_up">クリーンアップ中…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">マイク</string>
+    <string name="mic_auto">自動</string>
+    <string name="mic_warning_bluetooth">Bluetoothマイクは16 kHzが上限です（音楽ではなく通話品質）</string>
+    <string name="mic_warning_sample_rate">このマイクは選択したサンプリングレートに対応していません。%1$.1f kHzで録音します</string>
+    <string name="mic_warning_bitrate">ビットレートを%1$d kbpsに制限しました。このマイクの上限です</string>
+    <string name="mic_warning_mono">このマイクはモノラルです。1チャンネルで録音します</string>
+    <string name="mic_warning_unknown">このマイクは対応情報を返しませんでした。設定はそのまま適用します</string>
 </resources>

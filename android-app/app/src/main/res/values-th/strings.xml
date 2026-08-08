@@ -215,4 +215,13 @@
     <string name="speedtest_uploading">กำลังอัปโหลดไปยัง PC…</string>
     <string name="speedtest_downloading">กำลังดาวน์โหลดจาก PC…</string>
     <string name="speedtest_cleaning_up">กำลังล้างข้อมูล…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">ไมโครโฟน</string>
+    <string name="mic_auto">อัตโนมัติ</string>
+    <string name="mic_warning_bluetooth">ไมค์บลูทูธจำกัดที่ 16 kHz — คุณภาพเสียงพูด ไม่ใช่เพลง</string>
+    <string name="mic_warning_sample_rate">ไมค์นี้ไม่รองรับอัตราที่เลือก — กำลังบันทึกที่ %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">จำกัดบิตเรตที่ %1$d kbps — สูงสุดที่ไมค์นี้รองรับ</string>
+    <string name="mic_warning_mono">ไมค์นี้เป็นโมโน — บันทึกช่องสัญญาณเดียว</string>
+    <string name="mic_warning_unknown">ไมค์นี้ไม่ได้แจ้งความสามารถ — ใช้การตั้งค่าตามที่เลือกไว้</string>
 </resources>

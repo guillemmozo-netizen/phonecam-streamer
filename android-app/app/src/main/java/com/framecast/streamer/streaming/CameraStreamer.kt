@@ -52,7 +52,12 @@ class CameraStreamer(
     private val rewardManager: RewardManager,
     private val streamConfig: StreamConfig,
 ) {
-    private val networkExecutor: Executor = Executors.newSingleThreadExecutor()
+    private val networkExecutor: Executor = Executors.newSingleThreadExecutor(),
+    // Null means this session has no audio, which puts the whole stream back on
+    // the original video-only framing (see the Hello/send path below). Built by
+    // MainActivity, which is where the microphone preference and the
+    // RECORD_AUDIO permission live.
+    private val audioSession: com.framecast.streamer.audio.AudioStreamSession? = null,
     @Volatile private var connection: StreamConnection? = null
     @Volatile private var supervisor: ConnectionSupervisor<StreamConnection>? = null
     @Volatile private var stopped = false
@@ -157,6 +162,43 @@ class CameraStreamer(
     fun start() {
         stopped = false
         networkExecutor.execute { connectWithRetry() }
+        startAudio()
+    }
+
+    /**
+     * Starts capturing and sending the microphone, if this session has one.
+     *
+     * Audio produced before Hello has gone out is dropped rather than queued:
+     * the PC cannot interpret a typed message until it knows audio was
+     * negotiated, and a queue would only delay live audio to deliver samples
+     * nobody wants by then.
+     */
+    private fun startAudio() {
+        val session = audioSession ?: return
+        val ok = session.start(
+            onConfig = { config ->
+                networkExecutor.execute {
+                    val conn = connection ?: return@execute
+                    if (!helloSent) return@execute
+                    runCatching { conn.sendAudioConfig(config) }
+                        .onFailure { Log.w(TAG, "audio config send failed", it) }
+                }
+            },
+            onFrame = { frame ->
+                networkExecutor.execute {
+                    val conn = connection ?: return@execute
+                    if (!helloSent) return@execute
+                    runCatching { conn.sendAudioFrame(frame) }
+                        .onFailure {
+                            // Video's send failure already drives the reconnect;
+                            // duplicating it here would race two reconnects
+                            // through the same supervisor.
+                            Log.w(TAG, "audio frame send failed", it)
+                        }
+                }
+            },
+        )
+        if (!ok) Log.w(TAG, "microphone could not be opened; streaming video only")
     }
 
     private fun connectWithRetry() {
@@ -200,6 +242,8 @@ class CameraStreamer(
 
     fun stop() {
         stopped = true
+        runCatching { audioSession?.stop() }
+            .onFailure { Log.w(TAG, "audio session did not stop cleanly", it) }
         networkExecutor.execute {
             supervisor?.shutdown() ?: connection?.close()
             connection = null
@@ -403,9 +447,17 @@ class CameraStreamer(
                             videoBitrateBps = streamConfig.videoBitrateBps,
                             syncObs = streamConfig.syncObs,
                             authToken = authToken,
+                            audio = audioSession != null,
+                            audioSampleRate = audioSession?.sampleRate ?: 0,
+                            audioChannels = audioSession?.channelCount ?: 0,
+                            audioBitrateBps = audioSession?.bitrateBps ?: 0,
                         ),
                     )
                     helloSent = true
+                    // Re-sent on every (re)connect, not just the first: a
+                    // reconnect gives the PC a brand new decoder, and one that
+                    // never saw the AudioSpecificConfig decodes nothing at all.
+                    audioSession?.codecConfig?.let { conn.sendAudioConfig(it) }
                 }
                 // Timed because a blocking write is the honest measure of
                 // network backpressure: when the far side stops keeping up,
@@ -414,7 +466,10 @@ class CameraStreamer(
                 val sendStart = System.nanoTime()
                 var bytes = 0
                 for (chunk in chunks) {
-                    conn.sendFrame(chunk)
+                    // Tagged only when audio was negotiated — otherwise the PC
+                    // is reading bare frames and a type byte would land inside
+                    // the picture.
+                    if (audioSession != null) conn.sendVideoFrameTyped(chunk) else conn.sendFrame(chunk)
                     bytes += chunk.size
                 }
                 metrics.onSent(System.nanoTime() - sendStart, bytes)

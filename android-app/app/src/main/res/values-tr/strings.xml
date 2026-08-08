@@ -216,4 +216,13 @@
     <string name="speedtest_uploading">Bilgisayara yükleniyor…</string>
     <string name="speedtest_downloading">Bilgisayardan indiriliyor…</string>
     <string name="speedtest_cleaning_up">Temizleniyor…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Mikrofon</string>
+    <string name="mic_auto">Otomatik</string>
+    <string name="mic_warning_bluetooth">Bluetooth mikrofonlar 16 kHz ile sınırlıdır — müzik değil, konuşma kalitesi</string>
+    <string name="mic_warning_sample_rate">Bu mikrofon seçilen örnekleme hızını desteklemiyor — %1$.1f kHz ile kaydediliyor</string>
+    <string name="mic_warning_bitrate">Bit hızı %1$d kbps ile sınırlandı — bu mikrofonun taşıyabileceği en yüksek değer</string>
+    <string name="mic_warning_mono">Bu mikrofon mono — tek kanal kaydediliyor</string>
+    <string name="mic_warning_unknown">Bu mikrofon yeteneklerini bildirmedi — ayarlar olduğu gibi uygulandı</string>
 </resources>

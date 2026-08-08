@@ -216,4 +216,13 @@
     <string name="speedtest_uploading">Envoi vers le PC…</string>
     <string name="speedtest_downloading">Réception depuis le PC…</string>
     <string name="speedtest_cleaning_up">Nettoyage…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Microphone</string>
+    <string name="mic_auto">Automatique</string>
+    <string name="mic_warning_bluetooth">Les micros Bluetooth sont limités à 16 kHz : qualité voix, pas musique</string>
+    <string name="mic_warning_sample_rate">Ce micro ne gère pas la fréquence choisie : enregistrement à %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Débit limité à %1$d kbps : le maximum pour ce micro</string>
+    <string name="mic_warning_mono">Ce micro est mono : un seul canal enregistré</string>
+    <string name="mic_warning_unknown">Ce micro n\'a pas indiqué ses capacités : réglages appliqués tels quels</string>
 </resources>

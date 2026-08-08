@@ -215,4 +215,13 @@
     <string name="speedtest_uploading">正在上传到电脑…</string>
     <string name="speedtest_downloading">正在从电脑下载…</string>
     <string name="speedtest_cleaning_up">正在清理…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">麦克风</string>
+    <string name="mic_auto">自动</string>
+    <string name="mic_warning_bluetooth">蓝牙麦克风上限为 16 kHz — 通话音质，而非音乐音质</string>
+    <string name="mic_warning_sample_rate">此麦克风不支持所选采样率 — 正以 %1$.1f kHz 录制</string>
+    <string name="mic_warning_bitrate">码率已限制为 %1$d kbps — 这是此麦克风的上限</string>
+    <string name="mic_warning_mono">此麦克风为单声道 — 只录制一个声道</string>
+    <string name="mic_warning_unknown">此麦克风未报告其能力 — 设置按原样应用</string>
 </resources>

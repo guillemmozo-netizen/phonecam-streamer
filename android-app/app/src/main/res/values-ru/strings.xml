@@ -218,4 +218,13 @@
     <string name="speedtest_uploading">Отправка на ПК…</string>
     <string name="speedtest_downloading">Загрузка с ПК…</string>
     <string name="speedtest_cleaning_up">Очистка…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Микрофон</string>
+    <string name="mic_auto">Автоматически</string>
+    <string name="mic_warning_bluetooth">Bluetooth-микрофоны ограничены 16 кГц — качество речи, не музыки</string>
+    <string name="mic_warning_sample_rate">Этот микрофон не поддерживает выбранную частоту — запись на %1$.1f кГц</string>
+    <string name="mic_warning_bitrate">Битрейт ограничен %1$d кбит/с — это максимум для этого микрофона</string>
+    <string name="mic_warning_mono">Этот микрофон монофонический — записывается один канал</string>
+    <string name="mic_warning_unknown">Этот микрофон не сообщил свои возможности — настройки применены как есть</string>
 </resources>

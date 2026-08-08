@@ -917,6 +917,7 @@ class MainActivity : AppCompatActivity() {
             port = 8787,
             rewardManager = rewardManager,
             streamConfig = cfg,
+            audioSession = buildAudioSession(),
         )
         streamer = newStreamer
 
@@ -1289,6 +1290,82 @@ class MainActivity : AppCompatActivity() {
         val params = binding.previewView.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
         params.dimensionRatio = "$num:$denom"
         binding.previewView.layoutParams = params
+    }
+
+    /**
+     * The microphone half of the session, or null to stream video only.
+     *
+     * Null on three counts, all of which have to fall back rather than fail:
+     * the user turned audio off, RECORD_AUDIO was never granted (the meter asks
+     * for it, but a user can stream without ever having enabled the meter), or
+     * the device could not open a microphone at all. Each leaves the stream in
+     * exactly the shape it had before audio existed.
+     *
+     * Settings are read here rather than in StreamConfig because these four
+     * preferences already existed and already had a UI — they simply never
+     * reached anything. This is the wire that was missing.
+     */
+    private fun buildAudioSession(): com.framecast.streamer.audio.AudioStreamSession? {
+        val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+        if (!prefs.getBoolean("audio_enabled", true)) return null
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.i(TAG, "audio enabled but RECORD_AUDIO not granted; streaming video only")
+            return null
+        }
+
+        // Index order matches the Settings spinners, same as everywhere else.
+        val sampleRate = when (prefs.getInt("sample_rate", 1)) {
+            0 -> 44_100
+            2 -> 96_000
+            else -> 48_000
+        }
+        val bitrateBps = when (prefs.getInt("audio_bitrate", 1)) {
+            0 -> 128_000
+            2 -> 256_000
+            3 -> 320_000
+            else -> 192_000
+        }
+
+        val selectedMicId = prefs.getInt("mic_device_id", -1)
+        val mic = com.framecast.streamer.audio.AudioDeviceInventory.inputs(this)
+            .firstOrNull { it.id == selectedMicId }
+
+        val session = com.framecast.streamer.audio.AudioStreamSession.create(
+            context = this,
+            mic = mic,
+            requestedSampleRate = sampleRate,
+            requestedChannelCount = 1,
+            requestedBitrateBps = bitrateBps,
+            noiseReduction = prefs.getBoolean("noise_reduction", false),
+        )
+        session?.plan?.warnings?.firstOrNull()?.let { showMicWarning(it, session) }
+        return session
+    }
+
+    /**
+     * Tells the user why their audio settings did not survive contact with
+     * their microphone. First warning only: four toasts stacked on the camera
+     * screen is worse than the one that explains the most.
+     */
+    private fun showMicWarning(
+        warning: com.framecast.streamer.audio.AudioWarning,
+        session: com.framecast.streamer.audio.AudioStreamSession,
+    ) {
+        val message = when (warning) {
+            com.framecast.streamer.audio.AudioWarning.BLUETOOTH_VOICE_QUALITY ->
+                getString(R.string.mic_warning_bluetooth)
+            com.framecast.streamer.audio.AudioWarning.SAMPLE_RATE_UNSUPPORTED ->
+                getString(R.string.mic_warning_sample_rate, session.sampleRate / 1000f)
+            com.framecast.streamer.audio.AudioWarning.BITRATE_ABOVE_MAX ->
+                getString(R.string.mic_warning_bitrate, session.plan.maxBitrateBps / 1000)
+            com.framecast.streamer.audio.AudioWarning.CHANNELS_UNSUPPORTED ->
+                getString(R.string.mic_warning_mono)
+            com.framecast.streamer.audio.AudioWarning.CAPABILITIES_UNKNOWN ->
+                getString(R.string.mic_warning_unknown)
+        }
+        AppToast.warning(this, message)
     }
 
     /** Starts/stops the 2-bar mic level meter to match the Settings toggle, requesting RECORD_AUDIO if needed. */

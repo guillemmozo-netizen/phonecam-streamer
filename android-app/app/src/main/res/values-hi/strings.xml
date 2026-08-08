@@ -216,4 +216,13 @@
     <string name="speedtest_uploading">पीसी पर अपलोड हो रहा है…</string>
     <string name="speedtest_downloading">पीसी से डाउनलोड हो रहा है…</string>
     <string name="speedtest_cleaning_up">सफ़ाई हो रही है…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">माइक्रोफ़ोन</string>
+    <string name="mic_auto">स्वचालित</string>
+    <string name="mic_warning_bluetooth">ब्लूटूथ माइक 16 kHz तक सीमित हैं — आवाज़ की क्वालिटी, संगीत की नहीं</string>
+    <string name="mic_warning_sample_rate">यह माइक चुनी गई दर सपोर्ट नहीं करता — %1$.1f kHz पर रिकॉर्ड हो रहा है</string>
+    <string name="mic_warning_bitrate">बिटरेट %1$d kbps तक सीमित — इस माइक की अधिकतम क्षमता यही है</string>
+    <string name="mic_warning_mono">यह माइक मोनो है — एक ही चैनल रिकॉर्ड हो रहा है</string>
+    <string name="mic_warning_unknown">इस माइक ने अपनी क्षमताएँ नहीं बताईं — सेटिंग्स वैसी ही लागू की गईं</string>
 </resources>

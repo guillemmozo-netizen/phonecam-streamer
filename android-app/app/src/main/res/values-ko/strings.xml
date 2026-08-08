@@ -215,4 +215,13 @@
     <string name="speedtest_uploading">PC로 업로드 중…</string>
     <string name="speedtest_downloading">PC에서 다운로드 중…</string>
     <string name="speedtest_cleaning_up">정리 중…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">마이크</string>
+    <string name="mic_auto">자동</string>
+    <string name="mic_warning_bluetooth">블루투스 마이크는 16 kHz로 제한됩니다 — 음악이 아닌 음성 품질입니다</string>
+    <string name="mic_warning_sample_rate">이 마이크는 선택한 샘플레이트를 지원하지 않습니다 — %1$.1f kHz로 녹음합니다</string>
+    <string name="mic_warning_bitrate">비트레이트를 %1$d kbps로 제한했습니다 — 이 마이크의 최대치입니다</string>
+    <string name="mic_warning_mono">이 마이크는 모노입니다 — 한 채널만 녹음합니다</string>
+    <string name="mic_warning_unknown">이 마이크가 지원 정보를 알리지 않았습니다 — 설정을 그대로 적용합니다</string>
 </resources>

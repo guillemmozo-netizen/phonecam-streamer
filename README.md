@@ -40,6 +40,12 @@ window instead, but needs a non-headless OpenCV — see requirements-dev.txt.
 ./.venv/Scripts/python -m pytest
 ```
 
+The Android module's Android-free unit tests run too, without Gradle or an SDK:
+
+```bash
+tools/run_kotlin_tests.sh
+```
+
 120 pass in this environment: the reward/credit economy (18), the receiver,
 wire protocol, H.264 decode path and network auth surface (83, including a
 real socket-based end-to-end handshake and a PyAV encode/decode round trip),
@@ -143,8 +149,21 @@ MediaCodec → network round trip — hasn't been validated against a real
 device yet) and configuring the actual consent message copy in the AdMob
 console. `video_codec` in Settings still only actually produces H.264
 regardless of which option is picked (H.265/AV1 are unimplemented), and
-`audio_bitrate`/`audio_codec` remain decorative — there's still no audio
-capture/transmission pipeline at all, only the local visual level meter.
+`audio_codec` remains decorative (AAC is the only codec produced).
+
+Audio itself is real now: pick a microphone — built-in, USB-C or Bluetooth —
+and the app reports what it can actually do rather than what was asked for
+(a Bluetooth mic is capped at 16 kHz by Bluetooth, not by a setting), captures
+it, encodes AAC and multiplexes it onto the same socket as video. On the PC it
+plays out of a device you choose; pointing that at VB-CABLE is what makes the
+phone's mic selectable as an input in Zoom/Meet/OBS, since Windows ships no
+virtual audio device of its own. "Noise reduction" now drives the platform's
+`NoiseSuppressor` instead of nothing.
+
+Settings that never did anything — the codec and protocol pickers, the wind
+filter, low latency, and HDR (which only ever reached the viewfinder) — are
+hidden rather than deleted, with what each would take to finish written down in
+[docs/PLANNED.md](docs/PLANNED.md).
 
 Before submitting anything to Google Play, work through
 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) — it lists what is

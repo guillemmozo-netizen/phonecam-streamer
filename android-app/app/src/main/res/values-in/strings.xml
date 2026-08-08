@@ -215,4 +215,13 @@
     <string name="speedtest_uploading">Mengunggah ke PC…</string>
     <string name="speedtest_downloading">Mengunduh dari PC…</string>
     <string name="speedtest_cleaning_up">Membersihkan…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Mikrofon</string>
+    <string name="mic_auto">Otomatis</string>
+    <string name="mic_warning_bluetooth">Mikrofon Bluetooth dibatasi 16 kHz — kualitas suara, bukan musik</string>
+    <string name="mic_warning_sample_rate">Mikrofon ini tidak mendukung laju yang dipilih — merekam pada %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Bitrate dibatasi %1$d kbps — maksimum untuk mikrofon ini</string>
+    <string name="mic_warning_mono">Mikrofon ini mono — merekam satu kanal saja</string>
+    <string name="mic_warning_unknown">Mikrofon ini tidak melaporkan kemampuannya — setelan diterapkan apa adanya</string>
 </resources>

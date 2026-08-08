@@ -41,6 +41,27 @@ class ProtocolError(Exception):
     pass
 
 
+class MessageType:
+    """First byte of every message once Hello.audio is True.
+
+    Audio and video share one TCP connection, so something has to say which is
+    which. A type byte only appears when audio was negotiated: with audio off
+    the stream is byte-for-byte what it always was, which is what keeps
+    demo_sender.py and the whole existing test suite meaningful rather than
+    rewritten around a framing change they don't exercise.
+    """
+
+    VIDEO = 0x01
+    # AAC's AudioSpecificConfig (MediaCodec's csd-0). Sent once before the
+    # first audio frame, and again after any reconfiguration - a decoder that
+    # missed it cannot decode a single frame, so it is not merged into the
+    # first frame message.
+    AUDIO_CONFIG = 0x02
+    AUDIO = 0x03
+
+    ALL = (VIDEO, AUDIO_CONFIG, AUDIO)
+
+
 @dataclass(frozen=True)
 class Hello:
     """Describes the stream the sender is about to push."""
@@ -67,6 +88,18 @@ class Hello:
     # senders. Empty for the USB path, which arrives on loopback and is
     # exempt - see receiver.handle_connection.
     auth_token: str = ""
+    # Audio, off by default so every sender that predates it (demo_sender.py,
+    # the tests, any older build) keeps the original framing: bare video frames
+    # with nothing to demultiplex. When this is True the sender switches to
+    # typed messages instead - see MessageType and the module docstring.
+    audio: bool = False
+    # Only meaningful when audio is True. "aac" is the only codec the phone
+    # produces; the rest describe what the PC has to configure its output with,
+    # since AAC's own config is sent separately as an AUDIO_CONFIG message.
+    audio_codec: str = "aac"
+    audio_sample_rate: int = 48_000
+    audio_channels: int = 1
+    audio_bitrate_bps: int = 128_000
 
     def to_json_bytes(self) -> bytes:
         return json.dumps(asdict(self)).encode("utf-8")
@@ -105,11 +138,18 @@ class Hello:
         filtered["height"] = _int("height", 0, 16, 8192)
         filtered["fps"] = _int("fps", 30, 1, 240)
         filtered["video_bitrate_bps"] = _int("video_bitrate_bps", 0, 0, 1_000_000_000)
+        # 4000..384000 spans everything from a Bluetooth voice link to a
+        # high-rate USB interface; the receiver opens an output stream at
+        # whatever this says, so an absurd value is a broken output device
+        # rather than a merely odd setting.
+        filtered["audio_sample_rate"] = _int("audio_sample_rate", 48_000, 4_000, 384_000)
+        filtered["audio_channels"] = _int("audio_channels", 1, 1, 2)
+        filtered["audio_bitrate_bps"] = _int("audio_bitrate_bps", 128_000, 1_000, 1_000_000)
 
-        for name in ("quality", "device_name", "codec", "auth_token"):
+        for name in ("quality", "device_name", "codec", "auth_token", "audio_codec"):
             if name in filtered:
                 filtered[name] = str(filtered[name])[:256]
-        for name in ("watermark", "sync_obs"):
+        for name in ("watermark", "sync_obs", "audio"):
             if name in filtered:
                 filtered[name] = bool(filtered[name])
 
@@ -154,6 +194,31 @@ def send_frame(sock: socket.socket, jpeg_bytes: bytes) -> None:
 
 def recv_frame(sock: socket.socket) -> bytes:
     return recv_message(sock)
+
+
+def send_typed_message(sock: socket.socket, message_type: int, payload: bytes) -> None:
+    """One message in the audio-enabled framing: type byte, then payload.
+
+    The type byte lives *inside* the length-prefixed payload rather than beside
+    it, so a reader that already knows how to pull one message off the wire
+    needs no change to its framing — only to what it does with the bytes.
+    """
+    send_message(sock, bytes((message_type,)) + payload)
+
+
+def split_typed_message(payload: bytes) -> tuple[int, bytes]:
+    """(type, body) from a message read in the audio-enabled framing.
+
+    Raises rather than guessing on an unknown type: with two media streams
+    multiplexed onto one socket, silently treating an unrecognised message as
+    video would push noise into the user's virtual camera.
+    """
+    if not payload:
+        raise ProtocolError("typed message is empty")
+    message_type = payload[0]
+    if message_type not in MessageType.ALL:
+        raise ProtocolError(f"unknown message type 0x{message_type:02x}")
+    return message_type, payload[1:]
 
 
 class FrameReader:

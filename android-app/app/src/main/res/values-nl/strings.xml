@@ -216,4 +216,13 @@
     <string name="speedtest_uploading">Uploaden naar pc…</string>
     <string name="speedtest_downloading">Downloaden van pc…</string>
     <string name="speedtest_cleaning_up">Opschonen…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Microfoon</string>
+    <string name="mic_auto">Automatisch</string>
+    <string name="mic_warning_bluetooth">Bluetooth-microfoons zijn beperkt tot 16 kHz: spraakkwaliteit, geen muziek</string>
+    <string name="mic_warning_sample_rate">Deze microfoon ondersteunt de gekozen frequentie niet: opname op %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Bitrate beperkt tot %1$d kbps: het maximum voor deze microfoon</string>
+    <string name="mic_warning_mono">Deze microfoon is mono: één kanaal wordt opgenomen</string>
+    <string name="mic_warning_unknown">Deze microfoon heeft zijn mogelijkheden niet gemeld: instellingen ongewijzigd toegepast</string>
 </resources>

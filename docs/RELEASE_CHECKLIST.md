@@ -139,6 +139,32 @@ Each of these was live in the code being audited.
 
 ---
 
+## Audio
+
+Added after the rebrand, and worth stating plainly because the settings screen
+previously implied it already existed.
+
+**Real now:** microphone selection (built-in, wired, USB-C, Bluetooth SCO/LE),
+capability detection with honest warnings when a request cannot be met, AAC-LC
+encoding, transport multiplexed onto the existing socket, and PC-side playback
+to a user-chosen output device. "Noise reduction" drives the platform's
+`NoiseSuppressor`. `MicrophonePolicy` — the part that decides fallbacks and
+warnings — has 17 unit tests that actually run here.
+
+**Not verified:** none of the Android side has been compiled or run, for the
+same reason as everything else Android in this document. The capture path in
+particular has device-specific behaviour that only a real phone exercises:
+Bluetooth SCO routing, whether `setPreferredDevice` is honoured, and whether a
+given USB interface enumerates at all.
+
+**Needs a decision before release:** the PC plays audio to its default output
+unless `FRAMECAST_AUDIO_DEVICE` names something else. That is monitoring, not
+routing — getting the phone's mic into Zoom/Meet/OBS needs VB-CABLE installed,
+which is a third-party download the user has to be told about. README.txt says
+so; the store listing should too.
+
+---
+
 ## Worth doing, not blocking
 
 - **Dependency versions are unpinned.** `pc_receiver/requirements.txt` names
@@ -155,6 +181,11 @@ Each of these was live in the code being audited.
   invisible because the services start eagerly and the video socket carries its
   own token, but the Settings screen's "Discover"/"Start PC" buttons are
   affected.
+
+- **Hidden settings.** The codec picker, protocol picker, wind filter, low
+  latency and HDR are hidden rather than deleted — see
+  [PLANNED.md](PLANNED.md) for what each would take. Nothing in the UI now
+  claims to do something it does not.
 
 - **R8 is off** (`isMinifyEnabled = false`), so the APK ships larger than it
   needs to. Turning it on needs keep rules worked out against a real device for

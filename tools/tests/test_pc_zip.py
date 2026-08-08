@@ -32,6 +32,7 @@ DISTRIBUTION_BY_IMPORT = {
     "cv2": "opencv-python-headless",
     "numpy": "numpy",
     "pyvirtualcam": "pyvirtualcam",
+    "sounddevice": "sounddevice",
     "websocket": "websocket-client",
 }
 

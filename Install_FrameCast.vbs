@@ -38,6 +38,7 @@ requiredFiles = Array( _
     "pc_receiver\protocol.py", _
     "pc_receiver\sinks.py", _
     "pc_receiver\h264_decoder.py", _
+    "pc_receiver\audio_sink.py", _
     "pc_receiver\obs_manager.py", _
     "pc_receiver\obs_sync.py", _
     "pc_receiver\enable_obs_websocket.py", _

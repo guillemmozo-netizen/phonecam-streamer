@@ -110,6 +110,19 @@ SERVICE_ARGS = {
     "receiver": ["--host", "0.0.0.0", "--sink", "virtualcam", "--serve-forever"],
 }
 
+# Where the phone's microphone is played on this PC. Nothing sets this by
+# default, which means the system's default output device — i.e. audible
+# monitoring. Setting it to "cable" (or any unique part of an output device's
+# name, or its index) routes the audio into VB-CABLE instead, which is what
+# makes the phone's mic selectable as an input in Zoom/Meet/Teams/OBS.
+#
+# An environment variable rather than a setting in the app: this is a property
+# of the PC's audio hardware, not of the phone, and it has to be readable by
+# the service that starts the receiver without a phone being connected at all.
+_audio_device = os.environ.get("FRAMECAST_AUDIO_DEVICE", "").strip()
+if _audio_device:
+    SERVICE_ARGS["receiver"] = SERVICE_ARGS["receiver"] + ["--audio-device", _audio_device]
+
 
 AUTH_TOKEN_PATH = os.path.join(script_dir, ".control_token")
 _auth_token: str = ""
