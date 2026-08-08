@@ -208,10 +208,23 @@ def decode_frame(jpeg_bytes: bytes) -> Optional[np.ndarray]:
 
 
 def _peer_ip(conn: socket.socket) -> str:
+    """The peer's address, or "?" when the socket has none to report.
+
+    AF_UNIX sockets have no address at all — getpeername() hands back an empty
+    string rather than the (host, port) tuple AF_INET returns — so indexing the
+    result blindly raised IndexError instead of yielding an address. That is
+    what socket.socketpair() gives on POSIX, which is why the receiver's
+    end-to-end tests only passed on Windows (where socketpair is emulated over
+    AF_INET loopback). A Unix domain socket cannot be connected across a
+    network, so its peer is local by construction and maps to loopback.
+    """
+    if conn.family == getattr(socket, "AF_UNIX", object()):
+        return "127.0.0.1"
     try:
-        return conn.getpeername()[0]
+        peer = conn.getpeername()
     except OSError:
         return "?"
+    return str(peer[0]) if isinstance(peer, tuple) and peer else "?"
 
 
 def _load_control_token() -> str:

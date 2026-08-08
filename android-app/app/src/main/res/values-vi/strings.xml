@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Trong khi phát trực tiếp</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">MIỄN PHÍ</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Mở khóa quay video 4K, xóa hình mờ, nhận các tùy chỉnh âm thanh nâng cao và hỗ trợ ưu tiên.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Cảm ơn bạn đã ủng hộ ứng dụng độc lập này ❤️</string>
-    <string name="welcome_message">PhoneCam đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
+    <string name="welcome_message">FrameCast đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
     <string name="welcome_button">Tiếp tục</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Trong giai đoạn Alpha và Beta, mọi tính năng Pro đều có thể được mở khóa miễn phí bằng cách xem quảng cáo có thưởng.</string>
-    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu PhoneCam Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
+    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu FrameCast Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Nhận %1$d giờ Pro</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">Không thể kết nối PC</string>
     <string name="pc_starting">Đang khởi động…</string>
     <string name="pc_services_started">Đã khởi động dịch vụ PC</string>
-    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy PhoneCam_PC.bat trước</string>
+    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy FrameCast_PC.bat trước</string>
     <string name="pc_services_stopped">Đã dừng dịch vụ PC</string>
     <string name="pc_usb_forwarded">Đã chuyển tiếp cổng USB</string>
     <string name="pc_usb_failed">Thất bại — kiểm tra kết nối USB</string>

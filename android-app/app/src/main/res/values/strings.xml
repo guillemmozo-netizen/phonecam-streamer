@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -33,14 +33,18 @@
     <!-- Display settings -->
     <string name="settings_display">DISPLAY</string>
     <string name="settings_keep_awake">Keep screen awake</string>
-    <!-- Developer flag, intentionally not translated: it is not a shipped feature. -->
-    <string name="settings_experimental_camera2">Experimental Camera2 capture</string>
-    <string name="settings_experimental_camera2_hint">Unlocks true 4K60. Camera controls are disabled while streaming.</string>
-    <string name="toast_camera2_fallback">Camera2 backend unavailable — using CameraX</string>
+    <!-- Developer flag, intentionally not translated: it is not a shipped feature.
+         translatable="false" is what states that to the toolchain as well as to
+         a reader — without it lint's MissingTranslation check reports all three
+         against all 20 locales, and MissingTranslation is an error, not a
+         warning, so it fails a release build rather than just noting it. -->
+    <string name="settings_experimental_camera2" translatable="false">Experimental Camera2 capture</string>
+    <string name="settings_experimental_camera2_hint" translatable="false">Unlocks true 4K60. Camera controls are disabled while streaming.</string>
+    <string name="toast_camera2_fallback" translatable="false">Camera2 backend unavailable — using CameraX</string>
     <string name="settings_stream_brightness">While streaming</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">FREE</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Unlock 4K recording, remove watermarks, advanced audio controls, and priority support.</string>
@@ -118,12 +122,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Thank you for supporting this independent app ❤️</string>
-    <string name="welcome_message">PhoneCam is being developed independently by a single person.\n\nDuring the Alpha and Beta phases, we want to thank you for your support by offering every Pro feature through rewarded ads.\n\nYour help testing the app, sending feedback, and sharing it with others lets us keep improving it.\n\nThanks for being part of the project from the start.</string>
+    <string name="welcome_message">FrameCast is being developed independently by a single person.\n\nDuring the Alpha and Beta phases, we want to thank you for your support by offering every Pro feature through rewarded ads.\n\nYour help testing the app, sending feedback, and sharing it with others lets us keep improving it.\n\nThanks for being part of the project from the start.</string>
     <string name="welcome_button">Continue</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">During Alpha and Beta, every Pro feature can be unlocked for free by watching rewarded ads.</string>
-    <string name="pro_feature_locked_desc">This setting requires PhoneCam Pro — watch ads on the camera screen to unlock</string>
+    <string name="pro_feature_locked_desc">This setting requires FrameCast Pro — watch ads on the camera screen to unlock</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Earn %1$d hours of Pro</string>
@@ -152,7 +156,7 @@
     <string name="pc_status_unreachable">PC not reachable</string>
     <string name="pc_starting">Starting…</string>
     <string name="pc_services_started">PC services started</string>
-    <string name="pc_unreachable_hint">Cannot reach PC — run PhoneCam_PC.bat first</string>
+    <string name="pc_unreachable_hint">Cannot reach PC — run FrameCast_PC.bat first</string>
     <string name="pc_services_stopped">PC services stopped</string>
     <string name="pc_usb_forwarded">USB ports forwarded</string>
     <string name="pc_usb_failed">Failed — check USB connection</string>

@@ -72,7 +72,7 @@ def redirect_own_output_to_log():
     """Point this process's own stdout/stderr at a log file.
 
     Needed because this now normally runs hidden via pythonw.exe (launched
-    from PhoneCam_Service.vbs, no console attached at all) — under pythonw,
+    from FrameCast_Service.vbs, no console attached at all) — under pythonw,
     sys.stdout/sys.stderr are None, so the plain print() calls throughout
     this file would raise AttributeError on the very first line logged.
     Redirecting first makes every print() below work the same way whether
@@ -388,7 +388,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return True
         if not _auth_token:
             return False
-        supplied = self.headers.get("X-PhoneCam-Token", "")
+        supplied = self.headers.get("X-FrameCast-Token", "")
         return secrets.compare_digest(supplied, _auth_token)
 
     def do_GET(self):
@@ -488,7 +488,7 @@ def main():
     load_or_create_token()
     print(f"[control] auth token at {AUTH_TOKEN_PATH} (loopback exempt)")
     server = http.server.HTTPServer((HOST, PORT), Handler)
-    print(f"[control] PhoneCam Control Server running on port {PORT}")
+    print(f"[control] FrameCast Control Server running on port {PORT}")
     print(f"[control] Endpoints: GET /status, POST /start, POST /stop, POST /adb-reverse")
 
     # Eager start: discovery/speed_test/receiver come up immediately instead

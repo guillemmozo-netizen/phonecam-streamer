@@ -61,7 +61,7 @@
                 app:cardBackgroundColor="@color/surface_secondary"
                 
                 
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.PhoneCam.ProCard">
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.FrameCast.ProCard">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -332,7 +332,7 @@
                 android:orientation="vertical">
 
                 <!-- 1. Resolution -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerResolution"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_resolution" />
@@ -397,21 +397,21 @@
                 <View style="@style/Separator" />
 
                 <!-- 1b. Aspect ratio / composition -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerAspectRatio"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_aspect_ratio" />
                 <View style="@style/Separator" />
 
                 <!-- 2. Codec -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerVideoCodec"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_video_codec" />
                 <View style="@style/Separator" />
 
                 <!-- 3. Bitrate -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerVideoBitrate"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_video_bitrate" />
@@ -453,7 +453,7 @@
                 <View style="@style/Separator" />
 
                 <!-- 4. FPS -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerFps"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_fps" />
@@ -529,14 +529,14 @@
                 <View style="@style/Separator" />
 
                 <!-- 7. Autofocus -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerAutofocus"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_autofocus" />
                 <View style="@style/Separator" />
 
                 <!-- 7b. Autofocus speed preset -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerAfSpeed"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_af_speed" />
@@ -583,21 +583,21 @@
                 <View style="@style/Separator" />
 
                 <!-- 9. Sample rate -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerSampleRate"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_sample_rate" />
                 <View style="@style/Separator" />
 
                 <!-- 10. Audio bitrate -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerAudioBitrate"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_audio_bitrate" />
                 <View style="@style/Separator" />
 
                 <!-- 11. Audio codec -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerAudioCodec"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_audio_codec" />
@@ -666,14 +666,14 @@
                 android:orientation="vertical">
 
                 <!-- 14. White balance -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerWhiteBalance"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_white_balance" />
                 <View style="@style/Separator" />
 
                 <!-- 15. Lens -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerLens"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_lens" />
@@ -772,14 +772,14 @@
                 <View style="@style/Separator" />
 
                 <!-- Connection mode -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerConnectionMode"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_connection_mode" />
                 <View style="@style/Separator" />
 
                 <!-- 18. Protocol -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerProtocol"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_protocol" />
@@ -1011,7 +1011,7 @@
 
                 <View style="@style/Separator" />
 
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerStreamBrightness"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_stream_brightness" />
@@ -1080,7 +1080,7 @@
                 <View style="@style/Separator" />
 
                 <!-- 22. Copyright mode (Text / Image) -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerCopyrightMode"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_copyright_mode" />
@@ -1147,7 +1147,7 @@
                 <View style="@style/Separator" />
 
                 <!-- 24. Watermark position -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
+                <com.framecast.streamer.ui.ExpandableChoiceRow
                     android:id="@+id/spinnerWatermarkPos"
                     android:layout_width="match_parent" android:layout_height="wrap_content"
                     app:label="@string/settings_watermark_position" />

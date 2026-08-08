@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Mentre es transmet</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Desbloqueja la gravació en 4K, elimina les marques d\'aigua, obtén controls d\'àudio avançats i suport prioritari.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Gràcies per donar suport a aquesta aplicació independent ❤️</string>
-    <string name="welcome_message">PhoneCam està sent desenvolupada de manera independent per una sola persona.\n\nDurant les fases Alpha i Beta volem agrair-vos el vostre suport oferint totes les funcions Pro mitjançant anuncis amb recompensa.\n\nLa vostra ajuda provant l\'aplicació, enviant comentaris i compartint-la amb altres persones ens permet seguir millorant-la.\n\nGràcies per formar part del projecte des del principi.</string>
+    <string name="welcome_message">FrameCast està sent desenvolupada de manera independent per una sola persona.\n\nDurant les fases Alpha i Beta volem agrair-vos el vostre suport oferint totes les funcions Pro mitjançant anuncis amb recompensa.\n\nLa vostra ajuda provant l\'aplicació, enviant comentaris i compartint-la amb altres persones ens permet seguir millorant-la.\n\nGràcies per formar part del projecte des del principi.</string>
     <string name="welcome_button">Continua</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Durant l\'Alpha i la Beta, totes les funcions Pro es poden desbloquejar gratuïtament mirant anuncis amb recompensa.</string>
-    <string name="pro_feature_locked_desc">Aquest ajust requereix PhoneCam Pro — mira anuncis a la pantalla de la càmera per desbloquejar-lo</string>
+    <string name="pro_feature_locked_desc">Aquest ajust requereix FrameCast Pro — mira anuncis a la pantalla de la càmera per desbloquejar-lo</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Aconsegueix %1$d hores de Pro</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC no accessible</string>
     <string name="pc_starting">S\'està iniciant…</string>
     <string name="pc_services_started">Serveis del PC iniciats</string>
-    <string name="pc_unreachable_hint">No es pot accedir al PC — executa primer PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">No es pot accedir al PC — executa primer FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Serveis del PC aturats</string>
     <string name="pc_usb_forwarded">Ports USB redirigits</string>
     <string name="pc_usb_failed">Error — comprova la connexió USB</string>

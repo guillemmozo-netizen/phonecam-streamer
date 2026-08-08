@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">配信中</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">無料</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">4K録画、透かしの削除、高度な音声コントロール、優先サポートを利用できます。</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">この独立系アプリを応援してくださりありがとうございます ❤️</string>
-    <string name="welcome_message">PhoneCamは、たった一人の開発者によって独立して開発されています。\n\nAlpha版とBeta版の期間中は、応援してくださる皆さまへの感謝として、リワード広告を見るだけですべてのPro機能をご利用いただけます。\n\nアプリのテスト、フィードバックの送信、そして周りの方への共有にご協力いただくことで、開発を続けていくことができます。\n\n最初からこのプロジェクトに参加してくださり、ありがとうございます。</string>
+    <string name="welcome_message">FrameCastは、たった一人の開発者によって独立して開発されています。\n\nAlpha版とBeta版の期間中は、応援してくださる皆さまへの感謝として、リワード広告を見るだけですべてのPro機能をご利用いただけます。\n\nアプリのテスト、フィードバックの送信、そして周りの方への共有にご協力いただくことで、開発を続けていくことができます。\n\n最初からこのプロジェクトに参加してくださり、ありがとうございます。</string>
     <string name="welcome_button">続ける</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">AlphaおよびBeta期間中は、リワード広告を見るだけですべてのPro機能を無料で解除できます。</string>
-    <string name="pro_feature_locked_desc">この設定にはPhoneCam Proが必要です — カメラ画面で広告を見て解除してください</string>
+    <string name="pro_feature_locked_desc">この設定にはFrameCast Proが必要です — カメラ画面で広告を見て解除してください</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Pro %1$d時間を獲得</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">PCに接続できません</string>
     <string name="pc_starting">起動中…</string>
     <string name="pc_services_started">PCサービスを起動しました</string>
-    <string name="pc_unreachable_hint">PCに接続できません — 先にPhoneCam_PC.batを実行してください</string>
+    <string name="pc_unreachable_hint">PCに接続できません — 先にFrameCast_PC.batを実行してください</string>
     <string name="pc_services_stopped">PCサービスを停止しました</string>
     <string name="pc_usb_forwarded">USBポートを転送しました</string>
     <string name="pc_usb_failed">失敗しました — USB接続を確認してください</string>

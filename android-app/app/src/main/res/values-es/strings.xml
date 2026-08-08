@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Durante la retransmisión</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Desbloquea grabación en 4K, elimina las marcas de agua, controles de audio avanzados y soporte prioritario.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Gracias por apoyar esta aplicación independiente ❤️</string>
-    <string name="welcome_message">PhoneCam está siendo desarrollado por una persona de forma independiente.\n\nDurante las fases Alpha y Beta queremos agradecer vuestro apoyo ofreciendo todas las funciones Pro mediante anuncios recompensados.\n\nTu ayuda probando la aplicación, enviando comentarios y compartiéndola con otras personas nos permite seguir mejorándola.\n\nGracias por formar parte del proyecto desde el principio.</string>
+    <string name="welcome_message">FrameCast está siendo desarrollado por una persona de forma independiente.\n\nDurante las fases Alpha y Beta queremos agradecer vuestro apoyo ofreciendo todas las funciones Pro mediante anuncios recompensados.\n\nTu ayuda probando la aplicación, enviando comentarios y compartiéndola con otras personas nos permite seguir mejorándola.\n\nGracias por formar parte del proyecto desde el principio.</string>
     <string name="welcome_button">Continuar</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Durante la Alpha y la Beta, todas las funciones Pro pueden desbloquearse gratuitamente viendo anuncios recompensados.</string>
-    <string name="pro_feature_locked_desc">Este ajuste requiere PhoneCam Pro — mira anuncios en la pantalla de cámara para desbloquearlo</string>
+    <string name="pro_feature_locked_desc">Este ajuste requiere FrameCast Pro — mira anuncios en la pantalla de cámara para desbloquearlo</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Consigue %1$d horas de Pro</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC no accesible</string>
     <string name="pc_starting">Iniciando…</string>
     <string name="pc_services_started">Servicios del PC iniciados</string>
-    <string name="pc_unreachable_hint">No se puede acceder al PC — ejecuta primero PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">No se puede acceder al PC — ejecuta primero FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Servicios del PC detenidos</string>
     <string name="pc_usb_forwarded">Puertos USB redirigidos</string>
     <string name="pc_usb_failed">Error — comprueba la conexión USB</string>

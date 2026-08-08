@@ -1,4 +1,4 @@
-<title>PhoneCam — App Simulator</title>
+<title>FrameCast — App Simulator</title>
 <style>
 :root {
   /* iOS-style dark palette: true-black grounds, inset-grouped cells,
@@ -684,7 +684,7 @@ body {
       <div class="pro-toast-icon">⟐</div>
       <div class="pro-toast-text">
         <div class="pro-toast-title" id="proToastTitle">Pro feature</div>
-        <div class="pro-toast-desc" id="proToastDesc">This setting requires PhoneCam Pro</div>
+        <div class="pro-toast-desc" id="proToastDesc">This setting requires FrameCast Pro</div>
       </div>
       <button class="pro-toast-btn" id="proToastBtn">Upgrade</button>
     </div>
@@ -761,7 +761,7 @@ body {
         <!-- Subscription -->
         <div class="sub-card">
           <div class="sub-top">
-            <span class="sub-name">PhoneCam Pro</span>
+            <span class="sub-name">FrameCast Pro</span>
             <span class="sub-badge">FREE</span>
           </div>
           <p class="sub-desc">Unlock 4K, remove watermarks, advanced audio, and priority support.</p>
@@ -1028,7 +1028,7 @@ body {
           <!-- Text mode -->
           <div id="overlayTextMode" class="setting-row">
             <span class="setting-label">Text</span>
-            <input class="overlay-text-input" id="overlayTextInput" placeholder="© Your Name" value="© PhoneCam" style="width:140px;margin:0;padding:4px 8px;text-align:right;">
+            <input class="overlay-text-input" id="overlayTextInput" placeholder="© Your Name" value="© FrameCast" style="width:140px;margin:0;padding:4px 8px;text-align:right;">
           </div>
           <!-- Image mode -->
           <div id="overlayImageMode" class="setting-row" style="display:none;">
@@ -1113,7 +1113,7 @@ body {
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
-      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Zero-touch connect: USB now auto-forwards on plug-in (PC-side watcher, no adb/python command), Wi-Fi auto-discovers + auto-starts PC services — Install_PhoneCam.vbs is the only manual step, once, and it's completely silent (no console ever)</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Zero-touch connect: USB now auto-forwards on plug-in (PC-side watcher, no adb/python command), Wi-Fi auto-discovers + auto-starts PC services — Install_FrameCast.vbs is the only manual step, once, and it's completely silent (no console ever)</span>
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
@@ -1125,7 +1125,7 @@ body {
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
-      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC service now gated on OBS: PhoneCam_Service.vbs is a lightweight WMI watcher (no ports, no processes) that only starts control_server.py while obs64.exe/obs32.exe is actually running, and stops the whole tree when OBS closes — was previously "always on from login"</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC service now gated on OBS: FrameCast_Service.vbs is a lightweight WMI watcher (no ports, no processes) that only starts control_server.py while obs64.exe/obs32.exe is actually running, and stops the whole tree when OBS closes — was previously "always on from login"</span>
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
@@ -1550,7 +1550,7 @@ function guardProSelect(select, lastRef, setLast) {
     const v = e.target.value;
     if (v.includes('⟐ Pro') && !isPro) {
       e.target.value = lastRef();
-      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      showProToast('This setting requires FrameCast Pro — upgrade to unlock');
       return;
     }
     setLast(v);
@@ -1667,7 +1667,7 @@ function setupCustomSelect(select, expandEl, input, lastRef, setLast, stateEl, m
 
     if (v.includes('⟐ Pro') && !isPro) {
       e.target.value = lastRef();
-      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      showProToast('This setting requires FrameCast Pro — upgrade to unlock');
       return;
     }
     setLast(v);
@@ -1680,7 +1680,7 @@ function setupCustomSelect(select, expandEl, input, lastRef, setLast, stateEl, m
     if (num > maxFree && !isPro) {
       num = maxFree;
       input.value = maxFree;
-      showProToast(`Values above ${maxFree} ${unit} require PhoneCam Pro — upgrade to unlock`);
+      showProToast(`Values above ${maxFree} ${unit} require FrameCast Pro — upgrade to unlock`);
     }
     stateEl.textContent = formatState(num);
   }
@@ -1908,7 +1908,7 @@ function simulateSpeedTest() {
 setInterval(() => { if (recording) { $('#stateLat').textContent = Math.floor(1 + Math.random() * 4) + 'ms'; } }, 2000);
 
 // ─── On-device settings persistence (localStorage — no server, plain text is tiny) ───
-const STORAGE_KEY = 'phonecam_settings_v1';
+const STORAGE_KEY = 'framecast_settings_v1';
 const TOGGLE_KEYS = ['hdr', 'stab', 'audio', 'nr', 'wind', 'audioMeter', 'grid', 'mirror', 'lowlat', 'reconn', 'syncObs', 'overlay-show', 'ts'];
 let settingsLoaded = false;
 
@@ -1956,7 +1956,7 @@ function saveSettings() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (err) {
-    console.warn('PhoneCam: could not persist settings (storage full?)', err);
+    console.warn('FrameCast: could not persist settings (storage full?)', err);
   }
 }
 

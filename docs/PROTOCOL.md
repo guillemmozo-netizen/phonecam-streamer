@@ -85,7 +85,7 @@ still work unchanged).
 |---|---|---|
 | PC receiver (server) | [`pc_receiver/protocol.py`](../pc_receiver/protocol.py), [`receiver.py`](../pc_receiver/receiver.py), [`h264_decoder.py`](../pc_receiver/h264_decoder.py) | Actually running + tested in this environment, H.264 path included (`pc_receiver/tests/test_h264_decoder.py`) |
 | PC demo sender (client, stand-in for the phone) | [`pc_receiver/demo_sender.py`](../pc_receiver/demo_sender.py) | Uses the PC's own webcam, or a synthetic pattern if none is attached; always sends `codec: "jpeg"` |
-| Android client | [`StreamProtocol.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/StreamProtocol.kt), [`CameraStreamer.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/CameraStreamer.kt), [`H264Encoder.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/H264Encoder.kt) | Compiles and type-checks in this environment; the actual on-device MediaCodec round trip hasn't run outside this sandbox (no camera hardware/emulator here) |
+| Android client | [`StreamProtocol.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/StreamProtocol.kt), [`CameraStreamer.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/CameraStreamer.kt), [`H264Encoder.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/H264Encoder.kt) | Compiles and type-checks in this environment; the actual on-device MediaCodec round trip hasn't run outside this sandbox (no camera hardware/emulator here) |
 
 ## Deliberately out of scope for alpha
 

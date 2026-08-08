@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Saat streaming</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Buka rekaman 4K, hapus watermark, dapatkan kontrol audio lanjutan, dan dukungan prioritas.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Terima kasih telah mendukung aplikasi independen ini ❤️</string>
-    <string name="welcome_message">PhoneCam dikembangkan secara independen oleh satu orang.\n\nSelama fase Alpha dan Beta, kami ingin berterima kasih atas dukungan Anda dengan membuka semua fitur Pro melalui iklan berhadiah.\n\nBantuan Anda dalam menguji aplikasi, mengirim masukan, dan membagikannya kepada orang lain memungkinkan kami untuk terus menyempurnakannya.\n\nTerima kasih telah menjadi bagian dari proyek ini sejak awal.</string>
+    <string name="welcome_message">FrameCast dikembangkan secara independen oleh satu orang.\n\nSelama fase Alpha dan Beta, kami ingin berterima kasih atas dukungan Anda dengan membuka semua fitur Pro melalui iklan berhadiah.\n\nBantuan Anda dalam menguji aplikasi, mengirim masukan, dan membagikannya kepada orang lain memungkinkan kami untuk terus menyempurnakannya.\n\nTerima kasih telah menjadi bagian dari proyek ini sejak awal.</string>
     <string name="welcome_button">Lanjutkan</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Selama Alpha dan Beta, semua fitur Pro dapat dibuka secara gratis dengan menonton iklan berhadiah.</string>
-    <string name="pro_feature_locked_desc">Pengaturan ini memerlukan PhoneCam Pro — tonton iklan di layar kamera untuk membukanya</string>
+    <string name="pro_feature_locked_desc">Pengaturan ini memerlukan FrameCast Pro — tonton iklan di layar kamera untuk membukanya</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Dapatkan %1$d jam Pro</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">PC tidak dapat dijangkau</string>
     <string name="pc_starting">Memulai…</string>
     <string name="pc_services_started">Layanan PC dimulai</string>
-    <string name="pc_unreachable_hint">Tidak dapat menjangkau PC — jalankan PhoneCam_PC.bat terlebih dahulu</string>
+    <string name="pc_unreachable_hint">Tidak dapat menjangkau PC — jalankan FrameCast_PC.bat terlebih dahulu</string>
     <string name="pc_services_stopped">Layanan PC dihentikan</string>
     <string name="pc_usb_forwarded">Port USB diteruskan</string>
     <string name="pc_usb_failed">Gagal — periksa koneksi USB</string>

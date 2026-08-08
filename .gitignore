@@ -3,7 +3,11 @@ __pycache__/
 *.pyc
 .pytest_cache/
 pc_receiver/logs/
-dist/
+# The built PC download is committed so the README's link to it resolves on
+# GitHub; tools/tests/test_pc_zip.py fails if it drifts from the sources it is
+# built from. Nothing else in dist/ belongs in git.
+dist/*
+!dist/FrameCast_PC_Setup.zip
 .idea/
 ui_dump*.xml
 
@@ -11,6 +15,10 @@ android-app/.gradle/
 android-app/build/
 android-app/app/build/
 android-app/local.properties
+# Release signing material — see the signingConfigs block in app/build.gradle.kts.
+android-app/keystore.properties
+*.jks
+*.keystore
 android-app/.idea/
 *.iml
 android-app/.artifacts/

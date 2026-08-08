@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Під час трансляції</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">БЕЗКОШТОВНО</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Розблокуйте запис у 4K, приберіть водяні знаки, отримайте розширене керування звуком і пріоритетну підтримку.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Дякуємо за підтримку цього незалежного застосунку ❤️</string>
-    <string name="welcome_message">PhoneCam розробляється незалежно однією людиною.\n\nПід час фаз Alpha і Beta ми хочемо подякувати вам за підтримку, відкривши всі функції Pro через рекламу з винагородою.\n\nВаша допомога в тестуванні застосунку, надсиланні відгуків і поширенні серед інших людей дає нам змогу й далі його вдосконалювати.\n\nДякуємо, що ви з нами від самого початку проєкту.</string>
+    <string name="welcome_message">FrameCast розробляється незалежно однією людиною.\n\nПід час фаз Alpha і Beta ми хочемо подякувати вам за підтримку, відкривши всі функції Pro через рекламу з винагородою.\n\nВаша допомога в тестуванні застосунку, надсиланні відгуків і поширенні серед інших людей дає нам змогу й далі його вдосконалювати.\n\nДякуємо, що ви з нами від самого початку проєкту.</string>
     <string name="welcome_button">Продовжити</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Під час Alpha і Beta всі функції Pro можна безкоштовно розблокувати, переглянувши рекламу з винагородою.</string>
-    <string name="pro_feature_locked_desc">Це налаштування потребує PhoneCam Pro — перегляньте рекламу на екрані камери, щоб розблокувати його</string>
+    <string name="pro_feature_locked_desc">Це налаштування потребує FrameCast Pro — перегляньте рекламу на екрані камери, щоб розблокувати його</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Отримайте %1$d годин Pro</string>
@@ -150,7 +150,7 @@
     <string name="pc_status_unreachable">ПК недоступний</string>
     <string name="pc_starting">Запуск…</string>
     <string name="pc_services_started">Служби ПК запущено</string>
-    <string name="pc_unreachable_hint">Не вдається підключитися до ПК — спочатку запустіть PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">Не вдається підключитися до ПК — спочатку запустіть FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Служби ПК зупинено</string>
     <string name="pc_usb_forwarded">USB-порти перенаправлено</string>
     <string name="pc_usb_failed">Помилка — перевірте USB-з\'єднання</string>

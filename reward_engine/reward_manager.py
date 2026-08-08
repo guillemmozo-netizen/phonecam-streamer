@@ -14,7 +14,7 @@ streaming spread across however many days you get around to it."
 
 This module has no Android/UI dependencies on purpose: it is the reference
 implementation. The Kotlin port in
-android-app/app/src/main/java/com/phonecam/streamer/rewards/RewardManager.kt
+android-app/app/src/main/java/com/framecast/streamer/rewards/RewardManager.kt
 mirrors this logic 1:1 so the economy can be tuned and tested here first.
 """
 

@@ -1,6 +1,15 @@
+# Runtime dependencies for the PC side — exactly what _setup_helper.bat
+# installs into pc_receiver/.venv on a user's machine. Keep this to what the
+# shipped services actually import; test and asset-build tooling belongs in
+# requirements-dev.txt so end users don't download it.
 numpy
+
+# Headless build on purpose: the services only ever feed frames to the virtual
+# camera, never to a window, so the GUI backends would be dead weight. The one
+# thing that does need them is `--sink preview`, a debug-only path — see
+# sinks.PreviewWindowSink, which says so explicitly if it's used without them.
 opencv-python-headless
+
 pyvirtualcam
 av
 websocket-client
-pytest

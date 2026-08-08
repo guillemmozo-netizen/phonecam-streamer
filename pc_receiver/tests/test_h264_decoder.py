@@ -64,6 +64,72 @@ def test_h264_decoder_survives_garbage_chunk():
     decoder.close()
 
 
+def test_h264_decoder_closes_promptly_after_a_corrupt_chunk():
+    """close() must not block when the last thing decoded was garbage.
+
+    Frame-threaded decoding parks its workers on a packet it cannot parse, and
+    freeing the context joins them — so decode(garbage) followed by close()
+    with no flush in between used to hang the calling thread forever, taking
+    the connection teardown in receiver.py with it. Run on a worker thread so
+    a regression fails the suite instead of wedging the whole run.
+    """
+    for chunk in _encode_synthetic_h264(3):
+        pass  # warm the module-level encoder path the same way a session does
+
+    done = threading.Event()
+
+    def close_after_garbage():
+        decoder = H264Decoder()
+        for chunk in _encode_synthetic_h264(3):
+            decoder.decode(chunk)
+        decoder.decode(b"not h264 data")
+        decoder.close()  # deliberately no flush() first
+        done.set()
+
+    worker = threading.Thread(target=close_after_garbage, daemon=True)
+    worker.start()
+    assert done.wait(timeout=30), "H264Decoder.close() blocked after a corrupt chunk"
+
+
+def test_h264_decoder_falls_back_when_hardware_decoder_cannot_open():
+    """A cuvid context that only fails once it's fed a packet must not eat the
+    whole stream.
+
+    h264_cuvid is *creatable* on any PC whose FFmpeg build includes it, GPU or
+    not; on a PC without NVDEC it fails inside avcodec_open2 on the first
+    packet, raising the same FFmpegError type decode() swallows for corrupt
+    chunks. That combination silently decoded zero frames for an entire
+    session — a black virtual camera and an empty log.
+    """
+    chunks = _encode_synthetic_h264(3)
+
+    class DeadHardwareContext:
+        def decode(self, packet):
+            raise av.error.PermissionError(1, 'avcodec_open2("h264_cuvid", {})')
+
+    decoder = H264Decoder()
+    decoder.backend = "h264_cuvid (NVDEC)"
+    decoder._ctx = DeadHardwareContext()
+
+    frames = []
+    for chunk in chunks:
+        frames.extend(decoder.decode(chunk))
+    frames.extend(decoder.flush())
+    decoder.close()
+
+    assert "software" in decoder.backend
+    assert len(frames) == 3
+
+
+def test_h264_decoder_does_not_fall_back_twice_on_a_corrupt_stream():
+    """The fallback is latched: once on the software decoder, a bad chunk is
+    just a bad chunk again, not a reason to keep rebuilding the context."""
+    decoder = H264Decoder()
+    decoder.backend = "h264 (software)"
+    assert decoder._fall_back_to_software(av.error.PermissionError(1, "x")) is False
+    decoder.close()
+
+
 def test_handle_connection_routes_h264_codec_to_decoder():
     server_sock, client_sock = socket.socketpair()
     sink = NullSink()

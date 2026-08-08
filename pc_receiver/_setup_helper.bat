@@ -1,5 +1,5 @@
 @echo off
-rem Does the actual venv-create + pip-install work for Install_PhoneCam.vbs.
+rem Does the actual venv-create + pip-install work for Install_FrameCast.vbs.
 rem Kept as a separate plain .bat, not inline VBS commands, since cmd.exe's
 rem quoting for multiple quoted segments on one line is unreliable.
 setlocal

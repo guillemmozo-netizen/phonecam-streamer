@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">स्ट्रीमिंग के दौरान</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">मुफ़्त</string>
     <string name="sub_pro">Pro</string>
     <string name="sub_description">4K रिकॉर्डिंग अनलॉक करें, वॉटरमार्क हटाएं, एडवांस्ड ऑडियो कंट्रोल और प्राथमिकता सहायता पाएं।</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">इस स्वतंत्र ऐप को सपोर्ट करने के लिए धन्यवाद ❤️</string>
-    <string name="welcome_message">PhoneCam को एक व्यक्ति द्वारा स्वतंत्र रूप से बनाया जा रहा है।\n\nAlpha और Beta चरणों के दौरान, हम आपके सपोर्ट के लिए धन्यवाद देना चाहते हैं और इसके लिए सभी Pro फीचर्स रिवॉर्ड वाले विज्ञापनों के ज़रिए उपलब्ध करा रहे हैं।\n\nऐप को टेस्ट करने, फ़ीडबैक भेजने और इसे दूसरों के साथ शेयर करने में आपकी मदद हमें इसे बेहतर बनाते रहने में सक्षम बनाती है।\n\nशुरुआत से ही इस प्रोजेक्ट का हिस्सा बनने के लिए धन्यवाद।</string>
+    <string name="welcome_message">FrameCast को एक व्यक्ति द्वारा स्वतंत्र रूप से बनाया जा रहा है।\n\nAlpha और Beta चरणों के दौरान, हम आपके सपोर्ट के लिए धन्यवाद देना चाहते हैं और इसके लिए सभी Pro फीचर्स रिवॉर्ड वाले विज्ञापनों के ज़रिए उपलब्ध करा रहे हैं।\n\nऐप को टेस्ट करने, फ़ीडबैक भेजने और इसे दूसरों के साथ शेयर करने में आपकी मदद हमें इसे बेहतर बनाते रहने में सक्षम बनाती है।\n\nशुरुआत से ही इस प्रोजेक्ट का हिस्सा बनने के लिए धन्यवाद।</string>
     <string name="welcome_button">जारी रखें</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Alpha और Beta के दौरान, सभी Pro फीचर्स रिवॉर्ड वाले विज्ञापन देखकर मुफ़्त में अनलॉक किए जा सकते हैं।</string>
-    <string name="pro_feature_locked_desc">इस सेटिंग के लिए PhoneCam Pro चाहिए — इसे अनलॉक करने के लिए कैमरा स्क्रीन पर विज्ञापन देखें</string>
+    <string name="pro_feature_locked_desc">इस सेटिंग के लिए FrameCast Pro चाहिए — इसे अनलॉक करने के लिए कैमरा स्क्रीन पर विज्ञापन देखें</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">%1$d घंटे का Pro पाएं</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">पीसी उपलब्ध नहीं</string>
     <string name="pc_starting">शुरू हो रहा है…</string>
     <string name="pc_services_started">पीसी सेवाएं शुरू हो गईं</string>
-    <string name="pc_unreachable_hint">पीसी तक नहीं पहुंचा जा सका — पहले PhoneCam_PC.bat चलाएं</string>
+    <string name="pc_unreachable_hint">पीसी तक नहीं पहुंचा जा सका — पहले FrameCast_PC.bat चलाएं</string>
     <string name="pc_services_stopped">पीसी सेवाएं रोक दी गईं</string>
     <string name="pc_usb_forwarded">USB पोर्ट फॉरवर्ड किए गए</string>
     <string name="pc_usb_failed">विफल — USB कनेक्शन जांचें</string>

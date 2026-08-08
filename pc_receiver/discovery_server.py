@@ -1,8 +1,8 @@
 """
 Discovery Server — responds to UDP broadcast from the phone app.
 
-The phone broadcasts "PHONECAM_DISCOVER" on port 8789.
-This server replies "PHONECAM_HERE" so the phone learns the PC's IP.
+The phone broadcasts "FRAMECAST_DISCOVER" on port 8789.
+This server replies "FRAMECAST_HERE" so the phone learns the PC's IP.
 
 Run this alongside speed_test_server.py and the main receiver.
 """
@@ -12,8 +12,8 @@ import threading
 
 HOST = "0.0.0.0"
 PORT = 8789
-DISCOVER_MSG = "PHONECAM_DISCOVER"
-REPLY_MSG = "PHONECAM_HERE"
+DISCOVER_MSG = "FRAMECAST_DISCOVER"
+REPLY_MSG = "FRAMECAST_HERE"
 
 
 def main():

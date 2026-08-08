@@ -17,7 +17,7 @@
     </style>
 
     <!-- Pill toggle with a squircle knob, accent-blue when on -->
-    <style name="Widget.PhoneCam.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+    <style name="Widget.FrameCast.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
         <item name="track">@drawable/switch_track</item>
         <item name="android:thumb">@drawable/switch_thumb</item>
         <item name="trackTint">@null</item>
@@ -52,7 +52,7 @@
     </style>
 
     <!-- Continuous-corner card, iOS inset-grouped style -->
-    <style name="ShapeAppearance.PhoneCam.ProCard" parent="">
+    <style name="ShapeAppearance.FrameCast.ProCard" parent="">
         <item name="cornerSize">14dp</item>
     </style>
 </resources>

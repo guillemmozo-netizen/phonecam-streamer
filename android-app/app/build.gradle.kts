@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -5,8 +6,30 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Release signing comes from android-app/keystore.properties (gitignored) or,
+// for CI, the matching FRAMECAST_* environment variables — the keystore and its
+// passwords must never be in the repo. Play refuses an unsigned artifact, so a
+// release build without either of these is only good for local inspection; it
+// still *builds* rather than failing configuration, so debug builds and unit
+// tests keep working on a machine that has no keystore at all.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun signingSetting(key: String, environmentVariable: String): String? =
+    keystoreProperties.getProperty(key) ?: System.getenv(environmentVariable)
+
+val releaseStorePath = signingSetting("storeFile", "FRAMECAST_KEYSTORE_FILE")
+val releaseStorePassword = signingSetting("storePassword", "FRAMECAST_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingSetting("keyAlias", "FRAMECAST_KEY_ALIAS")
+val releaseKeyPassword = signingSetting("keyPassword", "FRAMECAST_KEY_PASSWORD")
+val hasReleaseSigning = listOf(
+    releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
-    namespace = "com.phonecam.streamer"
+    namespace = "com.framecast.streamer"
     // Several updated dependencies (androidx.activity, core-ktx, the
     // androidx.navigationevent transitive) now require compiling against
     // API 36+ — bumped only compileSdk, not targetSdk/minSdk: compileSdk
@@ -16,16 +39,34 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.phonecam.streamer"
+        applicationId = "com.framecast.streamer"
         minSdk = 26
         targetSdk = 34
         versionCode = 13
         versionName = "0.0.13-alpha"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStorePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 stays off until there's a device to verify it on: the AdMob
+            // and UMP SDKs and CameraX's reflective internals are exactly the
+            // kind of code that needs keep rules worked out against a real
+            // run, and a stripped release that only breaks on a user's phone
+            // is worse than a larger APK. proguard-rules.pro is where those
+            // rules go when it's turned on.
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

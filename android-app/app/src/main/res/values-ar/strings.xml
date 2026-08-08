@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">أثناء البث</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">مجاني</string>
     <string name="sub_pro">Pro</string>
     <string name="sub_description">افتح تسجيل 4K، وأزل العلامات المائية، واحصل على أدوات تحكم صوتية متقدمة ودعم ذو أولوية.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">شكرًا لدعمك هذا التطبيق المستقل ❤️</string>
-    <string name="welcome_message">يتم تطوير PhoneCam بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
+    <string name="welcome_message">يتم تطوير FrameCast بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
     <string name="welcome_button">متابعة</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">خلال مرحلتي Alpha وBeta، يمكن فتح جميع ميزات Pro مجانًا بمشاهدة الإعلانات المكافئة.</string>
-    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد PhoneCam Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
+    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد FrameCast Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">احصل على %1$d ساعة من Pro</string>
@@ -150,7 +150,7 @@
     <string name="pc_status_unreachable">الكمبيوتر غير متاح</string>
     <string name="pc_starting">جارٍ التشغيل…</string>
     <string name="pc_services_started">تم تشغيل خدمات الكمبيوتر</string>
-    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل PhoneCam_PC.bat أولاً</string>
+    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل FrameCast_PC.bat أولاً</string>
     <string name="pc_services_stopped">تم إيقاف خدمات الكمبيوتر</string>
     <string name="pc_usb_forwarded">تم توجيه منافذ USB</string>
     <string name="pc_usb_failed">فشل — تحقق من اتصال USB</string>

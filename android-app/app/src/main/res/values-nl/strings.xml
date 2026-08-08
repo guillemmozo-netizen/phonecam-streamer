@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Tijdens streamen</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Ontgrendel 4K-opnames, verwijder watermerken, gebruik geavanceerde audio-instellingen en krijg voorrang bij support.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Bedankt voor het steunen van deze onafhankelijke app ❤️</string>
-    <string name="welcome_message">PhoneCam wordt onafhankelijk ontwikkeld door één persoon.\n\nTijdens de Alpha- en Bètafase willen we je bedanken voor je steun door alle Pro-functies vrij te geven via beloningsadvertenties.\n\nDoor de app te testen, feedback te sturen en hem met anderen te delen, help je ons de app te blijven verbeteren.\n\nBedankt dat je vanaf het begin deel uitmaakt van dit project.</string>
+    <string name="welcome_message">FrameCast wordt onafhankelijk ontwikkeld door één persoon.\n\nTijdens de Alpha- en Bètafase willen we je bedanken voor je steun door alle Pro-functies vrij te geven via beloningsadvertenties.\n\nDoor de app te testen, feedback te sturen en hem met anderen te delen, help je ons de app te blijven verbeteren.\n\nBedankt dat je vanaf het begin deel uitmaakt van dit project.</string>
     <string name="welcome_button">Doorgaan</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Tijdens de Alpha en Bèta kunnen alle Pro-functies gratis worden ontgrendeld door beloningsadvertenties te bekijken.</string>
-    <string name="pro_feature_locked_desc">Deze instelling vereist PhoneCam Pro — bekijk advertenties op het camerascherm om deze te ontgrendelen</string>
+    <string name="pro_feature_locked_desc">Deze instelling vereist FrameCast Pro — bekijk advertenties op het camerascherm om deze te ontgrendelen</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Verdien %1$d uur Pro</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC niet bereikbaar</string>
     <string name="pc_starting">Bezig met starten…</string>
     <string name="pc_services_started">PC-services gestart</string>
-    <string name="pc_unreachable_hint">PC niet bereikbaar — start eerst PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">PC niet bereikbaar — start eerst FrameCast_PC.bat</string>
     <string name="pc_services_stopped">PC-services gestopt</string>
     <string name="pc_usb_forwarded">USB-poorten doorgestuurd</string>
     <string name="pc_usb_failed">Mislukt — controleer de USB-verbinding</string>
