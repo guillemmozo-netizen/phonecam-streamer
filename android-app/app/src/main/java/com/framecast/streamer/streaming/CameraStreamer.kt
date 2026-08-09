@@ -51,7 +51,6 @@ class CameraStreamer(
     private val port: Int,
     private val rewardManager: RewardManager,
     private val streamConfig: StreamConfig,
-) {
     private val networkExecutor: Executor = Executors.newSingleThreadExecutor(),
     // Null means this session has no audio, which puts the whole stream back on
     // the original video-only framing (see the Hello/send path below). Built by
@@ -61,6 +60,7 @@ class CameraStreamer(
     /** Called when the microphone was refused, so the UI can say why instead of
      *  streaming video with silently wrong audio. */
     private val onAudioFailure: (com.framecast.streamer.audio.CaptureFailure) -> Unit = {},
+) {
     @Volatile private var connection: StreamConnection? = null
     @Volatile private var supervisor: ConnectionSupervisor<StreamConnection>? = null
     @Volatile private var stopped = false
