@@ -1,0 +1,16 @@
+# Developer/CI dependencies. Never installed on a user's PC — the installer
+# only ever reads requirements.txt.
+-r requirements.txt
+
+pytest
+
+# tools/make_brand_assets.py renders brand/framecast.ico and the Play Store
+# listing icon from the Android launcher drawables. Build-time only.
+cairosvg
+pillow
+
+# `--sink preview` opens an OpenCV window, which the headless wheel in
+# requirements.txt cannot do. Install this *instead of* opencv-python-headless
+# if you want the preview sink — the two wheels overwrite each other's cv2, so
+# having both installed at once is not supported by OpenCV:
+#   pip uninstall -y opencv-python-headless && pip install opencv-python

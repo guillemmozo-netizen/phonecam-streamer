@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Во время трансляции</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">БЕСПЛАТНО</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Откройте запись в 4K, уберите водяные знаки, получите расширенное управление звуком и приоритетную поддержку.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Спасибо за поддержку этого независимого приложения ❤️</string>
-    <string name="welcome_message">PhoneCam разрабатывается независимо одним человеком.\n\nВо время фаз Alpha и Beta мы хотим поблагодарить вас за поддержку, открыв все функции Pro через рекламу с вознаграждением.\n\nВаша помощь в тестировании приложения, отправке отзывов и распространении среди других людей позволяет нам продолжать его улучшать.\n\nСпасибо, что вы с нами с самого начала проекта.</string>
+    <string name="welcome_message">FrameCast разрабатывается независимо одним человеком.\n\nВо время фаз Alpha и Beta мы хотим поблагодарить вас за поддержку, открыв все функции Pro через рекламу с вознаграждением.\n\nВаша помощь в тестировании приложения, отправке отзывов и распространении среди других людей позволяет нам продолжать его улучшать.\n\nСпасибо, что вы с нами с самого начала проекта.</string>
     <string name="welcome_button">Продолжить</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Во время Alpha и Beta все функции Pro можно бесплатно открыть, посмотрев рекламу с вознаграждением.</string>
-    <string name="pro_feature_locked_desc">Для этой настройки требуется PhoneCam Pro — посмотрите рекламу на экране камеры, чтобы разблокировать её</string>
+    <string name="pro_feature_locked_desc">Для этой настройки требуется FrameCast Pro — посмотрите рекламу на экране камеры, чтобы разблокировать её</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Получите %1$d часов Pro</string>
@@ -150,7 +150,7 @@
     <string name="pc_status_unreachable">ПК недоступен</string>
     <string name="pc_starting">Запуск…</string>
     <string name="pc_services_started">Службы ПК запущены</string>
-    <string name="pc_unreachable_hint">Не удаётся подключиться к ПК — сначала запустите PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">Не удаётся подключиться к ПК — сначала запустите FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Службы ПК остановлены</string>
     <string name="pc_usb_forwarded">USB-порты перенаправлены</string>
     <string name="pc_usb_failed">Ошибка — проверьте USB-соединение</string>
@@ -218,4 +218,22 @@
     <string name="speedtest_uploading">Отправка на ПК…</string>
     <string name="speedtest_downloading">Загрузка с ПК…</string>
     <string name="speedtest_cleaning_up">Очистка…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Микрофон</string>
+    <string name="mic_auto">Автоматически</string>
+    <string name="mic_warning_bluetooth">Bluetooth-микрофоны ограничены 16 кГц — качество речи, не музыки</string>
+    <string name="mic_warning_sample_rate">Этот микрофон не поддерживает выбранную частоту — запись на %1$.1f кГц</string>
+    <string name="mic_warning_bitrate">Битрейт ограничен %1$d кбит/с — это максимум для этого микрофона</string>
+    <string name="mic_warning_mono">Этот микрофон монофонический — записывается один канал</string>
+    <string name="mic_warning_unknown">Этот микрофон не сообщил свои возможности — настройки применены как есть</string>
+    <string name="pc_paired">Сопряжено с ПК — трансляция по Wi-Fi готова</string>
+    <string name="mic_error_bluetooth_permission">Микрофону Bluetooth нужно разрешение — выдайте его в настройках</string>
+    <string name="mic_error_bluetooth_link">Микрофон Bluetooth не подключился — проверьте, включён ли он и сопряжён</string>
+    <string name="mic_error_wrong_device">Записывался не тот микрофон, что выбран — остановлено вместо записи с неверного</string>
+    <string name="mic_error_unavailable">Не удалось открыть микрофон — возможно,он занят другим приложением</string>
+    <string name="streaming_channel_name">Трансляция FrameCast</string>
+    <string name="streaming_notification_title">Трансляция на ПК</string>
+    <string name="streaming_notification_text">Камера и микрофон используются</string>
+    <string name="streaming_background_unavailable">Трансляция работает, пока FrameCast открыт, и остановится при переключении приложений</string>
 </resources>

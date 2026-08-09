@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Beim Streamen</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">KOSTENLOS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Schalte 4K-Aufnahmen frei, entferne Wasserzeichen, nutze erweiterte Audiosteuerung und bevorzugten Support.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Danke, dass du diese unabhängige App unterstützt ❤️</string>
-    <string name="welcome_message">PhoneCam wird unabhängig von einer einzelnen Person entwickelt.\n\nWährend der Alpha- und Beta-Phase möchten wir uns für deine Unterstützung bedanken, indem wir alle Pro-Funktionen über Werbeprämien freischalten.\n\nDeine Hilfe beim Testen der App, beim Senden von Feedback und beim Teilen mit anderen ermöglicht es uns, sie weiter zu verbessern.\n\nDanke, dass du von Anfang an Teil des Projekts bist.</string>
+    <string name="welcome_message">FrameCast wird unabhängig von einer einzelnen Person entwickelt.\n\nWährend der Alpha- und Beta-Phase möchten wir uns für deine Unterstützung bedanken, indem wir alle Pro-Funktionen über Werbeprämien freischalten.\n\nDeine Hilfe beim Testen der App, beim Senden von Feedback und beim Teilen mit anderen ermöglicht es uns, sie weiter zu verbessern.\n\nDanke, dass du von Anfang an Teil des Projekts bist.</string>
     <string name="welcome_button">Weiter</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Während der Alpha- und Beta-Phase können alle Pro-Funktionen kostenlos durch das Ansehen von Werbevideos freigeschaltet werden.</string>
-    <string name="pro_feature_locked_desc">Diese Einstellung erfordert PhoneCam Pro — sieh dir Werbevideos auf dem Kamerabildschirm an, um sie freizuschalten</string>
+    <string name="pro_feature_locked_desc">Diese Einstellung erfordert FrameCast Pro — sieh dir Werbevideos auf dem Kamerabildschirm an, um sie freizuschalten</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Verdiene %1$d Stunden Pro</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC nicht erreichbar</string>
     <string name="pc_starting">Wird gestartet…</string>
     <string name="pc_services_started">PC-Dienste gestartet</string>
-    <string name="pc_unreachable_hint">PC nicht erreichbar — starte zuerst PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">PC nicht erreichbar — starte zuerst FrameCast_PC.bat</string>
     <string name="pc_services_stopped">PC-Dienste gestoppt</string>
     <string name="pc_usb_forwarded">USB-Ports weitergeleitet</string>
     <string name="pc_usb_failed">Fehlgeschlagen — USB-Verbindung prüfen</string>
@@ -216,4 +216,22 @@
     <string name="speedtest_uploading">Wird zum PC hochgeladen…</string>
     <string name="speedtest_downloading">Wird vom PC heruntergeladen…</string>
     <string name="speedtest_cleaning_up">Wird bereinigt…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Mikrofon</string>
+    <string name="mic_auto">Automatisch</string>
+    <string name="mic_warning_bluetooth">Bluetooth-Mikrofone sind auf 16 kHz begrenzt – Sprachqualität, nicht Musik</string>
+    <string name="mic_warning_sample_rate">Dieses Mikrofon unterstützt die gewählte Rate nicht – Aufnahme mit %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Bitrate auf %1$d kbps begrenzt – mehr schafft dieses Mikrofon nicht</string>
+    <string name="mic_warning_mono">Dieses Mikrofon ist mono – es wird ein Kanal aufgenommen</string>
+    <string name="mic_warning_unknown">Dieses Mikrofon hat seine Fähigkeiten nicht gemeldet – Einstellungen unverändert übernommen</string>
+    <string name="pc_paired">Mit dem PC gekoppelt – WLAN-Streaming ist bereit</string>
+    <string name="mic_error_bluetooth_permission">Das Bluetooth-Mikrofon braucht eine Berechtigung – erteile sie in den Einstellungen</string>
+    <string name="mic_error_bluetooth_link">Bluetooth-Mikrofon nicht verbunden – prüfe, ob es an und gekoppelt ist</string>
+    <string name="mic_error_wrong_device">Es wurde ein anderes als das gewählte Mikrofon aufgenommen – gestoppt statt falsch aufzunehmen</string>
+    <string name="mic_error_unavailable">Mikrofon konnte nicht geöffnet werden – vielleicht nutzt es eine andere App</string>
+    <string name="streaming_channel_name">FrameCast-Übertragung</string>
+    <string name="streaming_notification_title">Übertragung an den PC</string>
+    <string name="streaming_notification_text">Kamera und Mikrofon werden verwendet</string>
+    <string name="streaming_background_unavailable">Die Übertragung läuft, solange FrameCast offen ist, und stoppt beim App-Wechsel</string>
 </resources>

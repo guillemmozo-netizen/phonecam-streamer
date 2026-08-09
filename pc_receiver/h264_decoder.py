@@ -96,6 +96,9 @@ class H264Decoder:
         # format depends on which decoder backend was available.
         self.frame_format = "rgb"
         self.backend, self._ctx = self._create_context(self._codec)
+        # One-shot latch for the runtime hardware->software fallback below, so
+        # a genuinely corrupt stream can't send it round the loop repeatedly.
+        self._fell_back = False
         log.info("H264Decoder using backend=%s", self.backend)
         self._decode_calls = 0
         self._decode_time_total = 0.0
@@ -115,8 +118,14 @@ class H264Decoder:
         return frame.to_ndarray(format=frame.format.name)
 
     @staticmethod
-    def _create_context(codec: str = "h264") -> tuple[str, "av.CodecContext"]:
+    def _create_context(
+        codec: str = "h264", allow_hardware: bool = True
+    ) -> tuple[str, "av.CodecContext"]:
         """Prefer NVDEC (h264_cuvid) over the software decoder.
+
+        [allow_hardware] is what `_fall_back_to_software` sets to False to
+        force the software path after a hardware context turned out not to
+        work on this PC.
 
         Confirmed on-device: plain libavcodec software decode can't keep up
         with a real 4K60 stream — it's not fast enough to decode frames as
@@ -134,18 +143,22 @@ class H264Decoder:
         took, instead of silently guessing from GPU utilization alone.
         """
         hardware = f"{codec}_cuvid"
-        try:
-            return f"{hardware} (NVDEC)", av.CodecContext.create(hardware, "r")
-        except Exception as e:
-            log.warning("%s unavailable (%s), falling back to software %s decode", hardware, e, codec)
-            ctx = av.CodecContext.create(codec, "r")
-            # Frame-level threading for the software path — the default is a
-            # single thread, which leaves most of the CPU idle exactly when
-            # this fallback needs it most (no NVDEC = decode competes with
-            # everything else on the CPU).
-            ctx.thread_type = "AUTO"
-            ctx.thread_count = 0
-            return f"{codec} (software)", ctx
+        if allow_hardware:
+            try:
+                return f"{hardware} (NVDEC)", av.CodecContext.create(hardware, "r")
+            except Exception as e:
+                log.warning(
+                    "%s unavailable (%s), falling back to software %s decode",
+                    hardware, e, codec,
+                )
+        ctx = av.CodecContext.create(codec, "r")
+        # Frame-level threading for the software path — the default is a
+        # single thread, which leaves most of the CPU idle exactly when
+        # this fallback needs it most (no NVDEC = decode competes with
+        # everything else on the CPU).
+        ctx.thread_type = "AUTO"
+        ctx.thread_count = 0
+        return f"{codec} (software)", ctx
 
     def decode(self, data: bytes) -> List[np.ndarray]:
         """Feed one Annex-B chunk (the codec-config NALs sent once up front,
@@ -171,7 +184,9 @@ class H264Decoder:
         try:
             packet = av.Packet(data)
             frames = self._ctx.decode(packet)
-        except av.error.FFmpegError:
+        except av.error.FFmpegError as e:
+            if self._fall_back_to_software(e):
+                return self.decode(data)
             return []
         t1 = time.monotonic()
         result = [self._to_output(frame) for frame in frames]
@@ -182,6 +197,34 @@ class H264Decoder:
         self._convert_time_total += t2 - t1
         self._frames_out_total += len(result)
         return result
+
+    def _fall_back_to_software(self, error: Exception) -> bool:
+        """Swap a hardware decoder that can't actually run for the software one.
+
+        _create_context can only catch hardware decoders that fail to *create*.
+        h264_cuvid creates fine on any PC whose FFmpeg build was compiled with
+        it — including PCs with no NVIDIA GPU at all, where it instead fails
+        later, inside avcodec_open2, on the first packet fed to it. That
+        surfaces as an FFmpegError (EPERM, "Operation not permitted"), which is
+        the same type decode() deliberately shrugs off for corrupt chunks, so
+        the whole session silently decoded zero frames: a frozen black virtual
+        camera, an empty receiver.log, and no way to tell it apart from the
+        phone not sending anything.
+
+        Returns True when the caller should retry the packet on the new
+        context. Latched, so a genuinely undecodable stream doesn't bounce
+        between backends.
+        """
+        if self._fell_back or "cuvid" not in self.backend:
+            return False
+        self._fell_back = True
+        log.warning(
+            "%s could not be opened on this PC (%s) — switching to software %s "
+            "decode for the rest of this session",
+            self.backend, error, self._codec,
+        )
+        self.backend, self._ctx = self._create_context(self._codec, allow_hardware=False)
+        return True
 
     def pop_stage_stats(self) -> "DecoderStageStats":
         """Snapshot decode-only vs. convert-only time since the last call,
@@ -230,5 +273,24 @@ class H264Decoder:
         actually released anything since it was written. Dropping the reference
         is what PyAV supports: the context frees itself, including any NVDEC
         surfaces, once nothing holds it.
+
+        Drains the context before dropping it, even though receiver.py's
+        teardown already calls flush() first. Frame-threaded decoding
+        (thread_type="AUTO", see _create_context) leaves its worker threads
+        parked when it is handed a packet it cannot parse - decode() returns
+        no frames and raises nothing, and freeing the context then joins those
+        threads and blocks forever. So one corrupt chunk followed by a close()
+        with no flush between them hung the calling thread permanently, with
+        the connection never torn down. Draining here makes the order callers
+        happen to use irrelevant.
         """
-        self._ctx = None
+        ctx, self._ctx = self._ctx, None
+        if ctx is None:
+            return
+        try:
+            ctx.decode(None)
+        except Exception:
+            # Already flushed, already at EOF, or undecodable - none of which
+            # matter now. The drain is wanted for its effect on the worker
+            # threads, not for the frames.
+            pass

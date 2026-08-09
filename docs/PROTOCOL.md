@@ -85,7 +85,7 @@ still work unchanged).
 |---|---|---|
 | PC receiver (server) | [`pc_receiver/protocol.py`](../pc_receiver/protocol.py), [`receiver.py`](../pc_receiver/receiver.py), [`h264_decoder.py`](../pc_receiver/h264_decoder.py) | Actually running + tested in this environment, H.264 path included (`pc_receiver/tests/test_h264_decoder.py`) |
 | PC demo sender (client, stand-in for the phone) | [`pc_receiver/demo_sender.py`](../pc_receiver/demo_sender.py) | Uses the PC's own webcam, or a synthetic pattern if none is attached; always sends `codec: "jpeg"` |
-| Android client | [`StreamProtocol.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/StreamProtocol.kt), [`CameraStreamer.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/CameraStreamer.kt), [`H264Encoder.kt`](../android-app/app/src/main/java/com/phonecam/streamer/streaming/H264Encoder.kt) | Compiles and type-checks in this environment; the actual on-device MediaCodec round trip hasn't run outside this sandbox (no camera hardware/emulator here) |
+| Android client | [`StreamProtocol.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/StreamProtocol.kt), [`CameraStreamer.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/CameraStreamer.kt), [`H264Encoder.kt`](../android-app/app/src/main/java/com/framecast/streamer/streaming/H264Encoder.kt) | Compiles and type-checks in this environment; the actual on-device MediaCodec round trip hasn't run outside this sandbox (no camera hardware/emulator here) |
 
 ## Deliberately out of scope for alpha
 
@@ -97,3 +97,67 @@ still work unchanged).
 - **Single connection at a time.** The receiver accepts one client; a second
   connection attempt while one is active will just hang until the first
   disconnects. Fine for "one phone, one PC" alpha use.
+
+
+## Audio (optional, negotiated in Hello)
+
+Audio is off unless the phone sets `audio: true` in Hello. That is not a
+courtesy to old clients — it decides the framing of everything after Hello:
+
+- **`audio: false`** — every message is one encoded video frame, exactly as
+  described above. Unchanged, and what `demo_sender.py` and the test suite
+  still produce.
+- **`audio: true`** — audio and video share the socket, so every message now
+  begins with a one-byte type:
+
+  | Byte | Meaning |
+  |------|---------|
+  | `0x01` | video frame (the payload the message used to carry whole) |
+  | `0x02` | AAC `AudioSpecificConfig` (MediaCodec's `csd-0`) |
+  | `0x03` | AAC access unit |
+
+  The type byte lives *inside* the length-prefixed payload, so the framing
+  itself is identical and only the interpretation changes.
+
+Hello carries `audio_codec` (always `"aac"`), `audio_sample_rate`,
+`audio_channels` and `audio_bitrate_bps`, describing what the phone actually
+resolved — not what its settings requested. A Bluetooth microphone reports
+16 kHz here however the user's settings are configured, because that is what a
+Bluetooth voice link can carry (see `MicrophonePolicy` on the phone).
+
+Two rules that are easy to get wrong:
+
+- **The config message is mandatory and repeated.** The stream is raw access
+  units with no ADTS headers, so a decoder that never saw `0x02` cannot decode
+  a single frame. The phone re-sends it on every reconnect, because a reconnect
+  gives the PC a fresh decoder.
+- **Audio is never dropped for backlog.** Video frames are skipped when the
+  receiver has fallen behind real time; a dropped audio block is an audible
+  gap, and audio is a rounding error next to video on this link anyway.
+
+
+## Wi-Fi pairing
+
+Loopback senders are exempt from authentication because loopback *is* the USB
+tunnel: reaching it already required physical access and an authorised adb key.
+Everything arriving from the network has to present the PC's token in
+`Hello.auth_token`, and the receiver drops the connection otherwise.
+
+That left one gap: a phone that has never been plugged in has no way to obtain
+the token, so "wireless" did not work end to end on a fresh install — discovery
+succeeded, the socket opened, and the Hello was rejected.
+
+`GET /pair` on the control server closes it. Unlike `GET /token` it is
+reachable from the LAN, so it is gated twice:
+
+- **A window has to be open.** `POST /pair/open` opens one for 120 seconds and
+  is loopback-only, so only a process running on the PC can open it. That is
+  what `Pair_Phone.bat` does, and running it is the proof of physical access
+  that a typed pairing code would otherwise stand in for.
+- **The window is single-use.** The first successful `GET /pair` consumes it.
+  The race is to one device rather than to every device on the network for the
+  full two minutes.
+
+The phone attempts pairing as part of Settings → "Find PC", so a Wi-Fi user
+performs one action rather than two. Failure is silent by design: an
+already-paired phone would otherwise be told off on every scan.

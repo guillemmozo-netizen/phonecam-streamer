@@ -1,0 +1,67 @@
+# Builds an installable APK, because nothing in this repo ever produced one.
+#
+# The development environment for this branch cannot reach dl.google.com, so it
+# has no Android SDK and no AGP: every Kotlin file that imports android.* was
+# written without ever being compiled. GitHub's runners have the SDK
+# preinstalled and no such restriction, so this workflow is where the Android
+# module gets compiled for the first time - and where a red X, if it comes, is
+# honest news rather than a mystery.
+#
+# It builds debug, not release: a debug APK is signed with the throwaway debug
+# key that every Android machine has, so it installs on a phone straight from
+# the artifact zip. Release needs the keystore, which is deliberately not in
+# the repo.
+name: Android build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      # Unit tests first: they compile the module's own logic, so a compile
+      # error surfaces as a compile error rather than as a failed packaging
+      # step twenty lines further down the log.
+      - name: Unit tests
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Assemble debug APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FrameCast-debug-apk
+          path: android-app/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Without this a failed run leaves nothing to read but the console tail,
+      # and Gradle's HTML report is where the actual assertion lives.
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: android-app/app/build/reports/
+          if-no-files-found: ignore

@@ -1,4 +1,4 @@
-# PhoneCam Streamer (alpha)
+# FrameCast (alpha)
 
 Use an Android phone as a PC webcam over USB (or Wi-Fi), monetized with
 opt-in rewarded ads instead of a forced paywall: free tier is
@@ -16,19 +16,23 @@ pattern if no webcam is attached) standing in for the phone.
 
 ```bash
 python -m venv .venv
-./.venv/Scripts/python -m pip install -r pc_receiver/requirements.txt
+./.venv/Scripts/python -m pip install -r pc_receiver/requirements-dev.txt
 
 # terminal 1: the receiver (feeds a virtual camera other apps can select)
-./.venv/Scripts/python -m pc_receiver.receiver --port 8787 --sink preview
+./.venv/Scripts/python -m pc_receiver.receiver --port 8787 --sink virtualcam
 
-# terminal 2: the sender, simulating a user who already watched 1 rewarded ad
-./.venv/Scripts/python -m pc_receiver.demo_sender --port 8787 --simulate-ads 1
+# terminal 2: the sender, simulating a user who has watched a full ad batch
+./.venv/Scripts/python -m pc_receiver.demo_sender --port 8787 --simulate-ads 3
 ```
 
-Drop `--simulate-ads 1` to see the free tier instead (1080p60, small
-watermark). Use `--sink virtualcam` instead of `--sink preview` if you have
-OBS installed (OBS Virtual Camera is the backend `pyvirtualcam` drives) —
-that's what makes the phone show up as a normal webcam in Zoom/Meet/etc.
+`--simulate-ads 3` because a reward takes a full batch of three ads
+(`RewardConfig.ads_per_reward`) — anything less leaves you on the free tier
+(1080p60, small watermark), which is what you get with the flag dropped
+entirely. `--sink virtualcam` is what makes the phone show up as a normal
+webcam in Zoom/Meet/etc. (OBS Virtual Camera is the backend `pyvirtualcam`
+drives, so OBS has to be installed). `--sink preview` opens a plain OpenCV
+window instead, but needs a non-headless OpenCV — see requirements-dev.txt.
+`--sink null` decodes and discards, which is the one that works anywhere.
 
 ## Running the tests
 
@@ -36,9 +40,18 @@ that's what makes the phone show up as a normal webcam in Zoom/Meet/etc.
 ./.venv/Scripts/python -m pytest
 ```
 
-30/30 pass in this environment: the reward/credit engine (15 tests), the
-wire protocol (6 tests), and the receiver/sender pipeline (9 tests,
-including a real socket-based end-to-end handshake).
+The Android module's Android-free unit tests run too, without Gradle or an SDK:
+
+```bash
+tools/run_kotlin_tests.sh
+```
+
+120 pass in this environment: the reward/credit economy (18), the receiver,
+wire protocol, H.264 decode path and network auth surface (83, including a
+real socket-based end-to-end handshake and a PyAV encode/decode round trip),
+and the packaging itself (19 — that the zip is complete, that its
+dependency list covers every import in it, and that every module in it
+imports from the layout it extracts into).
 
 ## Repository layout
 
@@ -46,7 +59,10 @@ including a real socket-based end-to-end handshake).
 reward_engine/    Reward/credit economy — pure logic, reference implementation, fully tested
 pc_receiver/      PC-side receiver (virtual camera) + demo sender (webcam/synthetic) + wire protocol
 android-app/      Kotlin/CameraX Android app skeleton — the real product, not compiled in this sandbox
-docs/             Architecture, wire protocol, and reward-model design docs
+brand/            Generated icon assets (see tools/make_brand_assets.py) — the Android launcher icon is their source
+tools/            Build scripts: the PC download zip and the brand assets, plus their tests
+dist/             The built PC download, committed so the link below resolves
+docs/             Architecture, wire protocol, reward-model design, and the release checklist
 ```
 
 ## Android app
@@ -59,7 +75,7 @@ encoder's actual configured bitrate, not just a saved preference), and the
 TCP client. It builds cleanly (`./gradlew compileDebugKotlin` and
 `testDebugUnitTest` both pass) wherever a JDK + Android SDK are installed;
 open `android-app/` in Android Studio to build an APK. The JUnit suite in
-`app/src/test/java/com/phonecam/streamer/rewards/RewardManagerTest.kt`
+`app/src/test/java/com/framecast/streamer/rewards/RewardManagerTest.kt`
 mirrors the already-passing Python test suite case-for-case. The H.264 path
 is exercised on the PC side by real tests (encode a stream with PyAV, decode
 it back with the receiver's own decoder — see
@@ -70,13 +86,11 @@ against a real device.
 
 ### Connecting the PC (one-time setup, then zero commands, zero windows)
 
-Double-click **`Install_PhoneCam.vbs`** once. It sets up a private Python
-environment for `pc_receiver` and registers a lightweight watcher
-(`PhoneCam_Service.vbs`) to run at login — no console window at any point,
-just a confirmation popup at the end (see
-[dist/PhoneCam_PC_Setup.zip](dist/PhoneCam_PC_Setup.zip) for the same thing
-packaged as a standalone download: installer + README at the top, everything
-else tucked into `pc_receiver/`).
+Double-click **`Install_FrameCast.vbs`** once. It sets up a private Python
+environment for `pc_receiver`, checks that every file it needs actually
+survived extraction, and registers a lightweight watcher
+(`FrameCast_Service.vbs`) to run at login — no console window at any point,
+just a confirmation popup at the end.
 
 That watcher does nothing — no ports bound, no processes spawned — until it
 sees `obs64.exe`/`obs32.exe` running, polling every few seconds via WMI.
@@ -100,12 +114,25 @@ to look is `pc_receiver/logs/` (`control_server.log`, `receiver.log`,
 install step itself.
 
 Prefer to run things visibly by hand, or just for one session without
-installing anything permanently? `pc_receiver/PhoneCam_PC.bat` (or
+installing anything permanently? `pc_receiver/FrameCast_PC.bat` (or
 `python -m pc_receiver.control_server`) starts the same thing in a normal
 console window, without touching Windows Startup. `pc_receiver/install_startup.bat`
 is the older, manual equivalent of step 2 above (Windows-startup
 registration only, no venv/dependency setup) for anyone who already has a
 working Python environment.
+
+[**dist/FrameCast_PC_Setup.zip**](dist/FrameCast_PC_Setup.zip) is the same
+thing packaged as a standalone download: installer, README and the FrameCast
+icon at the top, everything else tucked into `pc_receiver/` and
+`reward_engine/`. Rebuild it after changing anything on the PC side —
+
+```bash
+python tools/build_pc_zip.py
+```
+
+— and commit the result: the build is byte-reproducible and a test compares
+the committed zip against what the current sources produce, so a stale
+download fails the suite rather than reaching a user.
 
 ## Honest status
 
@@ -122,5 +149,22 @@ MediaCodec → network round trip — hasn't been validated against a real
 device yet) and configuring the actual consent message copy in the AdMob
 console. `video_codec` in Settings still only actually produces H.264
 regardless of which option is picked (H.265/AV1 are unimplemented), and
-`audio_bitrate`/`audio_codec` remain decorative — there's still no audio
-capture/transmission pipeline at all, only the local visual level meter.
+`audio_codec` remains decorative (AAC is the only codec produced).
+
+Audio itself is real now: pick a microphone — built-in, USB-C or Bluetooth —
+and the app reports what it can actually do rather than what was asked for
+(a Bluetooth mic is capped at 16 kHz by Bluetooth, not by a setting), captures
+it, encodes AAC and multiplexes it onto the same socket as video. On the PC it
+plays out of a device you choose; pointing that at VB-CABLE is what makes the
+phone's mic selectable as an input in Zoom/Meet/OBS, since Windows ships no
+virtual audio device of its own. "Noise reduction" now drives the platform's
+`NoiseSuppressor` instead of nothing.
+
+Settings that never did anything — the codec and protocol pickers, the wind
+filter, low latency, and HDR (which only ever reached the viewfinder) — are
+hidden rather than deleted, with what each would take to finish written down in
+[docs/PLANNED.md](docs/PLANNED.md).
+
+Before submitting anything to Google Play, work through
+[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) — it lists what is
+already handled, and the handful of things that still block an upload.

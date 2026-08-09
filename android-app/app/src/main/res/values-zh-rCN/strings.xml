@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">直播时</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">免费</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">解锁4K录制、去除水印、高级音频控制和优先支持。</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">感谢您支持这款独立应用 ❤️</string>
-    <string name="welcome_message">PhoneCam 由一个人独立开发。\n\n在 Alpha 和 Beta 阶段，我们想通过激励广告解锁所有 Pro 功能，来感谢您的支持。\n\n您帮忙测试应用、发送反馈、并分享给其他人，让我们能够持续改进它。\n\n感谢您从一开始就参与这个项目。</string>
+    <string name="welcome_message">FrameCast 由一个人独立开发。\n\n在 Alpha 和 Beta 阶段，我们想通过激励广告解锁所有 Pro 功能，来感谢您的支持。\n\n您帮忙测试应用、发送反馈、并分享给其他人，让我们能够持续改进它。\n\n感谢您从一开始就参与这个项目。</string>
     <string name="welcome_button">继续</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">在 Alpha 和 Beta 阶段，观看激励广告即可免费解锁所有 Pro 功能。</string>
-    <string name="pro_feature_locked_desc">此设置需要 PhoneCam Pro — 在相机界面观看广告即可解锁</string>
+    <string name="pro_feature_locked_desc">此设置需要 FrameCast Pro — 在相机界面观看广告即可解锁</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">获得 %1$d 小时 Pro</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">无法连接电脑</string>
     <string name="pc_starting">正在启动…</string>
     <string name="pc_services_started">电脑服务已启动</string>
-    <string name="pc_unreachable_hint">无法连接电脑 — 请先运行 PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">无法连接电脑 — 请先运行 FrameCast_PC.bat</string>
     <string name="pc_services_stopped">电脑服务已停止</string>
     <string name="pc_usb_forwarded">USB 端口已转发</string>
     <string name="pc_usb_failed">失败 — 请检查 USB 连接</string>
@@ -215,4 +215,22 @@
     <string name="speedtest_uploading">正在上传到电脑…</string>
     <string name="speedtest_downloading">正在从电脑下载…</string>
     <string name="speedtest_cleaning_up">正在清理…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">麦克风</string>
+    <string name="mic_auto">自动</string>
+    <string name="mic_warning_bluetooth">蓝牙麦克风上限为 16 kHz — 通话音质，而非音乐音质</string>
+    <string name="mic_warning_sample_rate">此麦克风不支持所选采样率 — 正以 %1$.1f kHz 录制</string>
+    <string name="mic_warning_bitrate">码率已限制为 %1$d kbps — 这是此麦克风的上限</string>
+    <string name="mic_warning_mono">此麦克风为单声道 — 只录制一个声道</string>
+    <string name="mic_warning_unknown">此麦克风未报告其能力 — 设置按原样应用</string>
+    <string name="pc_paired">已与电脑配对 — 可以通过 Wi-Fi 推流了</string>
+    <string name="mic_error_bluetooth_permission">蓝牙麦克风需要权限 — 请在设置中授予，或改选其他麦克风</string>
+    <string name="mic_error_bluetooth_link">蓝牙麦克风未连接 — 请确认已开启并完成配对</string>
+    <string name="mic_error_wrong_device">正在录制的并非所选麦克风 — 已停止，而不是继续用错的</string>
+    <string name="mic_error_unavailable">无法打开麦克风 — 可能正被其他应用占用</string>
+    <string name="streaming_channel_name">FrameCast 推流</string>
+    <string name="streaming_notification_title">正在推流到电脑</string>
+    <string name="streaming_notification_text">正在使用摄像头和麦克风</string>
+    <string name="streaming_background_unavailable">FrameCast 打开时可推流，切换到其他应用会停止</string>
 </resources>

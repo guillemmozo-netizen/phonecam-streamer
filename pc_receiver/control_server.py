@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 import time
+from typing import Optional
 
 # This process normally runs headless under pythonw.exe (no console
 # attached at all). Any subprocess call targeting a console-subsystem
@@ -72,7 +73,7 @@ def redirect_own_output_to_log():
     """Point this process's own stdout/stderr at a log file.
 
     Needed because this now normally runs hidden via pythonw.exe (launched
-    from PhoneCam_Service.vbs, no console attached at all) — under pythonw,
+    from FrameCast_Service.vbs, no console attached at all) — under pythonw,
     sys.stdout/sys.stderr are None, so the plain print() calls throughout
     this file would raise AttributeError on the very first line logged.
     Redirecting first makes every print() below work the same way whether
@@ -110,9 +111,68 @@ SERVICE_ARGS = {
     "receiver": ["--host", "0.0.0.0", "--sink", "virtualcam", "--serve-forever"],
 }
 
+# Where the phone's microphone is played on this PC. Nothing sets this by
+# default, which means the system's default output device — i.e. audible
+# monitoring. Setting it to "cable" (or any unique part of an output device's
+# name, or its index) routes the audio into VB-CABLE instead, which is what
+# makes the phone's mic selectable as an input in Zoom/Meet/Teams/OBS.
+#
+# An environment variable rather than a setting in the app: this is a property
+# of the PC's audio hardware, not of the phone, and it has to be readable by
+# the service that starts the receiver without a phone being connected at all.
+_audio_device = os.environ.get("FRAMECAST_AUDIO_DEVICE", "").strip()
+if _audio_device:
+    SERVICE_ARGS["receiver"] = SERVICE_ARGS["receiver"] + ["--audio-device", _audio_device]
+
 
 AUTH_TOKEN_PATH = os.path.join(script_dir, ".control_token")
 _auth_token: str = ""
+
+# ---- Wi-Fi pairing ----------------------------------------------------------
+#
+# The token is what lets a phone stream over Wi-Fi, and until now the only way
+# to get it was GET /token over the USB tunnel. That makes "cable-free" false
+# for a phone that has never been plugged in: discovery finds the PC, the
+# socket opens, and the receiver rejects the Hello as unauthorised.
+#
+# A pairing window closes that gap without handing the token to the whole LAN.
+# The user runs Pair_Phone.bat once, which POSTs to this server over loopback -
+# something only a process on this PC can do - and opens a short window during
+# which one LAN device may collect the token. It is consumed by the first
+# successful pairing, so the window is not a door left ajar for its full
+# duration: the race is to exactly one device, not to everyone for two minutes.
+#
+# Deliberately not a passwordless permanent opening, and deliberately not a
+# typed code either: a code needs a PC display and a phone keyboard, and the
+# physical act of running the pairing tool already proves what a code would.
+PAIRING_WINDOW_SECONDS = 120
+_pairing_opens_until: float = 0.0
+_pairing_lock = threading.Lock()
+
+
+def open_pairing_window(seconds: int = PAIRING_WINDOW_SECONDS) -> float:
+    """Allow one LAN device to collect the token. Returns the deadline."""
+    global _pairing_opens_until
+    with _pairing_lock:
+        _pairing_opens_until = time.time() + seconds
+        return _pairing_opens_until
+
+
+def pairing_seconds_left(now: Optional[float] = None) -> int:
+    now = time.time() if now is None else now
+    with _pairing_lock:
+        return max(0, int(_pairing_opens_until - now))
+
+
+def claim_pairing(now: Optional[float] = None) -> bool:
+    """Consume the window. True exactly once per opening."""
+    global _pairing_opens_until
+    now = time.time() if now is None else now
+    with _pairing_lock:
+        if now >= _pairing_opens_until:
+            return False
+        _pairing_opens_until = 0.0
+        return True
 
 
 _obs_manager = None
@@ -388,10 +448,45 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return True
         if not _auth_token:
             return False
-        supplied = self.headers.get("X-PhoneCam-Token", "")
-        return secrets.compare_digest(supplied, _auth_token)
+        supplied = self.headers.get("X-FrameCast-Token", "")
+        # Bytes, not str: compare_digest raises TypeError on any non-ASCII
+        # character, which any LAN device could send to leave the request
+        # unanswered and a traceback in the log.
+        return secrets.compare_digest(
+            supplied.encode("utf-8", "replace"), _auth_token.encode("utf-8")
+        )
+
+    def _serve_pairing(self):
+        """Hand the token to one LAN device, if the user opened a window."""
+        peer = self.client_address[0] if self.client_address else "?"
+        if not _auth_token:
+            self._json(503, {"error": "this PC has no token to share"})
+            return
+        if not claim_pairing():
+            self._json(
+                403,
+                {"error": "no pairing window is open",
+                 "hint": "run Pair_Phone.bat on the PC, then try again"},
+            )
+            print(f"[control] pairing refused for {peer}: no window open")
+            return
+        print(f"[control] paired with {peer}")
+        self._json(200, {"token": _auth_token})
 
     def do_GET(self):
+        # /pair is routed *before* the token check, because it exists to hand
+        # out the token: gating it on already having one made the whole Wi-Fi
+        # pairing path dead on arrival, and the unit tests missed it by
+        # exercising the window state directly instead of over HTTP. It does
+        # its own gating - a window has to be open, and opening one is
+        # loopback-only.
+        if self.path == "/pair":
+            self._serve_pairing()
+            return
+        if self.path == "/pair-status":
+            self._json(200, {"seconds_left": pairing_seconds_left()})
+            return
+
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
             return
@@ -416,6 +511,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._authorised():
             self._json(403, {"error": "unauthorised"})
+            return
+        if self.path == "/pair/open":
+            # Loopback only: opening the window is the privileged half, and
+            # _authorised() exempts loopback precisely because reaching it
+            # already means running on this PC. A LAN caller able to open its
+            # own pairing window would make the whole gate pointless.
+            peer = self.client_address[0] if self.client_address else ""
+            if peer not in ("127.0.0.1", "::1"):
+                self._json(403, {"error": "pairing can only be opened from this PC"})
+                return
+            open_pairing_window()
+            print(f"[control] pairing window open for {PAIRING_WINDOW_SECONDS}s")
+            self._json(200, {"seconds_left": pairing_seconds_left()})
             return
         if self.path == "/start":
             started = start_services()
@@ -488,7 +596,7 @@ def main():
     load_or_create_token()
     print(f"[control] auth token at {AUTH_TOKEN_PATH} (loopback exempt)")
     server = http.server.HTTPServer((HOST, PORT), Handler)
-    print(f"[control] PhoneCam Control Server running on port {PORT}")
+    print(f"[control] FrameCast Control Server running on port {PORT}")
     print(f"[control] Endpoints: GET /status, POST /start, POST /stop, POST /adb-reverse")
 
     # Eager start: discovery/speed_test/receiver come up immediately instead

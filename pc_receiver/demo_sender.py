@@ -55,7 +55,7 @@ def build_synthetic_frame(width: int, height: int, frame_index: int) -> np.ndarr
     return frame
 
 
-def apply_watermark(frame: np.ndarray, text: str = "PhoneCam Streamer - FREE") -> np.ndarray:
+def apply_watermark(frame: np.ndarray, text: str = "FrameCast - FREE") -> np.ndarray:
     """Burns a small watermark into the bottom-right corner, in place-safe."""
     out = frame.copy()
     height, width = out.shape[:2]
@@ -181,7 +181,10 @@ def run(
     finally:
         source.close()
         sock.close()
-        log.info("sent %d frames, final balance=%.0fs", frame_count, reward.balance_seconds)
+        # balance_seconds() is a method, not a property — passing it unbound
+        # made logging blow up on the format ("must be real number, not
+        # method"), so the demo's closing summary never printed.
+        log.info("sent %d frames, final balance=%.0fs", frame_count, reward.balance_seconds())
 
 
 def main() -> None:

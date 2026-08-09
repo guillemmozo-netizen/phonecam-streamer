@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">ขณะสตรีม</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">ฟรี</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">ปลดล็อกการบันทึกวิดีโอ 4K ลบลายน้ำ ควบคุมเสียงขั้นสูง และรับการสนับสนุนก่อนใคร</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">ขอบคุณที่สนับสนุนแอปอิสระนี้ ❤️</string>
-    <string name="welcome_message">PhoneCam กำลังได้รับการพัฒนาอย่างอิสระโดยคนเพียงคนเดียว\n\nในช่วง Alpha และ Beta เราอยากขอบคุณสำหรับการสนับสนุนของคุณ ด้วยการเปิดให้ใช้ฟีเจอร์ Pro ทั้งหมดผ่านการดูโฆษณาแบบมีรางวัล\n\nความช่วยเหลือของคุณในการทดสอบแอป ส่งความคิดเห็น และแชร์ให้ผู้อื่น ช่วยให้เราพัฒนาแอปนี้ต่อไปได้\n\nขอบคุณที่เป็นส่วนหนึ่งของโปรเจกต์นี้ตั้งแต่เริ่มต้น</string>
+    <string name="welcome_message">FrameCast กำลังได้รับการพัฒนาอย่างอิสระโดยคนเพียงคนเดียว\n\nในช่วง Alpha และ Beta เราอยากขอบคุณสำหรับการสนับสนุนของคุณ ด้วยการเปิดให้ใช้ฟีเจอร์ Pro ทั้งหมดผ่านการดูโฆษณาแบบมีรางวัล\n\nความช่วยเหลือของคุณในการทดสอบแอป ส่งความคิดเห็น และแชร์ให้ผู้อื่น ช่วยให้เราพัฒนาแอปนี้ต่อไปได้\n\nขอบคุณที่เป็นส่วนหนึ่งของโปรเจกต์นี้ตั้งแต่เริ่มต้น</string>
     <string name="welcome_button">ดำเนินการต่อ</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">ในช่วง Alpha และ Beta ฟีเจอร์ Pro ทั้งหมดสามารถปลดล็อกได้ฟรีโดยการดูโฆษณาแบบมีรางวัล</string>
-    <string name="pro_feature_locked_desc">การตั้งค่านี้ต้องใช้ PhoneCam Pro — ดูโฆษณาที่หน้าจอกล้องเพื่อปลดล็อก</string>
+    <string name="pro_feature_locked_desc">การตั้งค่านี้ต้องใช้ FrameCast Pro — ดูโฆษณาที่หน้าจอกล้องเพื่อปลดล็อก</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">รับ Pro %1$d ชั่วโมง</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">ไม่พบ PC</string>
     <string name="pc_starting">กำลังเริ่ม…</string>
     <string name="pc_services_started">เริ่มบริการ PC แล้ว</string>
-    <string name="pc_unreachable_hint">ไม่พบ PC — เปิด PhoneCam_PC.bat ก่อน</string>
+    <string name="pc_unreachable_hint">ไม่พบ PC — เปิด FrameCast_PC.bat ก่อน</string>
     <string name="pc_services_stopped">หยุดบริการ PC แล้ว</string>
     <string name="pc_usb_forwarded">ส่งต่อพอร์ต USB แล้ว</string>
     <string name="pc_usb_failed">ล้มเหลว — ตรวจสอบการเชื่อมต่อ USB</string>
@@ -215,4 +215,22 @@
     <string name="speedtest_uploading">กำลังอัปโหลดไปยัง PC…</string>
     <string name="speedtest_downloading">กำลังดาวน์โหลดจาก PC…</string>
     <string name="speedtest_cleaning_up">กำลังล้างข้อมูล…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">ไมโครโฟน</string>
+    <string name="mic_auto">อัตโนมัติ</string>
+    <string name="mic_warning_bluetooth">ไมค์บลูทูธจำกัดที่ 16 kHz — คุณภาพเสียงพูด ไม่ใช่เพลง</string>
+    <string name="mic_warning_sample_rate">ไมค์นี้ไม่รองรับอัตราที่เลือก — กำลังบันทึกที่ %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">จำกัดบิตเรตที่ %1$d kbps — สูงสุดที่ไมค์นี้รองรับ</string>
+    <string name="mic_warning_mono">ไมค์นี้เป็นโมโน — บันทึกช่องสัญญาณเดียว</string>
+    <string name="mic_warning_unknown">ไมค์นี้ไม่ได้แจ้งความสามารถ — ใช้การตั้งค่าตามที่เลือกไว้</string>
+    <string name="pc_paired">จับคู่กับพีซีแล้ว — พร้อมสตรีมผ่าน Wi-Fi</string>
+    <string name="mic_error_bluetooth_permission">ไมค์บลูทูธต้องได้รับสิทธิ์ — อนุญาตในการตั้งค่า หรือเลือกไมค์อื่น</string>
+    <string name="mic_error_bluetooth_link">ไมค์บลูทูธไม่เชื่อมต่อ — ตรวจสอบว่าเปิดอยู่และจับคู่แล้ว</string>
+    <string name="mic_error_wrong_device">กำลังบันทึกจากไมค์อื่นที่ไม่ใช่ที่เลือกไว้ — หยุดแทนที่จะใช้ตัวที่ผิด</string>
+    <string name="mic_error_unavailable">เปิดไมโครโฟนไม่ได้ — อาจถูกใช้งานโดยแอปอื่น</string>
+    <string name="streaming_channel_name">การสตรีม FrameCast</string>
+    <string name="streaming_notification_title">กำลังสตรีมไปยังพีซี</string>
+    <string name="streaming_notification_text">กำลังใช้กล้องและไมโครโฟน</string>
+    <string name="streaming_background_unavailable">สตรีมได้ขณะเปิด FrameCast อยู่ แต่จะหยุดหากสลับแอป</string>
 </resources>

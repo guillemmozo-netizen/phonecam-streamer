@@ -51,14 +51,28 @@ class PreviewWindowSink:
     paid only by this debug-only path instead of the real virtualcam one.
     """
 
-    def __init__(self, window_name: str = "PhoneCam Streamer - Preview") -> None:
+    def __init__(self, window_name: str = "FrameCast - Preview") -> None:
         self._window_name = window_name
         self._opened = False
 
     def send(self, frame_rgb: np.ndarray, fps: int) -> None:
         import cv2
 
-        cv2.imshow(self._window_name, cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
+        try:
+            cv2.imshow(self._window_name, cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
+        except cv2.error as e:
+            # requirements.txt ships opencv-python-headless, which has no GUI
+            # backend at all: imshow then fails with OpenCV's generic "function
+            # is not implemented / rebuild the library" error, which reads like
+            # a broken install rather than a deliberate packaging choice.
+            raise RuntimeError(
+                "--sink preview needs an OpenCV build with GUI support, and the "
+                "PC side installs opencv-python-headless (the services only "
+                "write to the virtual camera, never to a window). Swap it in "
+                "this environment with:\n"
+                "    pip uninstall -y opencv-python-headless && pip install opencv-python\n"
+                "or use --sink virtualcam instead."
+            ) from e
         self._opened = True
         cv2.waitKey(1)
 

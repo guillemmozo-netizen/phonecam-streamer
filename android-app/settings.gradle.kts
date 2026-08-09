@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PhoneCamStreamer"
+rootProject.name = "FrameCast"
 include(":app")

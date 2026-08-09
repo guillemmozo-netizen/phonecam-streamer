@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">أثناء البث</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">مجاني</string>
     <string name="sub_pro">Pro</string>
     <string name="sub_description">افتح تسجيل 4K، وأزل العلامات المائية، واحصل على أدوات تحكم صوتية متقدمة ودعم ذو أولوية.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">شكرًا لدعمك هذا التطبيق المستقل ❤️</string>
-    <string name="welcome_message">يتم تطوير PhoneCam بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
+    <string name="welcome_message">يتم تطوير FrameCast بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
     <string name="welcome_button">متابعة</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">خلال مرحلتي Alpha وBeta، يمكن فتح جميع ميزات Pro مجانًا بمشاهدة الإعلانات المكافئة.</string>
-    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد PhoneCam Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
+    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد FrameCast Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">احصل على %1$d ساعة من Pro</string>
@@ -150,7 +150,7 @@
     <string name="pc_status_unreachable">الكمبيوتر غير متاح</string>
     <string name="pc_starting">جارٍ التشغيل…</string>
     <string name="pc_services_started">تم تشغيل خدمات الكمبيوتر</string>
-    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل PhoneCam_PC.bat أولاً</string>
+    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل FrameCast_PC.bat أولاً</string>
     <string name="pc_services_stopped">تم إيقاف خدمات الكمبيوتر</string>
     <string name="pc_usb_forwarded">تم توجيه منافذ USB</string>
     <string name="pc_usb_failed">فشل — تحقق من اتصال USB</string>
@@ -218,4 +218,22 @@
     <string name="speedtest_uploading">جارٍ الرفع إلى الكمبيوتر…</string>
     <string name="speedtest_downloading">جارٍ التنزيل من الكمبيوتر…</string>
     <string name="speedtest_cleaning_up">جارٍ التنظيف…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">الميكروفون</string>
+    <string name="mic_auto">تلقائي</string>
+    <string name="mic_warning_bluetooth">ميكروفونات البلوتوث محدودة بـ 16 كيلوهرتز — جودة صوت المكالمات لا الموسيقى</string>
+    <string name="mic_warning_sample_rate">هذا الميكروفون لا يدعم التردد المحدد — التسجيل بـ %1$.1f كيلوهرتز</string>
+    <string name="mic_warning_bitrate">تم تحديد معدل البت عند %1$d كيلوبت/ث — وهو أقصى ما يدعمه هذا الميكروفون</string>
+    <string name="mic_warning_mono">هذا الميكروفون أحادي — يتم تسجيل قناة واحدة</string>
+    <string name="mic_warning_unknown">لم يُبلغ هذا الميكروفون عن إمكانياته — تم تطبيق الإعدادات كما هي</string>
+    <string name="pc_paired">تم الإقران مع الكمبيوتر — البث عبر Wi-Fi جاهز</string>
+    <string name="mic_error_bluetooth_permission">يحتاج ميكروفون البلوتوث إلى إذن — امنحه من الإعدادات أو اختر ميكروفونًا آخر</string>
+    <string name="mic_error_bluetooth_link">لم يتصل ميكروفون البلوتوث — تأكد من أنه مشغّل ومقترن</string>
+    <string name="mic_error_wrong_device">كان التسجيل من ميكروفون غير الذي اخترته — تم الإيقاف بدلاً من استخدام الخطأ</string>
+    <string name="mic_error_unavailable">تعذّر فتح الميكروفون — قد يكون قيد الاستخدام من تطبيق آخر</string>
+    <string name="streaming_channel_name">بث FrameCast</string>
+    <string name="streaming_notification_title">جارٍ البث إلى الكمبيوتر</string>
+    <string name="streaming_notification_text">الكاميرا والميكروفون قيد الاستخدام</string>
+    <string name="streaming_background_unavailable">يعمل البث أثناء فتح FrameCast، لكنه سيتوقف إذا بدّلت التطبيقات</string>
 </resources>

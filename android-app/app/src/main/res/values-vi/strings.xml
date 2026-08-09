@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Trong khi phát trực tiếp</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">MIỄN PHÍ</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Mở khóa quay video 4K, xóa hình mờ, nhận các tùy chỉnh âm thanh nâng cao và hỗ trợ ưu tiên.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Cảm ơn bạn đã ủng hộ ứng dụng độc lập này ❤️</string>
-    <string name="welcome_message">PhoneCam đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
+    <string name="welcome_message">FrameCast đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
     <string name="welcome_button">Tiếp tục</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Trong giai đoạn Alpha và Beta, mọi tính năng Pro đều có thể được mở khóa miễn phí bằng cách xem quảng cáo có thưởng.</string>
-    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu PhoneCam Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
+    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu FrameCast Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Nhận %1$d giờ Pro</string>
@@ -147,7 +147,7 @@
     <string name="pc_status_unreachable">Không thể kết nối PC</string>
     <string name="pc_starting">Đang khởi động…</string>
     <string name="pc_services_started">Đã khởi động dịch vụ PC</string>
-    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy PhoneCam_PC.bat trước</string>
+    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy FrameCast_PC.bat trước</string>
     <string name="pc_services_stopped">Đã dừng dịch vụ PC</string>
     <string name="pc_usb_forwarded">Đã chuyển tiếp cổng USB</string>
     <string name="pc_usb_failed">Thất bại — kiểm tra kết nối USB</string>
@@ -215,4 +215,22 @@
     <string name="speedtest_uploading">Đang tải lên PC…</string>
     <string name="speedtest_downloading">Đang tải xuống từ PC…</string>
     <string name="speedtest_cleaning_up">Đang dọn dẹp…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Micrô</string>
+    <string name="mic_auto">Tự động</string>
+    <string name="mic_warning_bluetooth">Micrô Bluetooth bị giới hạn ở 16 kHz — chất lượng thoại, không phải nhạc</string>
+    <string name="mic_warning_sample_rate">Micrô này không hỗ trợ tần số đã chọn — đang ghi ở %1$.1f kHz</string>
+    <string name="mic_warning_bitrate">Bitrate giới hạn ở %1$d kbps — mức cao nhất micrô này tải được</string>
+    <string name="mic_warning_mono">Micrô này là mono — chỉ ghi một kênh</string>
+    <string name="mic_warning_unknown">Micrô này không báo khả năng của nó — áp dụng cài đặt như hiện tại</string>
+    <string name="pc_paired">Đã ghép nối với PC — sẵn sàng phát qua Wi-Fi</string>
+    <string name="mic_error_bluetooth_permission">Micrô Bluetooth cần quyền — cấp trong Cài đặt hoặc chọn micrô khác</string>
+    <string name="mic_error_bluetooth_link">Micrô Bluetooth chưa kết nối — kiểm tra đã bật và ghép nối chưa</string>
+    <string name="mic_error_wrong_device">Đang ghi từ micrô khác với micrô đã chọn — đã dừng thay vì dùng nhầm</string>
+    <string name="mic_error_unavailable">Không mở được micrô — có thể ứng dụng khác đang dùng</string>
+    <string name="streaming_channel_name">Phát FrameCast</string>
+    <string name="streaming_notification_title">Đang phát tới PC</string>
+    <string name="streaming_notification_text">Camera và micrô đang được dùng</string>
+    <string name="streaming_background_unavailable">Phát hoạt động khi FrameCast đang mở, nhưng sẽ dừng nếu bạn chuyển ứng dụng</string>
 </resources>

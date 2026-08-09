@@ -4,6 +4,28 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Every AudioManager call that brings up or tears down a Bluetooth voice
+         link needs this: startBluetoothSco, setBluetoothScoOn and
+         setCommunicationDevice. Without it they throw SecurityException, and
+         because AudioCapture has to catch those (they also throw on devices
+         with no Bluetooth hardware) the failure degraded into recording the
+         built-in mic while the UI said "Bluetooth". Normal permission - no
+         runtime prompt. -->
+    <!-- Camera and microphone access stops when the app leaves the foreground,
+         so a webcam app needs a foreground service to survive the user opening
+         the very app they wanted to appear in. Android 14+ additionally
+         requires a permission per declared foregroundServiceType. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Android 13+: without it the foreground notification is never shown, and
+         a foreground service the user cannot see reads as a hang. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Android 12+ requires this to enumerate or route to Bluetooth audio
+         devices. Runtime permission, requested only when the user actually
+         picks a Bluetooth microphone - see MainActivity. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -24,14 +46,14 @@
          video stream and speed test already send everything in the clear over
          raw sockets, which this attribute doesn't touch either way. -->
     <application
-        android:name=".PhoneCamApp"
+        android:name=".FrameCastApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.PhoneCamStreamer">
+        android:theme="@style/Theme.FrameCast">
 
         <!--
           AdMob requires this meta-data or the SDK throws at init time.
@@ -56,11 +78,22 @@
             </intent-filter>
         </activity>
 
+        <!-- Holds the process in a state where CameraX and AudioRecord are
+             allowed to keep running while FrameCast is not on screen. The
+             capture pipeline itself stays with MainActivity; the types are
+             chosen at runtime from what is actually granted (see
+             ForegroundTypePolicy) because declaring one without its permission
+             makes startForeground throw on Android 14+. -->
+        <service
+            android:name=".streaming.StreamingService"
+            android:exported="false"
+            android:foregroundServiceType="camera|microphone" />
+
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.PhoneCamStreamer"
+            android:theme="@style/Theme.FrameCast"
             tools:ignore="LockedOrientationActivity" />
     </application>
 

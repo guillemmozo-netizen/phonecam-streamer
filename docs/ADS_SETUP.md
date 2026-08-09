@@ -1,6 +1,6 @@
 # Making ads actually show up
 
-`AdMobAdController` ([android-app/.../rewards/AdMobAdController.kt](../android-app/app/src/main/java/com/phonecam/streamer/rewards/AdMobAdController.kt))
+`AdMobAdController` ([android-app/.../rewards/AdMobAdController.kt](../android-app/app/src/main/java/com/framecast/streamer/rewards/AdMobAdController.kt))
 now does the real AdMob rewarded-ad flow (load → show → credit on completed
 view only). Out of the box it's wired to **Google's public test ad unit**,
 so you can see a real ad render and the "watch ad → premium unlocked" loop
@@ -44,7 +44,7 @@ pointing here:
 
 - `android-app/app/src/main/AndroidManifest.xml` → the
   `com.google.android.gms.ads.APPLICATION_ID` meta-data value → your App ID.
-- `android-app/app/src/main/java/com/phonecam/streamer/rewards/AdMobAdController.kt`
+- `android-app/app/src/main/java/com/framecast/streamer/rewards/AdMobAdController.kt`
   → the `rewardedAdUnitId` default parameter → your ad unit ID.
 
 ## 4. Do not click your own real ads
@@ -62,7 +62,7 @@ instead:
 
 ## 5. GDPR/UMP consent — implemented
 
-[`ConsentManager.kt`](../android-app/app/src/main/java/com/phonecam/streamer/consent/ConsentManager.kt)
+[`ConsentManager.kt`](../android-app/app/src/main/java/com/framecast/streamer/consent/ConsentManager.kt)
 wraps Google's User Messaging Platform (UMP) SDK. `MainActivity.onCreate`
 calls `consentManager.requestConsentAndThen { ... }` *before* touching
 `AdMobAdController` at all — ads are only initialized/preloaded if

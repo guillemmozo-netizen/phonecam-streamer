@@ -1,5 +1,5 @@
 """
-Launches all PC-side services for PhoneCam:
+Launches all PC-side services for FrameCast:
   - Discovery server  (UDP 8789)  — lets the phone find this PC on WiFi
   - Speed test server  (TCP 8788)  — handles upload/download speed tests
   - Main receiver      (TCP 8787)  — receives the camera stream

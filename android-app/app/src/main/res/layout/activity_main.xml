@@ -41,7 +41,7 @@
         app:layout_constraintEnd_toEndOf="@id/previewView" />
 
     <!-- Grid overlay (3x3 rule-of-thirds) -->
-    <com.phonecam.streamer.ui.GridOverlay
+    <com.framecast.streamer.ui.GridOverlay
         android:id="@+id/gridOverlay"
         android:layout_width="0dp"
         android:layout_height="0dp"

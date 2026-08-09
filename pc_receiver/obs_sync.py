@@ -120,12 +120,12 @@ def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
     Best-effort throughout: if the scene or the source can't be found, the rest
     of the sync is still worth doing.
     """
-    scene_status = _request(ws, "GetSceneList", "phonecam-scene", {})
+    scene_status = _request(ws, "GetSceneList", "framecast-scene", {})
     scene = (scene_status.get("responseData") or {}).get("currentProgramSceneName")
     if not scene:
         return
 
-    items_status = _request(ws, "GetSceneItemList", "phonecam-items", {"sceneName": scene})
+    items_status = _request(ws, "GetSceneItemList", "framecast-items", {"sceneName": scene})
     items = (items_status.get("responseData") or {}).get("sceneItems") or []
     for item in items:
         name = str(item.get("sourceName", ""))
@@ -134,7 +134,7 @@ def _fit_virtual_camera_source(ws, width: int, height: int) -> None:
         # purpose: the device name is localised and varies by backend.
         if "cam" not in name.lower():
             continue
-        _request(ws, "SetSceneItemTransform", "phonecam-fit", {
+        _request(ws, "SetSceneItemTransform", "framecast-fit", {
             "sceneName": scene,
             "sceneItemId": item.get("sceneItemId"),
             "sceneItemTransform": {
@@ -166,7 +166,7 @@ def _canvas_already_matches(ws, width: int, height: int, fps: int) -> bool:
     module into a no-op for the common case. A failed or unparseable read just
     reports False, so the sync proceeds exactly as it did before.
     """
-    status = _request(ws, "GetVideoSettings", "phonecam-get-video", {})
+    status = _request(ws, "GetVideoSettings", "framecast-get-video", {})
     data = status.get("responseData") or {}
     try:
         return (
@@ -260,7 +260,7 @@ def sync_video_settings(
                     "obs_sync: resetting OBS canvas to %sx%s@%sfps (from %s)",
                     width, height, fps, source,
                 )
-                video_status = _request(ws, "SetVideoSettings", "phonecam-sync-video", {
+                video_status = _request(ws, "SetVideoSettings", "framecast-sync-video", {
                     "fpsNumerator": fps,
                     "fpsDenominator": 1,
                     "baseWidth": width,
@@ -282,14 +282,14 @@ def sync_video_settings(
             # and OBS silently ignores them otherwise — all best-effort. None of
             # them resets the video pipeline, so none is gated.
             if bitrate_bps > 0:
-                _request(ws, "SetProfileParameter", "phonecam-sync-vbitrate", {
+                _request(ws, "SetProfileParameter", "framecast-sync-vbitrate", {
                     "parameterCategory": "SimpleOutput",
                     "parameterName": "VBitrate",
                     "parameterValue": str(bitrate_bps // 1000),
                 })
 
             if audio_bitrate_bps > 0:
-                _request(ws, "SetProfileParameter", "phonecam-sync-abitrate", {
+                _request(ws, "SetProfileParameter", "framecast-sync-abitrate", {
                     "parameterCategory": "SimpleOutput",
                     "parameterName": "ABitrate",
                     "parameterValue": str(audio_bitrate_bps // 1000),
@@ -300,7 +300,7 @@ def sync_video_settings(
                 # SimpleOutput, and OBS only picks it up on the next profile
                 # load — worth setting anyway so a restart lands on the right
                 # value.
-                _request(ws, "SetProfileParameter", "phonecam-sync-samplerate", {
+                _request(ws, "SetProfileParameter", "framecast-sync-samplerate", {
                     "parameterCategory": "Audio",
                     "parameterName": "SampleRate",
                     "parameterValue": str(sample_rate),
@@ -369,7 +369,7 @@ def open_connection(port: int, password: str):
         # than by the WebSocket thread alone - so no answer means no usable OBS.
         # _request swallows the timeout and returns {}, which is exactly the
         # case being detected here.
-        version = _request(ws, "GetVersion", "phonecam-liveness", {})
+        version = _request(ws, "GetVersion", "framecast-liveness", {})
         if not (version.get("requestStatus") or {}).get("result"):
             raise ConnectionError("OBS accepted the connection but is not answering requests")
         return ws

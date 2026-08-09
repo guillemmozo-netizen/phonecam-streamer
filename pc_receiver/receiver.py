@@ -27,9 +27,10 @@ from typing import Callable, Optional
 import cv2
 import numpy as np
 
+from pc_receiver.audio_sink import AacDecoder, AudioOutput, list_output_devices
 from pc_receiver.h264_decoder import H264Decoder
 from pc_receiver.obs_sync import sync_video_settings
-from pc_receiver.protocol import FrameReader, ProtocolError
+from pc_receiver.protocol import FrameReader, MessageType, ProtocolError, split_typed_message
 from pc_receiver.sinks import FrameSink, create_sink
 
 log = logging.getLogger("pc_receiver")
@@ -40,12 +41,26 @@ log = logging.getLogger("pc_receiver")
 # runs on a daemon thread nobody waits for.
 OBS_SETTLE_SECONDS = 20.0
 
+# How long a peer may hold the receiver without saying anything. serve_forever
+# handles one connection at a time, so an unbounded wait here is a denial of
+# service that needs no token: the token is only checked after the Hello is
+# read.
+HANDSHAKE_TIMEOUT_SECONDS = 10.0
+# Generous on purpose. A live stream sends many messages a second, so silence
+# this long means the peer is gone (Wi-Fi dropped without a FIN, phone slept)
+# rather than slow.
+IDLE_TIMEOUT_SECONDS = 30.0
+
 
 @dataclass
 class ReceiverStats:
     frames_received: int = 0
     frames_decoded_failed: int = 0
     bytes_received: int = 0
+    # Counted separately from frames_received: audio messages are not frames,
+    # and folding them in would make the frame count (and every fps figure
+    # derived from it) wrong the moment audio is enabled.
+    audio_messages_received: int = 0
 
 
 class _SinkWriter:
@@ -208,10 +223,23 @@ def decode_frame(jpeg_bytes: bytes) -> Optional[np.ndarray]:
 
 
 def _peer_ip(conn: socket.socket) -> str:
+    """The peer's address, or "?" when the socket has none to report.
+
+    AF_UNIX sockets have no address at all — getpeername() hands back an empty
+    string rather than the (host, port) tuple AF_INET returns — so indexing the
+    result blindly raised IndexError instead of yielding an address. That is
+    what socket.socketpair() gives on POSIX, which is why the receiver's
+    end-to-end tests only passed on Windows (where socketpair is emulated over
+    AF_INET loopback). A Unix domain socket cannot be connected across a
+    network, so its peer is local by construction and maps to loopback.
+    """
+    if conn.family == getattr(socket, "AF_UNIX", object()):
+        return "127.0.0.1"
     try:
-        return conn.getpeername()[0]
+        peer = conn.getpeername()
     except OSError:
         return "?"
+    return str(peer[0]) if isinstance(peer, tuple) and peer else "?"
 
 
 def _load_control_token() -> str:
@@ -241,6 +269,7 @@ def handle_connection(
     sink: FrameSink,
     max_frames: Optional[int] = None,
     stats: Optional[ReceiverStats] = None,
+    audio_device: Optional[str] = None,
 ) -> ReceiverStats:
     """Run the receive loop for one accepted connection.
 
@@ -249,7 +278,22 @@ def handle_connection(
     """
     stats = stats or ReceiverStats()
     reader = FrameReader(conn)
-    hello = reader.recv_hello()
+
+    # A deadline for the handshake specifically. Everything before the Hello is
+    # unauthenticated by construction — the token is inside it — so this is the
+    # window an anonymous peer gets, and it is the one that has to be short.
+    conn.settimeout(HANDSHAKE_TIMEOUT_SECONDS)
+    try:
+        hello = reader.recv_hello()
+    except socket.timeout as e:
+        raise ProtocolError(
+            f"peer sent no usable hello within {HANDSHAKE_TIMEOUT_SECONDS}s"
+        ) from e
+    # Past the handshake the peer has proven itself, so it gets the longer
+    # budget - but not an unlimited one: a phone whose Wi-Fi drops without
+    # closing the socket looks identical to one that is merely quiet, and only
+    # a deadline tells them apart.
+    conn.settimeout(IDLE_TIMEOUT_SECONDS)
 
     # Same trust model as control_server: loopback (the USB tunnel, which
     # already required physical access and an authorised adb key) is exempt;
@@ -318,13 +362,53 @@ def handle_connection(
     pipeline = _PipelineStageLog(hello.codec, h264_decoder)
     sink_writer = _SinkWriter(sink, pipeline.on_sent)
 
+    # Audio only exists when the sender negotiated it in Hello, and only then
+    # does the stream carry a type byte per message (see protocol.MessageType).
+    # A sender with audio off produces exactly the byte stream this loop has
+    # always read.
+    audio_decoder = AacDecoder(hello.audio_sample_rate, hello.audio_channels) if hello.audio else None
+    audio_output = (
+        AudioOutput(hello.audio_sample_rate, hello.audio_channels, device=audio_device)
+        if hello.audio else None
+    )
+    if hello.audio:
+        log.info(
+            "audio: %s %dHz %dch %dkbps",
+            hello.audio_codec, hello.audio_sample_rate, hello.audio_channels,
+            hello.audio_bitrate_bps // 1000,
+        )
+
     try:
         while max_frames is None or stats.frames_received < max_frames:
             try:
                 payload = reader.recv_message()
+            except socket.timeout:
+                log.info("sender went silent for %.0fs; closing", IDLE_TIMEOUT_SECONDS)
+                break
             except ProtocolError:
                 log.info("sender disconnected")
                 break
+
+            if hello.audio:
+                try:
+                    message_type, payload = split_typed_message(payload)
+                except ProtocolError as e:
+                    # One unreadable message is not a reason to drop a working
+                    # video stream, the same call the decoders make about a
+                    # corrupt chunk.
+                    log.warning("skipping malformed message: %s", e)
+                    continue
+                if message_type == MessageType.AUDIO_CONFIG:
+                    audio_decoder.configure(payload)
+                    continue
+                if message_type == MessageType.AUDIO:
+                    stats.audio_messages_received += 1
+                    # Audio is never skipped for backlog the way video is: a
+                    # dropped block is an audible gap, and audio is a rounding
+                    # error next to video on this link anyway.
+                    for block in audio_decoder.decode(payload):
+                        audio_output.write(block)
+                    continue
 
             stats.frames_received += 1
             stats.bytes_received += len(payload)
@@ -400,6 +484,12 @@ def handle_connection(
         # only once the writer thread is guaranteed stopped so it can't be
         # calling sink.send() concurrently with this.
         sink_writer.close()
+        if audio_decoder is not None:
+            for block in audio_decoder.flush():
+                audio_output.write(block)
+            audio_decoder.close()
+        if audio_output is not None:
+            audio_output.close()
         if h264_decoder is not None:
             for frame in h264_decoder.flush():
                 sink.send(frame, fps=hello.fps)
@@ -414,6 +504,7 @@ def serve_once(
     sink_kind: str,
     host: str = "127.0.0.1",
     max_frames: Optional[int] = None,
+    audio_device: Optional[str] = None,
 ) -> ReceiverStats:
     """Listen for a single incoming connection, handle it, and return stats.
 
@@ -432,10 +523,15 @@ def serve_once(
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         with conn:
             sink = create_sink(sink_kind)
-            return handle_connection(conn, sink, max_frames=max_frames)
+            return handle_connection(conn, sink, max_frames=max_frames, audio_device=audio_device)
 
 
-def serve_forever(port: int, sink_kind: str, host: str = "127.0.0.1") -> None:
+def serve_forever(
+    port: int,
+    sink_kind: str,
+    host: str = "127.0.0.1",
+    audio_device: Optional[str] = None,
+) -> None:
     """Bind once and keep accepting connections indefinitely.
 
     The previous --serve-forever loop called serve_once() in a cycle, which
@@ -465,7 +561,9 @@ def serve_forever(port: int, sink_kind: str, host: str = "127.0.0.1") -> None:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind((host, port))
-        server.listen(1)
+        # Backlog > 1: while one connection is being timed out and torn down,
+        # the phone's reconnect attempt has to be queued rather than refused.
+        server.listen(8)
         log.info("waiting for stream on %s:%s ...", host, port)
         while True:
             conn, addr = server.accept()
@@ -474,7 +572,7 @@ def serve_forever(port: int, sink_kind: str, host: str = "127.0.0.1") -> None:
             try:
                 with conn:
                     sink = create_sink(sink_kind)
-                    stats = handle_connection(conn, sink)
+                    stats = handle_connection(conn, sink, audio_device=audio_device)
                 log.info("connection closed: %s", stats)
             except Exception:
                 log.exception("connection from %s failed", addr)
@@ -493,14 +591,40 @@ def main() -> None:
     )
     parser.add_argument("--max-frames", type=int, default=None)
     parser.add_argument("--serve-forever", action="store_true", help="accept new connections in a loop")
+    parser.add_argument(
+        "--audio-device",
+        default=None,
+        help=(
+            "output device for the phone's microphone: an index, an exact name, or a "
+            "unique substring (e.g. 'cable' for VB-CABLE, which makes the phone mic "
+            "selectable as an input in Zoom/Meet/OBS). Omit for the system default. "
+            "Only used when the phone has audio enabled; run --list-audio-devices to see them."
+        ),
+    )
+    parser.add_argument(
+        "--list-audio-devices",
+        action="store_true",
+        help="print the PC's audio output devices and exit",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
+    if args.list_audio_devices:
+        devices = list_output_devices()
+        if not devices:
+            print("no audio output devices found (is PortAudio/sounddevice installed?)")
+        for device in devices:
+            marker = " (system default)" if device["default"] else ""
+            print(f"  [{device['index']}] {device['name']}  {device['channels']}ch{marker}")
+        return
+
     if args.serve_forever:
-        serve_forever(args.port, args.sink, args.host)
+        serve_forever(args.port, args.sink, args.host, audio_device=args.audio_device)
     else:
-        stats = serve_once(args.port, args.sink, args.host, args.max_frames)
+        stats = serve_once(
+            args.port, args.sink, args.host, args.max_frames, audio_device=args.audio_device
+        )
         log.info("done: %s", stats)
 
 

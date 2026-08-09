@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
+    <string name="app_name">FrameCast</string>
     <string name="app_version">v0.0.13-alpha</string>
 
     <!-- Tier status -->
@@ -36,7 +36,7 @@
     <string name="settings_stream_brightness">Yayın sırasında</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">ÜCRETSİZ</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">4K kayıt, filigran kaldırma, gelişmiş ses kontrolleri ve öncelikli destek kilidini açın.</string>
@@ -114,12 +114,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Bu bağımsız uygulamayı desteklediğin için teşekkürler ❤️</string>
-    <string name="welcome_message">PhoneCam tek bir kişi tarafından bağımsız olarak geliştiriliyor.\n\nAlpha ve Beta aşamalarında desteğin için teşekkür etmek amacıyla tüm Pro özelliklerini ödüllü reklamlar aracılığıyla sunuyoruz.\n\nUygulamayı test etmen, geri bildirim göndermen ve başkalarıyla paylaşman, onu geliştirmeye devam etmemizi sağlıyor.\n\nProjenin en başından beri bir parçası olduğun için teşekkürler.</string>
+    <string name="welcome_message">FrameCast tek bir kişi tarafından bağımsız olarak geliştiriliyor.\n\nAlpha ve Beta aşamalarında desteğin için teşekkür etmek amacıyla tüm Pro özelliklerini ödüllü reklamlar aracılığıyla sunuyoruz.\n\nUygulamayı test etmen, geri bildirim göndermen ve başkalarıyla paylaşman, onu geliştirmeye devam etmemizi sağlıyor.\n\nProjenin en başından beri bir parçası olduğun için teşekkürler.</string>
     <string name="welcome_button">Devam et</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Alpha ve Beta süresince, tüm Pro özellikleri ödüllü reklamlar izlenerek ücretsiz olarak açılabilir.</string>
-    <string name="pro_feature_locked_desc">Bu ayar PhoneCam Pro gerektirir — kilidini açmak için kamera ekranında reklam izle</string>
+    <string name="pro_feature_locked_desc">Bu ayar FrameCast Pro gerektirir — kilidini açmak için kamera ekranında reklam izle</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">%1$d saat Pro kazan</string>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC\'ye ulaşılamıyor</string>
     <string name="pc_starting">Başlatılıyor…</string>
     <string name="pc_services_started">PC hizmetleri başlatıldı</string>
-    <string name="pc_unreachable_hint">PC\'ye ulaşılamıyor — önce PhoneCam_PC.bat dosyasını çalıştırın</string>
+    <string name="pc_unreachable_hint">PC\'ye ulaşılamıyor — önce FrameCast_PC.bat dosyasını çalıştırın</string>
     <string name="pc_services_stopped">PC hizmetleri durduruldu</string>
     <string name="pc_usb_forwarded">USB portları yönlendirildi</string>
     <string name="pc_usb_failed">Başarısız — USB bağlantısını kontrol edin</string>
@@ -216,4 +216,22 @@
     <string name="speedtest_uploading">Bilgisayara yükleniyor…</string>
     <string name="speedtest_downloading">Bilgisayardan indiriliyor…</string>
     <string name="speedtest_cleaning_up">Temizleniyor…</string>
+
+    <!-- Microphone selection and capability warnings -->
+    <string name="settings_microphone">Mikrofon</string>
+    <string name="mic_auto">Otomatik</string>
+    <string name="mic_warning_bluetooth">Bluetooth mikrofonlar 16 kHz ile sınırlıdır — müzik değil, konuşma kalitesi</string>
+    <string name="mic_warning_sample_rate">Bu mikrofon seçilen örnekleme hızını desteklemiyor — %1$.1f kHz ile kaydediliyor</string>
+    <string name="mic_warning_bitrate">Bit hızı %1$d kbps ile sınırlandı — bu mikrofonun taşıyabileceği en yüksek değer</string>
+    <string name="mic_warning_mono">Bu mikrofon mono — tek kanal kaydediliyor</string>
+    <string name="mic_warning_unknown">Bu mikrofon yeteneklerini bildirmedi — ayarlar olduğu gibi uygulandı</string>
+    <string name="pc_paired">PC ile eşleştirildi — Wi-Fi yayını hazır</string>
+    <string name="mic_error_bluetooth_permission">Bluetooth mikrofon izin gerektiriyor — Ayarlar\'dan verin veya başka mikrofon seçin</string>
+    <string name="mic_error_bluetooth_link">Bluetooth mikrofon bağlanmadı — açık ve eşleşmiş olduğundan emin olun</string>
+    <string name="mic_error_wrong_device">Seçilenden farklı bir mikrofon kaydediliyordu — yanlışını kullanmak yerine durduruldu</string>
+    <string name="mic_error_unavailable">Mikrofon açılamadı — başka bir uygulama kullanıyor olabilir</string>
+    <string name="streaming_channel_name">FrameCast yayını</string>
+    <string name="streaming_notification_title">Bilgisayara yayın</string>
+    <string name="streaming_notification_text">Kamera ve mikrofon kullanımda</string>
+    <string name="streaming_background_unavailable">Yayın FrameCast açıkken çalışır, uygulama değiştirirseniz durur</string>
 </resources>

@@ -48,12 +48,12 @@ were made before writing any code:
   and [`reward_engine/tests/test_reward_manager.py`](../reward_engine/tests/test_reward_manager.py).
   This is the version actually run in this environment (15 passing tests) —
   tune the economy here first.
-- **Android port:** [`android-app/.../rewards/RewardManager.kt`](../android-app/app/src/main/java/com/phonecam/streamer/rewards/RewardManager.kt),
+- **Android port:** [`android-app/.../rewards/RewardManager.kt`](../android-app/app/src/main/java/com/framecast/streamer/rewards/RewardManager.kt),
   a deliberate 1:1 translation, plus a mirrored JUnit suite in
   `RewardManagerTest.kt`. No JDK is available in this sandbox so that suite
   hasn't been executed here — treat any behavioral change as unverified
   until it's run in Android Studio.
-- **Ad SDK boundary:** [`AdController.kt`](../android-app/app/src/main/java/com/phonecam/streamer/rewards/AdController.kt)
+- **Ad SDK boundary:** [`AdController.kt`](../android-app/app/src/main/java/com/framecast/streamer/rewards/AdController.kt)
   is the only thing that talks to an ad network. `RewardManager` never touches
   the ad SDK directly — it only reacts to "reward earned" — so swapping AdMob
   for another network, or unit-testing the economy without any ad SDK at all,
