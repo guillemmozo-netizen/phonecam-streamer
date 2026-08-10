@@ -43,22 +43,72 @@ Two places, both currently holding Google's test values with a comment
 pointing here:
 
 - `android-app/app/src/main/AndroidManifest.xml` → the
-  `com.google.android.gms.ads.APPLICATION_ID` meta-data value → your App ID.
+  `com.google.android.gms.ads.APPLICATION_ID` meta-data value → your App ID
+  (the one with a `~`).
 - `android-app/app/src/main/java/com/phonecam/streamer/rewards/AdMobAdController.kt`
-  → the `rewardedAdUnitId` default parameter → your ad unit ID.
+  → the `rewardedAdUnitId` default parameter → your rewarded ad unit ID (the
+  one with a `/`).
 
-## 4. Do not click your own real ads
+Rebuild and reinstall after changing them: the App ID is read from the
+manifest at startup, so a hot reload is not enough.
 
-Once you're using real IDs, **never watch/click your own production ads**
-to "test" them — AdMob treats that as invalid traffic and can suspend the
-account, sometimes permanently. Two safe ways to test with real ad units
-instead:
-- Register your test device: AdMob will mark ads served to it as test ads
-  even though you're using a real ad unit ID (`MobileAds.setRequestConfiguration`
-  with `setTestDeviceIds(listOf("YOUR_DEVICE_ID"))` — the device ID prints
-  to Logcat the first time the SDK loads an ad without it registered).
-- Or just keep using the test ad unit ID during development and only switch
-  to the real one in the build you actually publish.
+Expect **no fill at first**. A brand-new ad unit routinely serves nothing for
+a few hours, and AdMob will not serve real ads at all until the account has
+been reviewed and (for payouts) your address and tax details are on file.
+`onAdFailedToLoad` logging "No ad config" or "no fill" during that window is
+the normal state, not a bug — which is why the app degrades to a clear
+"unavailable" message instead of a broken button.
+
+## 4. Register your test devices — do this BEFORE using a real ad unit
+
+Watching or clicking your own production ads is invalid traffic. AdMob
+suspends accounts for it, sometimes permanently, and "I was only testing" is
+not a defence. A registered test device gets **test ads from your real ad
+unit**, so the whole flow is exercised with nothing to account for.
+
+Getting your device's ID takes one run:
+
+1. Point the app at your real ad unit (step 3) and run it on the device.
+2. Trigger an ad load and read logcat:
+
+   ```bash
+   adb logcat -d | grep -i setTestDeviceIds
+   ```
+
+   The SDK prints the exact line to copy, e.g.
+   `Use RequestConfiguration.Builder().setTestDeviceIds(Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))`
+
+3. Paste the id into `TEST_DEVICE_IDS` at the bottom of
+   [`AdMobAdController.kt`](../android-app/app/src/main/java/com/phonecam/streamer/rewards/AdMobAdController.kt):
+
+   ```kotlin
+   val TEST_DEVICE_IDS: List<String> = listOf(
+       "33BE2250B43518CCDA7DE426D04EE231",
+   )
+   ```
+
+   The list is applied in `initialize()` before the SDK starts, and an empty
+   list is a no-op — real users are never affected by what is in it.
+
+Two things worth knowing about that id: it is per **app + device**, so it
+changes if you uninstall and reinstall, and each tester's device needs its
+own entry. You can also add the same ids under **Settings → Test devices**
+in the AdMob console, which applies them without an app update — useful once
+the app is published.
+
+Confirm it worked: a registered device shows the ad with a **"Test Ad"**
+label across it. No label means the ad is real and you must not touch it.
+
+## 4b. Testing the consent form (UMP)
+
+Separate mechanism, separate id. The GDPR form only appears for users in the
+EEA/UK, so testing it from elsewhere needs
+`ConsentDebugSettings` — an addTestDeviceHashedId plus
+`DEBUG_GEOGRAPHY_EEA` on the request in
+[`ConsentManager.kt`](../android-app/app/src/main/java/com/phonecam/streamer/consent/ConsentManager.kt),
+and `consentInformation.reset()` to see the form again after answering once.
+Not wired in by default on purpose: debug settings left in a published build
+would show a consent form to the wrong people.
 
 ## 5. GDPR/UMP consent — implemented
 

@@ -8,6 +8,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
@@ -40,6 +41,27 @@ class AdMobAdController(
     private var isLoading = false
 
     fun initialize(onInitialized: () -> Unit = {}) {
+        // Devices listed here get TEST ads even from a real ad unit id. This
+        // is the only safe way to try the production unit yourself: watching
+        // or clicking your own real ads is invalid traffic, and AdMob
+        // suspends accounts for it — sometimes permanently.
+        //
+        // To find a device's id: run the app on it with a REAL ad unit id and
+        // read logcat; the SDK prints the exact line to paste, e.g.
+        //   Use RequestConfiguration.Builder().setTestDeviceIds(
+        //       Arrays.asList("33BE2250B43518CCDA7DE426D04EE231"))
+        // The id is per app+device and changes if the app is reinstalled.
+        //
+        // Empty means "no test devices" and costs nothing — real users are
+        // never affected by this list, only the ids in it.
+        if (TEST_DEVICE_IDS.isNotEmpty()) {
+            MobileAds.setRequestConfiguration(
+                RequestConfiguration.Builder()
+                    .setTestDeviceIds(TEST_DEVICE_IDS)
+                    .build(),
+            )
+            Log.i(TAG, "serving test ads to ${TEST_DEVICE_IDS.size} registered device(s)")
+        }
         MobileAds.initialize(context) {
             Log.i(TAG, "AdMob SDK initialized")
             onInitialized()
@@ -109,5 +131,19 @@ class AdMobAdController(
             Log.i(TAG, "reward earned: ${rewardItem.amount} ${rewardItem.type}")
             onRewardEarned()
         }
+    }
+
+    companion object {
+        /**
+         * Devices that must always be served test ads — see [initialize].
+         *
+         * Add your own phone's id here the moment the app points at a real ad
+         * unit, and keep it here: it is what makes "let me check the ad still
+         * works" a safe thing to do rather than the fastest way to lose an
+         * AdMob account.
+         */
+        val TEST_DEVICE_IDS: List<String> = listOf(
+            // "33BE2250B43518CCDA7DE426D04EE231",   <- example, replace
+        )
     }
 }
