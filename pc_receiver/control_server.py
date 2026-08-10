@@ -72,7 +72,7 @@ def redirect_own_output_to_log():
     """Point this process's own stdout/stderr at a log file.
 
     Needed because this now normally runs hidden via pythonw.exe (launched
-    from PhoneCam_Service.vbs, no console attached at all) — under pythonw,
+    from FrameCast_Service.vbs, no console attached at all) — under pythonw,
     sys.stdout/sys.stderr are None, so the plain print() calls throughout
     this file would raise AttributeError on the very first line logged.
     Redirecting first makes every print() below work the same way whether
@@ -593,7 +593,7 @@ def main():
         print(f"[control] port {PORT} is already in use ({e}); another control server "
               f"is running. Exiting rather than starting a duplicate.")
         return
-    print(f"[control] PhoneCam Control Server running on port {PORT}")
+    print(f"[control] FrameCast Control Server running on port {PORT}")
     print(f"[control] Endpoints: GET /status, POST /start, POST /stop, POST /adb-reverse")
 
     # Eager start: discovery/speed_test/receiver come up immediately instead

@@ -51,7 +51,7 @@ class AudioOptions:
 
     sink: str = "device"
     device: Optional[str] = None
-    wav_path: str = "phonecam_audio.wav"
+    wav_path: str = "framecast_audio.wav"
     # Play into an ordinary output device when no virtual cable is installed.
     # Off by default because this receiver auto-starts as a background
     # service, where that means an unrequested feedback loop — see
@@ -92,6 +92,21 @@ OBS_SETTLE_SECONDS = 20.0
 # startup) while still being a delay a user reads as "it dropped" rather than
 # "it's broken".
 STREAM_IDLE_TIMEOUT_SECONDS = 10.0
+
+# The longest the virtual camera may go without a new picture while frames are
+# still arriving and decoding fine.
+#
+# Skipping backlogged frames (see handle_connection's is_stale) assumes the
+# backlog is transient. When the consumer is *permanently* slower than the
+# producer, every frame is backlogged, every frame is skipped, and the sink
+# starves completely: measured on an 8K30 session as `shown=0.0fps` with
+# `backlog_max=21` — decode 17ms + convert 37ms against 33ms of arrivals — a
+# black virtual camera fed by a stream that was decoding perfectly.
+#
+# This floor turns that into "as many frames as this machine can actually
+# manage". It costs nothing on a pipeline that keeps up, because there the
+# backlog clears and frames are never stale for this long in the first place.
+MAX_SECONDS_WITHOUT_A_SHOWN_FRAME = 0.1
 
 
 def _bind_listener(server: socket.socket, host: str, port: int) -> None:
@@ -523,9 +538,18 @@ def handle_connection(
         # a user open OBS. obs-websocket answers before OBS's frontend is
         # ready, and mutating OBS in that window is what both crash reports
         # have in common. Nothing waits on this thread, so the delay is free.
+        # allow_scene_requests: resizing the canvas without re-fitting the
+        # FrameCast scene item leaves the item wearing the PREVIOUS
+        # composition's transform — seen live as "shifted left and oversized
+        # in OBS" for every non-16:9 composition, while the encoded frames
+        # themselves were pixel-perfect. The scene fit only ever touches an
+        # item named exactly FrameCast/PhoneCam (see obs_sync), and
+        # SetSceneItemTransform is an ordinary live scene edit, not the
+        # pipeline reshape that had the crash history.
         threading.Thread(
             target=lambda: sync_video_settings(
                 hello.width, hello.height, hello.fps, hello.video_bitrate_bps,
+                allow_scene_requests=True,
                 settle_seconds=OBS_SETTLE_SECONDS, source="hello",
             ),
             name="obs-sync",
@@ -562,6 +586,12 @@ def handle_connection(
     tagged = hello.has_audio
 
     frames_skipped_stale = 0
+    # Frames shown despite being backlogged, because nothing had been shown
+    # for too long — see MAX_SECONDS_WITHOUT_A_SHOWN_FRAME. A non-zero count
+    # at the end of a session says "this machine could not keep up with this
+    # resolution", which is worth knowing and used to be invisible.
+    frames_forced_through = 0
+    last_shown_at = time.monotonic()
     pipeline = _PipelineStageLog(hello.codec, h264_decoder, sync)
     sink_writer = _SinkWriter(sink, pipeline.on_sent)
 
@@ -569,6 +599,9 @@ def handle_connection(
         """Route decoded video to the sink, through A/V sync when there is
         audio to align to. [pts_us] is the sender-clock timestamp of the
         access unit these frames came out of."""
+        nonlocal last_shown_at
+        if frames:
+            last_shown_at = time.monotonic()
         if sync is None:
             for frame in frames:
                 sink_writer.submit(frame, hello.fps)
@@ -674,6 +707,13 @@ def handle_connection(
             is_stale = backlog >= 2
             pipeline.on_backlog_sample(backlog)
 
+            # ...but never skip so long that nothing is shown at all — see
+            # MAX_SECONDS_WITHOUT_A_SHOWN_FRAME. A consumer that can never
+            # catch up must degrade to a lower frame rate, not to black.
+            if is_stale and time.monotonic() - last_shown_at >= MAX_SECONDS_WITHOUT_A_SHOWN_FRAME:
+                is_stale = False
+                frames_forced_through += 1
+
             if h264_decoder is not None:
                 decoded = h264_decoder.decode(payload)
                 pipeline.on_decoded(len(decoded))
@@ -728,7 +768,7 @@ def handle_connection(
         # must not be conditional on anything else having succeeded.
         stats.audio_packets_failed = audio.packets_failed
         for label, step in (
-            ("stale-frame count", lambda: _log_skipped(frames_skipped_stale)),
+            ("stale-frame count", lambda: _log_skipped(frames_skipped_stale, frames_forced_through)),
             ("sink writer", sink_writer.close),
             # Video still held for A/V sync goes out before the decoder's own
             # flush — it is older, and the audio clock it was waiting on is
@@ -748,9 +788,16 @@ def handle_connection(
     return stats
 
 
-def _log_skipped(count: int) -> None:
+def _log_skipped(count: int, forced: int = 0) -> None:
     if count:
         log.info("skipped %d stale/backlogged frame(s) to stay caught up with real time", count)
+    if forced:
+        log.warning(
+            "showed %d frame(s) that were already backlogged because nothing had reached the "
+            "virtual camera for %.0fms — this machine cannot decode this resolution at the "
+            "rate the phone sends it, so the picture is running below the sender's fps",
+            forced, MAX_SECONDS_WITHOUT_A_SHOWN_FRAME * 1000,
+        )
 
 
 def _drain_to(sync: Optional[AvSync], sink: FrameSink, fps: int) -> None:
@@ -886,7 +933,7 @@ def main() -> None:
         default=None,
         help="substring of the output device name to play into; default auto-detects a virtual cable",
     )
-    parser.add_argument("--audio-wav", default="phonecam_audio.wav", help="output path for --audio-sink wav")
+    parser.add_argument("--audio-wav", default="framecast_audio.wav", help="output path for --audio-sink wav")
     parser.add_argument(
         "--audio-speakers",
         action="store_true",

@@ -22,6 +22,13 @@ COMMAND_UPLOAD = 1
 COMMAND_DOWNLOAD = 2
 COMMAND_CLEANUP = 3
 
+# The app's SpeedTestManager sends a 10 MB test file. Anything much larger is
+# not our client — and without a bound, the declared int64 size below becomes
+# an attacker-controlled allocation: this port is open to the LAN with no
+# auth (the speed test runs before pairing), so a stranger on the network
+# could ask this process to hold gigabytes in RAM, one thread per connection.
+MAX_UPLOAD_BYTES = 64 * 1024 * 1024
+
 
 def recv_exact(conn: socket.socket, n: int) -> bytes:
     buf = bytearray()
@@ -49,6 +56,10 @@ def handle_client(conn: socket.socket, addr):
             if command == COMMAND_UPLOAD:
                 size_bytes = recv_exact(conn, 8)
                 file_size = struct.unpack(">q", size_bytes)[0]
+                if not 0 <= file_size <= MAX_UPLOAD_BYTES:
+                    print(f"[speed-test] rejected upload of {file_size} bytes "
+                          f"(allowed 0..{MAX_UPLOAD_BYTES}) from {addr}")
+                    break
                 print(f"[speed-test] uploading {file_size / 1024 / 1024:.1f} MB...")
                 stored_data = recv_exact(conn, file_size)
                 conn.sendall(b"\x01")

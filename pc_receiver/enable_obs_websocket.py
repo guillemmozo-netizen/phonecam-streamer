@@ -7,7 +7,7 @@ authentication alone — obs_sync.py already implements the v5 handshake and
 reads the password out of this very file, so enabling auth costs nothing and
 turning it off would expose a remote-control socket for no benefit.
 
-Run by Install_PhoneCam.vbs. Safe to run repeatedly.
+Run by Install_FrameCast.vbs. Safe to run repeatedly.
 
 Exit codes (the installer turns them into a message):
     0  enabled, or already enabled

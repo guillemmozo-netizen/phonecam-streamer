@@ -25,7 +25,17 @@ class FakeWs:
         {"sourceName": "PhoneCam", "sceneItemId": 2},
     ]
 
-    def __init__(self, video_settings=None, fail_set=False, scene_items=None):
+    # What OBS offers in a capture source's device dropdown. The webcam is
+    # first again, for the same reason as above: picking the virtual camera
+    # must be a match, not "whatever came first".
+    DEFAULT_DEVICES = [
+        {"itemName": "Logitech HD Webcam C920", "itemValue": "usb#vid_046d"},
+        {"itemName": "OBS Virtual Camera", "itemValue": "root#image#0000#{860bb310}"},
+    ]
+
+    def __init__(self, video_settings=None, fail_set=False, scene_items=None,
+                 inputs=None, input_kinds=None, devices=None, fail_create=False,
+                 events=False):
         self.requests: list[tuple[str, dict]] = []
         self.closed = False
         self._replies: list[str] = []
@@ -35,9 +45,28 @@ class FakeWs:
             "fpsNumerator": 30, "fpsDenominator": 1,
         }
         self._fail_set = fail_set
-        self._scene_items = (
+        self._scene_items = list(
             self.DEFAULT_SCENE_ITEMS if scene_items is None else scene_items
         )
+        self._inputs = list(inputs or [])
+        self._input_kinds = (
+            ["dshow_input", "color_source_v3"] if input_kinds is None else list(input_kinds)
+        )
+        self._devices = self.DEFAULT_DEVICES if devices is None else list(devices)
+        self._fail_create = fail_create
+        # Real obs-websocket pushes events down the same socket as responses.
+        # Off by default only to keep the other tests' transcripts readable —
+        # see test_events_interleaved_with_responses_never_desync_the_dialogue.
+        self._events = events
+        # OBS refuses to reshape its video pipeline while an output runs, so
+        # the canvas change is deferred — the state the "bigger than the
+        # frame" bug lived in. Settable per test.
+        self.outputs_active = False
+
+    def _add_scene_item(self, source_name):
+        item_id = max((i["sceneItemId"] for i in self._scene_items), default=0) + 1
+        self._scene_items.append({"sourceName": source_name, "sceneItemId": item_id})
+        return item_id
 
     def send(self, raw):
         msg = json.loads(raw)["d"]
@@ -57,11 +86,41 @@ class FakeWs:
         elif kind == "GetSceneList":
             data, ok = {"currentProgramSceneName": "Scene", "scenes": [{"sceneName": "Scene"}]}, True
         elif kind == "GetSceneItemList":
-            data, ok = {"sceneItems": self._scene_items}, True
+            data, ok = {"sceneItems": list(self._scene_items)}, True
+        elif kind in ("GetVirtualCamStatus", "GetRecordStatus", "GetStreamStatus"):
+            data, ok = {"outputActive": self.outputs_active}, True
+        elif kind == "GetInputList":
+            data, ok = {"inputs": self._inputs}, True
+        elif kind == "GetInputKindList":
+            data, ok = {"inputKinds": self._input_kinds}, True
+        elif kind in ("CreateInput", "CreateSceneItem"):
+            ok = not self._fail_create
+            data = {}
+            if ok:
+                d = msg["requestData"]
+                name = d.get("inputName") or d.get("sourceName")
+                data = {"sceneItemId": self._add_scene_item(name)}
+                if kind == "CreateInput":
+                    self._inputs.append({"inputName": name})
+        elif kind == "GetInputPropertiesListPropertyItems":
+            data, ok = {"propertyItems": self._devices}, True
         else:
             data, ok = {}, True
+        if self._events:
+            # op 5 is an event. OBS emits these constantly (a source going
+            # active, a scene item being selected); one landing between a
+            # request and its answer is what silently desynced every later
+            # request by one message.
+            self._replies.append(json.dumps({
+                "op": 5, "d": {"eventType": "InputActiveStateChanged"},
+            }))
         self._replies.append(json.dumps({
-            "d": {"requestStatus": {"result": ok}, "responseData": data},
+            "op": 7,
+            "d": {
+                "requestId": msg.get("requestId"),
+                "requestStatus": {"result": ok},
+                "responseData": data,
+            },
         }))
 
     def recv(self):
@@ -273,19 +332,222 @@ def test_only_phonecams_own_source_is_reshaped():
     "My PhoneCam",           # and not "ends with" either
 ])
 def test_a_source_that_is_not_ours_is_never_touched(name):
+    """The invariant is about the FOREIGN item, not about doing nothing.
+
+    Since the missing source is now created, a transform does get sent — to
+    the item this module made for itself. What must never happen, and is what
+    this pins, is that transform landing on the user's webcam/capture card.
+    """
     ws = FakeWs(scene_items=[{"sourceName": name, "sceneItemId": 7}])
     sync(ws, allow_scene_requests=True)
-    assert _transforms(ws) == []
+    assert 7 not in [t["sceneItemId"] for t in _transforms(ws)]
+    # Nor may the foreign source be renamed, re-pointed or reconfigured.
+    assert [d for k, d in ws.requests if k == "SetInputSettings"
+            and d.get("inputName") == name] == []
 
 
-def test_a_missing_source_changes_nothing_and_says_so(caplog):
+def test_a_missing_source_is_created_and_then_fitted():
+    """The setup step that used to be the user's job.
+
+    The fit is name-exact so it can never touch a webcam — which made "name it
+    exactly FrameCast" a manual step. Creating it here removes the step
+    without relaxing the rule.
+    """
     ws = FakeWs(scene_items=[{"sourceName": "Webcam", "sceneItemId": 1}])
+    sync(ws, width=1080, height=1920, allow_scene_requests=True)
+
+    created = [d for k, d in ws.requests if k == "CreateInput"]
+    assert len(created) == 1
+    assert created[0]["inputName"] == "FrameCast"
+    assert created[0]["sceneName"] == "Scene"
+    assert created[0]["inputKind"] == "dshow_input"
+
+    # And the brand-new item is the one fitted — the webcam is never touched.
+    fitted = _transforms(ws)
+    assert len(fitted) == 1
+    assert fitted[0]["sceneItemId"] == 2
+    assert fitted[0]["sceneItemTransform"]["boundsWidth"] == 1080.0
+
+
+def test_the_new_source_is_pointed_at_the_obs_virtual_camera():
+    """A source with the right name but no device is a black rectangle. The
+    device value is a machine-specific moniker, so it has to be matched by
+    name out of OBS's own list."""
+    ws = FakeWs(scene_items=[])
+    sync(ws, allow_scene_requests=True)
+
+    settings = [d for k, d in ws.requests if k == "SetInputSettings"]
+    assert len(settings) == 1
+    assert settings[0]["inputName"] == "FrameCast"
+    assert settings[0]["inputSettings"]["video_device_id"] == "root#image#0000#{860bb310}"
+
+
+def test_an_input_that_already_exists_elsewhere_is_added_not_duplicated():
+    """Input names are global in OBS, so CreateInput would fail outright on a
+    name conflict — the source has to be added to this scene instead."""
+    ws = FakeWs(scene_items=[], inputs=[{"inputName": "FrameCast"}])
+    sync(ws, allow_scene_requests=True)
+
+    assert "CreateInput" not in ws.kinds()
+    added = [d for k, d in ws.requests if k == "CreateSceneItem"]
+    assert len(added) == 1
+    assert added[0]["sourceName"] == "FrameCast"
+    assert len(_transforms(ws)) == 1
+
+
+def test_an_existing_source_is_never_recreated():
+    """The overwhelmingly common path: it is already there, so nothing is
+    created and the sync is exactly what it always was."""
+    ws = FakeWs()
+    sync(ws, allow_scene_requests=True)
+    assert "CreateInput" not in ws.kinds()
+    assert "CreateSceneItem" not in ws.kinds()
+
+
+def test_a_source_that_cannot_be_created_changes_nothing_and_says_so(caplog):
+    ws = FakeWs(scene_items=[{"sourceName": "Webcam", "sceneItemId": 1}],
+                fail_create=True)
     with caplog.at_level("WARNING"):
         assert sync(ws, allow_scene_requests=True) is True
     assert _transforms(ws) == []
-    assert "no scene item named 'PhoneCam'" in caplog.text
-    # The names it did find, so the user can see what to rename.
-    assert "Webcam" in caplog.text
+    assert "could not be created" in caplog.text
+
+
+def test_creation_is_skipped_when_obs_has_no_capture_input_kind(caplog):
+    """Better to say so than to create a source of some unrelated kind."""
+    ws = FakeWs(scene_items=[], input_kinds=["color_source_v3"])
+    with caplog.at_level("WARNING"):
+        sync(ws, allow_scene_requests=True)
+    assert "CreateInput" not in ws.kinds()
+    assert _transforms(ws) == []
+
+
+def test_a_missing_virtual_camera_device_still_leaves_a_usable_source(caplog):
+    """No device found: the source is still created with the right name, so
+    the fit works and the user only has to pick a device."""
+    ws = FakeWs(scene_items=[], devices=[{"itemName": "Logitech", "itemValue": "usb#1"}])
+    with caplog.at_level("WARNING"):
+        sync(ws, allow_scene_requests=True)
+    assert "CreateInput" in ws.kinds()
+    assert [d for k, d in ws.requests if k == "SetInputSettings"] == []
+    assert len(_transforms(ws)) == 1
+    assert "no OBS Virtual Camera device" in caplog.text
+
+
+def test_the_source_is_fitted_to_the_canvas_in_effect_not_the_one_requested():
+    """The "bigger than the frame and shifted left" report.
+
+    While an output is running the canvas reset is deferred — and that is the
+    normal state once OBS's own virtual camera is started, not a rare one.
+    Sizing the scene item for the canvas we asked for, while the canvas is
+    still the old one, hangs the source off the edges.
+    """
+    ws = FakeWs(video_settings={
+        "baseWidth": 1920, "baseHeight": 1080,
+        "outputWidth": 1920, "outputHeight": 1080,
+        "fpsNumerator": 60, "fpsDenominator": 1,
+    })
+    ws.outputs_active = True   # OBS refuses the reshape; the change is deferred
+
+    sync(ws, width=1080, height=1920, fps=60, allow_scene_requests=True)
+
+    assert "SetVideoSettings" not in ws.kinds()      # correctly deferred
+    fitted = _transforms(ws)[0]["sceneItemTransform"]
+    assert (fitted["boundsWidth"], fitted["boundsHeight"]) == (1920.0, 1080.0)
+
+
+def test_the_requested_size_is_used_once_the_canvas_really_changed():
+    ws = FakeWs()
+    sync(ws, width=1440, height=1080, fps=60, allow_scene_requests=True)
+    fitted = _transforms(ws)[0]["sceneItemTransform"]
+    assert (fitted["boundsWidth"], fitted["boundsHeight"]) == (1440.0, 1080.0)
+
+
+def test_events_interleaved_with_responses_never_desync_the_dialogue():
+    """Found live, not by these tests — which is why the fake now emits events.
+
+    obs-websocket multiplexes events onto the request socket. Taking "the next
+    message" as the answer made GetInputList come back empty for a scene that
+    plainly held the input, so creation tried to make a source that already
+    existed and OBS refused it (code 601). Every request after such an event
+    was reading the previous one's answer.
+    """
+    ws = FakeWs(events=True)
+    assert sync(ws, width=1440, height=1080, allow_scene_requests=True) is True
+    # The canvas really changed, and the right item was fitted — neither is
+    # true if the answers are read one message late.
+    assert "SetVideoSettings" in ws.kinds()
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [2]
+
+
+def test_no_events_are_subscribed_to_in_the_first_place():
+    """The loop above is the belt; this is the braces. Nothing here consumes
+    OBS events, so the identify handshake asks for none."""
+    sent = {}
+
+    class Recorder:
+        def __init__(self):
+            self._step = 0
+
+        def send(self, raw):
+            msg = json.loads(raw)
+            if msg.get("op") == 1:
+                sent.update(msg["d"])
+
+        def recv(self):
+            self._step += 1
+            if self._step == 1:
+                return json.dumps({"op": 0, "d": {}})
+            if self._step == 2:
+                return json.dumps({"op": 2, "d": {}})
+            return json.dumps({
+                "op": 7,
+                "d": {"requestId": "phonecam-liveness",
+                      "requestStatus": {"result": True}, "responseData": {}},
+            })
+
+        def close(self):
+            pass
+
+    import pc_receiver.obs_sync as module
+
+    recorder = Recorder()
+    module.websocket = None  # not used: create_connection is patched below
+    import types
+    fake_ws_module = types.SimpleNamespace(create_connection=lambda url, timeout: recorder)
+    import sys
+    sys.modules["websocket"] = fake_ws_module
+    try:
+        module.open_connection(4455, "pw")
+    finally:
+        sys.modules.pop("websocket", None)
+
+    assert sent.get("eventSubscriptions") == 0
+
+
+def test_nothing_is_created_when_scene_requests_are_not_allowed():
+    """The Hello path used to run with scene requests off; creation must ride
+    the same gate as the fit, never happen behind it."""
+    ws = FakeWs(scene_items=[])
+    sync(ws, allow_scene_requests=False)
+    assert "CreateInput" not in ws.kinds()
+
+
+def test_framecast_wins_over_the_legacy_phonecam_name():
+    """Both names in one scene: the rebrand name is the one fitted, and the
+    legacy item is left untouched."""
+    ws = FakeWs(scene_items=[
+        {"sourceName": "PhoneCam", "sceneItemId": 1},
+        {"sourceName": "FrameCast", "sceneItemId": 2},
+    ])
+    sync(ws, allow_scene_requests=True)
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [2]
+
+
+def test_the_framecast_name_matches_case_insensitively():
+    ws = FakeWs(scene_items=[{"sourceName": "framecast", "sceneItemId": 4}])
+    sync(ws, allow_scene_requests=True)
+    assert [t["sceneItemId"] for t in _transforms(ws)] == [4]
 
 
 def test_the_source_name_is_configurable(monkeypatch):

@@ -1,10 +1,13 @@
-numpy
-opencv-python-headless
-pyvirtualcam
-av
-websocket-client
-pytest
+# Pinned to the exact versions the 0.0.14 release was tested with
+# (Python 3.11 on Windows). Bump deliberately, with a test run — not by
+# accident on a user's machine the day a new major release ships.
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
+pyvirtualcam==0.15.0
+av==18.0.0
+websocket-client==1.9.0
+pytest==9.1.1
 # Audio output (PortAudio). Only the --audio-sink device path imports it, so
 # a receiver running video-only, or writing audio to a .wav, still works
 # without it — see pc_receiver/audio_sinks.py.
-sounddevice
+sounddevice==0.5.5

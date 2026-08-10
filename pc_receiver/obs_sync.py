@@ -80,30 +80,226 @@ def _compute_auth(password: str, salt: str, challenge: str) -> str:
     return base64.b64encode(hashlib.sha256((secret + challenge).encode()).digest()).decode()
 
 
+# How many messages to skip while looking for one request's answer. Events
+# arrive in bursts (a scene switch emits several), but any number this large
+# means the socket is not answering us at all.
+_MAX_MESSAGES_PER_REQUEST = 50
+
+
 def _request(ws, request_type: str, request_id: str, data: dict) -> dict:
     """One obs-websocket request/response round trip, returning its
-    requestStatus. Every caller here treats a rejection as non-fatal."""
+    requestStatus. Every caller here treats a rejection as non-fatal.
+
+    Reading until the matching answer, rather than taking the next message,
+    is load-bearing: obs-websocket multiplexes *events* onto the same socket,
+    so `recv()` can hand back an InputActiveStateChanged (or any of a dozen
+    others) instead of the response. Every later request then reads the
+    previous one's answer, and the whole conversation is off by one.
+
+    Confirmed live: GetInputList came back empty for a scene that plainly
+    contained the input, which made the source-creation logic try to create
+    one that already existed. [open_connection] now also asks for no events at
+    all, which removes the cause; this loop is what keeps a stray message from
+    ever being mistaken for an answer again.
+    """
     ws.send(json.dumps({
         "op": 6,
         "d": {"requestType": request_type, "requestId": request_id, "requestData": data},
     }))
-    try:
-        return json.loads(ws.recv()).get("d", {}) or {}
-    except Exception:
-        return {}
+    for _ in range(_MAX_MESSAGES_PER_REQUEST):
+        try:
+            message = json.loads(ws.recv())
+        except Exception:
+            return {}
+        if message.get("op") == 5:          # an event, never an answer
+            continue
+        payload = message.get("d") or {}
+        # None covers test doubles and any build that omits the echo; a
+        # different id is a late answer to a request that already gave up.
+        if payload.get("requestId") not in (None, request_id):
+            continue
+        return payload
+    log.warning("obs_sync: no answer to %s after %d messages", request_type,
+                _MAX_MESSAGES_PER_REQUEST)
+    return {}
 
 
-DEFAULT_SOURCE_NAME = "PhoneCam"
+DEFAULT_SOURCE_NAME = "FrameCast"
+# The app's name before the FrameCast rebrand. Still accepted so a scene set
+# up against an older build keeps working untouched; FrameCast wins when a
+# scene somehow has both.
+LEGACY_SOURCE_NAME = "PhoneCam"
 
 
-def source_name() -> str:
-    """The exact OBS scene-item name this module is allowed to reshape.
+def source_names() -> tuple:
+    """The exact OBS scene-item names this module is allowed to reshape, in
+    preference order.
 
     Overridable with PHONECAM_OBS_SOURCE for anyone who has already named
-    their source something else and would rather configure than rename.
+    their source something else and would rather configure than rename — and
+    an explicit override is exclusive: it names *the* source, so the built-in
+    defaults stop applying.
     """
     configured = os.environ.get("PHONECAM_OBS_SOURCE", "").strip()
-    return configured or DEFAULT_SOURCE_NAME
+    if configured:
+        return (configured,)
+    return (DEFAULT_SOURCE_NAME, LEGACY_SOURCE_NAME)
+
+
+# Video-capture input kinds, per platform, mapped to the settings key that
+# holds the chosen device. Asked of OBS (GetInputKindList) rather than
+# assumed, so an OBS build without the expected kind degrades to "cannot
+# create it" instead of creating a broken source.
+_CAPTURE_KINDS = {
+    "dshow_input": "video_device_id",        # Windows
+    "v4l2_input": "device_id",               # Linux
+    "av_capture_input_v2": "device",         # macOS
+    "av_capture_input": "device",
+}
+
+# How OBS names its own virtual-camera device in that list. The Windows
+# DirectShow filter is registered by the OBS installer, so it is present
+# whether or not the virtual camera has ever been started — matched
+# case-insensitively, and the legacy obs-virtualcam plugin's name too.
+_VIRTUAL_CAMERA_HINTS = ("obs virtual camera", "obs-camera", "obs virtualcam")
+
+
+def _current_scene(ws) -> Optional[str]:
+    """The current program scene, via GetSceneList.
+
+    Never GetCurrentProgramScene: that request crashed OBS 32.2.1 with an
+    access violation in three separate reports — see [_fit_phonecam_source].
+    """
+    status = _request(ws, "GetSceneList", "phonecam-scene", {})
+    return (status.get("responseData") or {}).get("currentProgramSceneName")
+
+
+def _find_scene_item(ws, scene: str, wanted_names) -> Optional[dict]:
+    """The scene item matching one of [wanted_names], preferring the order
+    given (so FrameCast wins over the legacy PhoneCam when a scene has both).
+    Matching is case-insensitive but never a substring — see
+    [_fit_phonecam_source] for the webcam-eating bug that rule exists for."""
+    status = _request(ws, "GetSceneItemList", "phonecam-items", {"sceneName": scene})
+    items = (status.get("responseData") or {}).get("sceneItems") or []
+    by_folded_name: dict = {}
+    for item in items:
+        by_folded_name.setdefault(str(item.get("sourceName", "")).casefold(), item)
+    for wanted in wanted_names:
+        found = by_folded_name.get(wanted.casefold())
+        if found is not None:
+            return found
+    return None
+
+
+def _capture_kind(ws) -> Optional[tuple]:
+    status = _request(ws, "GetInputKindList", "phonecam-kinds", {})
+    kinds = (status.get("responseData") or {}).get("inputKinds") or []
+    for kind, device_key in _CAPTURE_KINDS.items():
+        if kind in kinds:
+            return kind, device_key
+    return None
+
+
+def _select_virtual_camera(ws, input_name: str, device_key: str) -> None:
+    """Points a freshly created capture input at OBS's virtual camera.
+
+    Done after creation rather than during it because the device *value* is a
+    machine-specific DirectShow moniker, not a name — it can only be read from
+    the input's own property list, which requires the input to exist.
+
+    Best-effort by design: a source that exists with the right name but no
+    device still lets the canvas/fit logic work, and the user only has to pick
+    a device from a dropdown. Silently creating nothing at all would be worse.
+    """
+    status = _request(ws, "GetInputPropertiesListPropertyItems", "phonecam-devices", {
+        "inputName": input_name,
+        "propertyName": device_key,
+    })
+    items = (status.get("responseData") or {}).get("propertyItems") or []
+    for item in items:
+        name = str(item.get("itemName", ""))
+        if any(hint in name.casefold() for hint in _VIRTUAL_CAMERA_HINTS):
+            _request(ws, "SetInputSettings", "phonecam-setdevice", {
+                "inputName": input_name,
+                "inputSettings": {device_key: item.get("itemValue")},
+                "overlay": True,
+            })
+            log.info("obs_sync: pointed '%s' at OBS's virtual camera (%s)", input_name, name)
+            return
+    log.warning(
+        "obs_sync: created '%s' but found no OBS Virtual Camera device to point it at. "
+        "Devices offered: %s. Pick one in OBS (double-click the source) — and if the list "
+        "is empty, start OBS's Virtual Camera once so Windows registers it.",
+        input_name, [str(i.get("itemName", "")) for i in items] or "none",
+    )
+
+
+def ensure_source(ws, scene: str) -> Optional[dict]:
+    """Creates FrameCast's own capture source in [scene] if it isn't there,
+    and returns its scene item (or None if it could not be created).
+
+    This exists because the auto-fit is deliberately name-exact: it only ever
+    touches a source called FrameCast, so that it can never rewrite the
+    transform of somebody's webcam or capture card. That safety rule put the
+    burden of naming on the user — "it only works if you name it exactly
+    FrameCast" is a setup step people get wrong. Creating it here removes the
+    step instead of relaxing the rule.
+
+    Three cases, and only the first one creates anything new:
+      - no input by that name anywhere -> CreateInput in this scene;
+      - the input exists in another scene -> CreateSceneItem, because input
+        names are global in OBS and CreateInput would fail on the conflict;
+      - already in this scene -> the caller never gets here.
+    """
+    wanted = source_names()[0]
+
+    inputs = (_request(ws, "GetInputList", "phonecam-inputs", {})
+              .get("responseData") or {}).get("inputs") or []
+    already_exists = any(
+        str(i.get("inputName", "")).casefold() == wanted.casefold() for i in inputs
+    )
+
+    if already_exists:
+        log.info("obs_sync: adding the existing '%s' source to scene '%s'", wanted, scene)
+        status = _request(ws, "CreateSceneItem", "phonecam-additem", {
+            "sceneName": scene,
+            "sourceName": wanted,
+            "sceneItemEnabled": True,
+        })
+    else:
+        kind = _capture_kind(ws)
+        if kind is None:
+            log.warning(
+                "obs_sync: this OBS has no video-capture input kind we know of — "
+                "cannot create the '%s' source automatically", wanted,
+            )
+            return None
+        input_kind, device_key = kind
+        log.info(
+            "obs_sync: creating the '%s' capture source in scene '%s' (%s)",
+            wanted, scene, input_kind,
+        )
+        status = _request(ws, "CreateInput", "phonecam-createinput", {
+            "sceneName": scene,
+            "inputName": wanted,
+            "inputKind": input_kind,
+            "inputSettings": {},
+            "sceneItemEnabled": True,
+        })
+        if (status.get("requestStatus") or {}).get("result"):
+            _select_virtual_camera(ws, wanted, device_key)
+
+    if not (status.get("requestStatus") or {}).get("result"):
+        log.warning(
+            "obs_sync: could not create the '%s' source: %s",
+            wanted, (status.get("requestStatus") or {}).get("comment"),
+        )
+        return None
+
+    # Re-queried rather than read out of the create response: it keeps this
+    # working across obs-websocket versions that answer CreateSceneItem and
+    # CreateInput with different shapes, and proves the item is really there.
+    return _find_scene_item(ws, scene, (wanted,))
 
 
 def _fit_phonecam_source(ws, width: int, height: int) -> None:
@@ -156,49 +352,52 @@ def _fit_phonecam_source(ws, width: int, height: int) -> None:
     Best-effort throughout: if the scene or the source can't be found, the rest
     of the sync is still worth doing.
     """
-    wanted = source_name()
+    wanted_names = source_names()
 
-    scene_status = _request(ws, "GetSceneList", "phonecam-scene", {})
-    scene = (scene_status.get("responseData") or {}).get("currentProgramSceneName")
+    scene = _current_scene(ws)
     if not scene:
         return
 
-    items_status = _request(ws, "GetSceneItemList", "phonecam-items", {"sceneName": scene})
-    items = (items_status.get("responseData") or {}).get("sceneItems") or []
-    for item in items:
-        name = str(item.get("sourceName", ""))
-        if name.casefold() != wanted.casefold():
-            continue
-        _request(ws, "SetSceneItemTransform", "phonecam-fit", {
-            "sceneName": scene,
-            "sceneItemId": item.get("sceneItemId"),
-            "sceneItemTransform": {
-                "boundsType": "OBS_BOUNDS_SCALE_INNER",
-                # 0 is OBS_ALIGN_CENTER: the source is centred inside its
-                # bounding box, so a composition narrower or shorter than the
-                # canvas letterboxes evenly instead of hugging one edge.
-                "boundsAlignment": 0,
-                "boundsWidth": float(width),
-                "boundsHeight": float(height),
-                # The bounding box itself is pinned to the canvas origin, which
-                # is only where it looks if the item's *position* alignment is
-                # top-left. An item left on centre alignment would put the box's
-                # centre at (0,0) and hang three quarters of it off-canvas, so
-                # the alignment is set here rather than inherited.
-                "alignment": 5,  # OBS_ALIGN_LEFT | OBS_ALIGN_TOP
-                "positionX": 0.0,
-                "positionY": 0.0,
-            },
-        })
-        log.info(
-            "obs_sync: fitted scene item '%s' to %sx%s without stretching", name, width, height,
+    item = _find_scene_item(ws, scene, wanted_names)
+    if item is None:
+        # Not there — so put it there. See [ensure_source]: the exact-name rule
+        # is what keeps this from ever touching somebody else's webcam, and
+        # creating the source ourselves is what stops that safety rule from
+        # becoming a setup step the user has to get right by hand.
+        item = ensure_source(ws, scene)
+    if item is None:
+        log.warning(
+            "obs_sync: no scene item named '%s' in scene '%s', and it could not be created "
+            "— leaving every source alone. Add a Video Capture Device source named '%s' "
+            "(or set PHONECAM_OBS_SOURCE to the name of the one you have).",
+            wanted_names[0], scene, wanted_names[0],
         )
         return
 
-    log.warning(
-        "obs_sync: no scene item named '%s' in scene '%s' — leaving every source alone. "
-        "Found: %s. Rename PhoneCam's source to '%s', or set PHONECAM_OBS_SOURCE to its name.",
-        wanted, scene, [str(i.get("sourceName", "")) for i in items] or "nothing", wanted,
+    name = str(item.get("sourceName", ""))
+    _request(ws, "SetSceneItemTransform", "phonecam-fit", {
+        "sceneName": scene,
+        "sceneItemId": item.get("sceneItemId"),
+        "sceneItemTransform": {
+            "boundsType": "OBS_BOUNDS_SCALE_INNER",
+            # 0 is OBS_ALIGN_CENTER: the source is centred inside its
+            # bounding box, so a composition narrower or shorter than the
+            # canvas letterboxes evenly instead of hugging one edge.
+            "boundsAlignment": 0,
+            "boundsWidth": float(width),
+            "boundsHeight": float(height),
+            # The bounding box itself is pinned to the canvas origin, which
+            # is only where it looks if the item's *position* alignment is
+            # top-left. An item left on centre alignment would put the box's
+            # centre at (0,0) and hang three quarters of it off-canvas, so
+            # the alignment is set here rather than inherited.
+            "alignment": 5,  # OBS_ALIGN_LEFT | OBS_ALIGN_TOP
+            "positionX": 0.0,
+            "positionY": 0.0,
+        },
+    })
+    log.info(
+        "obs_sync: fitted scene item '%s' to %sx%s without stretching", name, width, height,
     )
 
 
@@ -603,7 +802,30 @@ def sync_video_settings(
             # requests_allowed) opt in; the Hello path never does, because a
             # stream starting is exactly when OBS may have just been launched.
             if allow_scene_requests:
-                _fit_phonecam_source(ws, width, height)
+                # Fit to the canvas that is ACTUALLY in effect, never to the
+                # one we asked for. The two differ whenever the reset above
+                # was skipped or deferred — and "an output is running" is not
+                # a rare state, it is the normal one the moment the user
+                # starts OBS's own virtual camera. Sizing the source for a
+                # canvas that does not exist yet is what put it off-canvas:
+                # reported as "bigger than the frame and shifted left", with
+                # the frames themselves pixel-perfect.
+                #
+                # One extra read-only request, and it cannot be wrong by
+                # construction. When the deferred change does land later,
+                # replay_pending runs this same path again with the canvas
+                # it just applied.
+                applied = _current_canvas(ws)
+                if applied is not None and (applied[0], applied[1]) != (width, height):
+                    log.info(
+                        "obs_sync: fitting to the canvas actually in effect (%sx%s), "
+                        "not the requested %sx%s",
+                        applied[0], applied[1], width, height,
+                    )
+                fit_width, fit_height = (
+                    (applied[0], applied[1]) if applied is not None else (width, height)
+                )
+                _fit_phonecam_source(ws, fit_width, fit_height)
 
             log.info(
                 "obs_sync: synced canvas=%sx%s@%sfps video=%skbps audio=%skbps rate=%sHz",
@@ -645,7 +867,10 @@ def open_connection(port: int, password: str):
     try:
         hello = json.loads(ws.recv())
         auth_info = hello.get("d", {}).get("authentication")
-        identify: dict = {"op": 1, "d": {"rpcVersion": 1}}
+        # eventSubscriptions 0: nothing here consumes OBS events, and leaving
+        # the default (all of them) meant they interleaved with responses on
+        # this same socket — see _request for the desync that caused.
+        identify: dict = {"op": 1, "d": {"rpcVersion": 1, "eventSubscriptions": 0}}
         if auth_info:
             identify["d"]["authentication"] = _compute_auth(
                 password, auth_info["salt"], auth_info["challenge"],

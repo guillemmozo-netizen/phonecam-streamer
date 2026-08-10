@@ -284,3 +284,107 @@ def test_a_client_that_never_sends_a_hello_is_dropped(monkeypatch):
 
     client_sock.close()
     server_sock.close()
+
+
+# ─────────── a permanently slow consumer must degrade, not go black ───────────
+
+class _CountingSink:
+    preferred_frame_format = "rgb"
+
+    def __init__(self) -> None:
+        self.frames = 0
+
+    def send(self, frame, fps: int) -> None:
+        self.frames += 1
+
+    def close(self) -> None:
+        pass
+
+
+class _SlowDecoderStats:
+    backend = "fake"
+    decode_avg_ms = 0.0
+    convert_avg_ms = 0.0
+
+
+class _SlowDecoder:
+    """Stands in for 8K: decode+convert costs more than the frame interval,
+    so the receive loop itself falls permanently behind the arrivals."""
+
+    frame_format = "rgb"
+
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+    def decode(self, payload):
+        time.sleep(0.05)
+        return [np.zeros((48, 64, 3), dtype=np.uint8)]
+
+    def flush(self):
+        return []
+
+    def close(self) -> None:
+        pass
+
+    def pop_stage_stats(self):
+        return _SlowDecoderStats()
+
+
+def _run_against_a_slow_decoder(monkeypatch):
+    import pc_receiver.receiver as rx
+
+    monkeypatch.setattr(rx, "H264Decoder", _SlowDecoder)
+    packets = [b"\x00\x00\x00\x01\x65" + bytes(200)] * 30
+    sink = _CountingSink()
+    server_sock, client_sock = socket.socketpair()
+    hello = Hello(width=64, height=48, fps=30, quality="1080p60",
+                  watermark=False, codec="h264")
+
+    def sender():
+        send_hello(client_sock, hello)
+        # Pushed as fast as the socket takes them, so the reader always has a
+        # deep backlog behind whatever the slow decoder is working on.
+        for packet in packets:
+            send_message(client_sock, packet)
+        client_sock.close()
+
+    thread = threading.Thread(target=sender)
+    thread.start()
+    try:
+        handle_connection(server_sock, sink, max_frames=len(packets),
+                          audio_options=AudioOptions(sink="none"))
+    finally:
+        thread.join(timeout=10)
+        server_sock.close()
+    return sink.frames
+
+
+def test_a_consumer_that_can_never_catch_up_still_shows_frames(monkeypatch):
+    """The 8K black-screen bug.
+
+    Skipping backlogged frames assumes the backlog is transient. When the
+    consumer is permanently slower than the producer every frame looks
+    stale, so every frame was skipped and the virtual camera showed nothing
+    at all — measured live on an 8K30 session as `shown=0.0fps` with
+    `backlog_max=21`, while the stream itself decoded perfectly. Degrading to
+    a lower frame rate is the correct outcome; degrading to black is not.
+    """
+    assert _run_against_a_slow_decoder(monkeypatch) > 0
+
+
+def test_without_the_floor_the_picture_all_but_stops(monkeypatch):
+    """Pins that the test above is testing the fix and not the weather.
+
+    With the floor disabled only the handful of frames that arrive before
+    the backlog builds are ever shown — measured here as 2 out of 30, and in
+    the wild as a virtual camera frozen on one picture for a whole session.
+    The floor turns the same run into several times that.
+    """
+    import pc_receiver.receiver as rx
+
+    monkeypatch.setattr(rx, "MAX_SECONDS_WITHOUT_A_SHOWN_FRAME", 10_000)
+    starved = _run_against_a_slow_decoder(monkeypatch)
+    monkeypatch.undo()
+    healthy = _run_against_a_slow_decoder(monkeypatch)
+    assert starved <= 3
+    assert healthy >= starved * 3

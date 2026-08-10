@@ -1,8 +1,8 @@
 @echo off
-title PhoneCam PC Services
+title FrameCast PC Services
 echo.
 echo   ==========================================
-echo          PhoneCam Control Server
+echo          FrameCast Control Server
 echo   ==========================================
 echo.
 echo   Services start automatically now - no

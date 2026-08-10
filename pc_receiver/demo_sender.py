@@ -72,7 +72,7 @@ def build_synthetic_frame(width: int, height: int, frame_index: int) -> np.ndarr
     return frame
 
 
-def apply_watermark(frame: np.ndarray, text: str = "PhoneCam Streamer - FREE") -> np.ndarray:
+def apply_watermark(frame: np.ndarray, text: str = "FrameCast - FREE") -> np.ndarray:
     """Burns a small watermark into the bottom-right corner, in place-safe."""
     out = frame.copy()
     height, width = out.shape[:2]

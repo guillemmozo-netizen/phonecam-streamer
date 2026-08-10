@@ -83,7 +83,7 @@ class PreviewWindowSink:
     paid only by this debug-only path instead of the real virtualcam one.
     """
 
-    def __init__(self, window_name: str = "PhoneCam Streamer - Preview") -> None:
+    def __init__(self, window_name: str = "FrameCast - Preview") -> None:
         self._window_name = window_name
         self._opened = False
 
@@ -166,7 +166,27 @@ class VirtualCamSink:
         if self._cam is None or self._cam.width != width or self._cam.height != height:
             if self._cam is not None:
                 self._cam.close()
-            self._cam = pyvirtualcam.Camera(width=width, height=height, fps=fps, fmt=pixel_format)
+            try:
+                self._cam = pyvirtualcam.Camera(
+                    width=width, height=height, fps=fps, fmt=pixel_format,
+                )
+            except Exception as e:
+                # pyvirtualcam's own message says only "virtual camera output
+                # could not be started", which is true of a dozen different
+                # causes and names none of them. The size is the one fact that
+                # turns it into something actionable — and measured on the
+                # reference PC, asking for a size the OBS virtual camera
+                # cannot start (7680x4320) leaves it unable to start at ANY
+                # size, including ones that worked a minute earlier, until OBS
+                # is restarted. Someone reading this line at 2am should not
+                # have to rediscover that.
+                raise RuntimeError(
+                    f"the virtual camera could not be started at {width}x{height} "
+                    f"({pixel_format}). If this size is unusually large, that is the "
+                    f"likely reason; note that a refused size can leave OBS's virtual "
+                    f"camera broken for every size until OBS is restarted. "
+                    f"Original error: {e}"
+                ) from e
 
         # No cv2.cvtColor here — the decoder now hands us RGB directly (see
         # H264Decoder.decode's doc), which is exactly what pyvirtualcam

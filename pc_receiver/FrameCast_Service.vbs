@@ -1,8 +1,12 @@
-' Always-hidden lifecycle watcher for control_server.py: waits until OBS is
-' running before starting PhoneCam, and stops it again once OBS closes, so
-' nothing sits bound to network ports or polling `adb devices` unless OBS
-' is actually open. Used by the Windows Startup shortcut and by the
-' installer's "launch now" step - never shows a console window itself.
+' Always-hidden lifecycle keeper for control_server.py: starts it the moment
+' this runs (login, via the Startup shortcut, or the installer's "launch now"
+' step) and restarts it if it ever dies, so the PC is ready to receive a
+' stream from the first second after boot - no OBS required, no window ever.
+'
+' It used to wait for OBS and stop the server when OBS closed; that traded
+' readiness for tidiness. The services are idle-cheap (a few sockets and a
+' 2-second adb poll), and "plug in and it just works, instantly" is the
+' behaviour a user can trust - so always-on won.
 Option Explicit
 
 Dim fso, shell, wmi, appDir, projectRoot, pyExe, controlServerPid
@@ -43,7 +47,7 @@ Function WatcherCount()
     On Error Resume Next
     Set procs = wmi.ExecQuery("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='wscript.exe'")
     For Each p In procs
-        If InStr(1, p.CommandLine & "", "PhoneCam_Service.vbs", vbTextCompare) > 0 Then
+        If InStr(1, p.CommandLine & "", "FrameCast_Service.vbs", vbTextCompare) > 0 Then
             n = n + 1
         End If
     Next
@@ -58,7 +62,7 @@ On Error Resume Next
 Set lockFile = fso.CreateTextFile(lockPath, False)
 If Err.Number = 0 Then
     gotLock = True
-    lockFile.WriteLine "PhoneCam watcher"
+    lockFile.WriteLine "FrameCast watcher"
     lockFile.Close
 End If
 Err.Clear
@@ -84,10 +88,17 @@ Else
     pyExe = "pythonw.exe"
 End If
 
-Function IsObsRunning()
+' The restart check: PID still alive? Asked of WMI each cycle because the
+' server can die for reasons this script never sees (crash, taskkill, an
+' update replacing files under it).
+Function ProcessAlive(pid)
     Dim procs
-    Set procs = wmi.ExecQuery("SELECT Name FROM Win32_Process WHERE Name='obs64.exe' OR Name='obs32.exe'")
-    IsObsRunning = (procs.Count > 0)
+    If pid = 0 Then
+        ProcessAlive = False
+        Exit Function
+    End If
+    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & pid)
+    ProcessAlive = (procs.Count > 0)
 End Function
 
 ' Launches control_server.py hidden (as before) and hands back its PID by
@@ -122,21 +133,10 @@ Function StartControlServer()
     StartControlServer = 0
 End Function
 
-' /T kills the whole process tree (control_server + the discovery/speed_test/
-' receiver children it spawned), not just the top-level pid.
-Sub StopControlServer(pid)
-    If pid <> 0 Then
-        shell.Run "taskkill /PID " & pid & " /T /F", 0, True
-    End If
-End Sub
-
 controlServerPid = 0
 Do While True
-    If IsObsRunning() And controlServerPid = 0 Then
+    If Not ProcessAlive(controlServerPid) Then
         controlServerPid = StartControlServer()
-    ElseIf (Not IsObsRunning()) And controlServerPid <> 0 Then
-        StopControlServer controlServerPid
-        controlServerPid = 0
     End If
     WScript.Sleep 3000
 Loop

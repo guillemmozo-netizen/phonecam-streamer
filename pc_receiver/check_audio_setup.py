@@ -2,7 +2,7 @@
 
 Two jobs, one script:
 
-  * Run by Install_PhoneCam.vbs, which uses the exit code to decide what to
+  * Run by Install_FrameCast.vbs, which uses the exit code to decide what to
     tell the user — the same pattern enable_obs_websocket.py already follows.
   * Run by hand as a diagnostic when audio isn't showing up:
 

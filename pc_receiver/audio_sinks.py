@@ -460,7 +460,7 @@ def create_audio_sink(
 
     Playing into the default output device sounds like a friendly fallback
     and is not. This receiver auto-starts as a background service whenever
-    OBS opens (see Install_PhoneCam.vbs), so that fallback means: the moment
+    OBS opens (see Install_FrameCast.vbs), so that fallback means: the moment
     a user streams, their phone's microphone starts coming out of their PC's
     speakers, into their phone's microphone, out of their speakers. A
     feedback loop nobody asked for, from a service they did not knowingly
