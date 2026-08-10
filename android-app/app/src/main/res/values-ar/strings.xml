@@ -260,4 +260,6 @@
     <string name="settings_download_pc">تنزيل مثبّت الكمبيوتر</string>
     <string name="screen_capture_stop">إيقاف</string>
     <string name="screen_notification_denied">بدون الإشعارات يمكنك إيقاف البث من داخل التطبيق فقط</string>
+    <string name="settings_download_pc_mirror">نسخة على Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(قد ينبّه Drive إلى ملف مشبوه)</string>
 </resources>

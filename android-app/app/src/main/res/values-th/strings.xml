@@ -255,4 +255,6 @@
     <string name="settings_download_pc">ดาวน์โหลดตัวติดตั้งสำหรับ PC</string>
     <string name="screen_capture_stop">หยุด</string>
     <string name="screen_notification_denied">หากไม่มีการแจ้งเตือน คุณจะหยุดการส่งภาพได้จากในแอปเท่านั้น</string>
+    <string name="settings_download_pc_mirror">มิเรอร์บน Google ไดรฟ์</string>
+    <string name="settings_download_pc_mirror_hint">(ไดรฟ์อาจเตือนว่าเป็นไฟล์ที่น่าสงสัย)</string>
 </resources>

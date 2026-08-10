@@ -255,4 +255,6 @@
     <string name="settings_download_pc">PC 설치 프로그램 다운로드</string>
     <string name="screen_capture_stop">중지</string>
     <string name="screen_notification_denied">알림이 없으면 앱 안에서만 송출을 중지할 수 있습니다</string>
+    <string name="settings_download_pc_mirror">Google Drive 미러</string>
+    <string name="settings_download_pc_mirror_hint">(Drive가 의심스러운 파일이라고 경고할 수 있습니다)</string>
 </resources>

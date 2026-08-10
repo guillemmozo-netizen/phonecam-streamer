@@ -259,4 +259,6 @@
     <string name="settings_download_pc">Descarregar l\'instal·lador de PC</string>
     <string name="screen_capture_stop">Aturar</string>
     <string name="screen_notification_denied">Sense notificacions només podràs aturar l\'emissió des de dins de l\'app</string>
+    <string name="settings_download_pc_mirror">Mirall a Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive pot avisar de fitxer sospitós)</string>
 </resources>

@@ -259,4 +259,6 @@
     <string name="settings_download_pc">Descargar el instalador de PC</string>
     <string name="screen_capture_stop">Detener</string>
     <string name="screen_notification_denied">Sin notificaciones solo podrás detener la emisión desde dentro de la app</string>
+    <string name="settings_download_pc_mirror">Espejo en Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive puede avisar de archivo sospechoso)</string>
 </resources>

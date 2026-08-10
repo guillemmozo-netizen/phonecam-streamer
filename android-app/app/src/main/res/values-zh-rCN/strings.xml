@@ -255,4 +255,6 @@
     <string name="settings_download_pc">下载 PC 安装程序</string>
     <string name="screen_capture_stop">停止</string>
     <string name="screen_notification_denied">没有通知时，只能在应用内停止投送</string>
+    <string name="settings_download_pc_mirror">Google 云端硬盘镜像</string>
+    <string name="settings_download_pc_mirror_hint">（云端硬盘可能提示文件可疑）</string>
 </resources>

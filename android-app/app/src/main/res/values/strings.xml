@@ -197,10 +197,19 @@
     <!-- Camera2 diagnostics screen -->
     <!-- PC installer download (the app ships via Play Store; the PC half
          lives in Drive). URL is identity, not language. -->
-    <string name="pc_installer_url" translatable="false">https://drive.google.com/drive/folders/1Uy3r4a3Cvu92tKXb8zG2lDyv_xjlIYvx</string>
+    <!-- GitHub first, and it is a "latest" URL on purpose: it keeps working
+         when a new installer is released, so shipping a new app build is
+         never needed just to move a download. Drive shows a "suspicious
+         file" warning on any archive containing an executable (ours has the
+         installer launcher), which GitHub does not — hence the order, and
+         hence Drive staying as a mirror rather than disappearing. -->
+    <string name="pc_installer_url" translatable="false">https://github.com/guillemmozo-netizen/framecast-pc/releases/latest/download/FrameCast_PC_Setup.zip</string>
+    <string name="pc_installer_mirror_url" translatable="false">https://drive.google.com/file/d/1iYh-SeYW03TMDIvDy5N87ujk4W3QcXVd/view</string>
     <string name="settings_download_pc">Download the PC installer</string>
     <!-- A filename plus a brand — the same glyphs in every locale. -->
-    <string name="settings_download_pc_hint" translatable="false">FrameCast_PC_Setup.zip · Google Drive</string>
+    <string name="settings_download_pc_hint" translatable="false">FrameCast_PC_Setup.zip · GitHub</string>
+    <string name="settings_download_pc_mirror">Mirror on Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive may warn about a suspicious file)</string>
 
     <!-- Capture source (camera vs screen) -->
     <string name="source_camera">Camera</string>

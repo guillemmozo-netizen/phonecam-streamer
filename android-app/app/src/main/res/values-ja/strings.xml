@@ -255,4 +255,6 @@
     <string name="settings_download_pc">PC用インストーラーをダウンロード</string>
     <string name="screen_capture_stop">停止</string>
     <string name="screen_notification_denied">通知がないと、配信はアプリ内からしか停止できません</string>
+    <string name="settings_download_pc_mirror">Google ドライブのミラー</string>
+    <string name="settings_download_pc_mirror_hint">（ドライブが不審なファイルと警告する場合があります）</string>
 </resources>

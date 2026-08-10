@@ -256,4 +256,6 @@
     <string name="settings_download_pc">PC इंस्टॉलर डाउनलोड करें</string>
     <string name="screen_capture_stop">रोकें</string>
     <string name="screen_notification_denied">सूचनाओं के बिना आप कास्ट केवल ऐप के अंदर से रोक सकेंगे</string>
+    <string name="settings_download_pc_mirror">Google Drive पर मिरर</string>
+    <string name="settings_download_pc_mirror_hint">(Drive संदिग्ध फ़ाइल की चेतावनी दे सकता है)</string>
 </resources>

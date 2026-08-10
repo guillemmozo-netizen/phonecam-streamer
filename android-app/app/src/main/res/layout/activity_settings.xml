@@ -944,6 +944,33 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
+                <!-- Second source for the same file. Two hosts because either
+                     can be unreachable, and because Drive warns about the
+                     archive while GitHub does not — the hint says so rather
+                     than letting the warning ambush the user. -->
+                <LinearLayout
+                    android:id="@+id/downloadPcMirrorRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:paddingVertical="8dp"
+                    android:layout_marginBottom="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_download_pc_mirror"
+                        android:textColor="#0A84FF"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif-medium" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_download_pc_mirror_hint"
+                        android:textColor="@color/text_tertiary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <!-- Status indicator -->
                 <LinearLayout
                     android:layout_width="match_parent"

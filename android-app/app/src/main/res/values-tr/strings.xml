@@ -256,4 +256,6 @@
     <string name="settings_download_pc">PC yükleyicisini indir</string>
     <string name="screen_capture_stop">Durdur</string>
     <string name="screen_notification_denied">Bildirimler olmadan yayını yalnızca uygulama içinden durdurabilirsiniz</string>
+    <string name="settings_download_pc_mirror">Google Drive yansısı</string>
+    <string name="settings_download_pc_mirror_hint">(Drive şüpheli dosya uyarısı verebilir)</string>
 </resources>

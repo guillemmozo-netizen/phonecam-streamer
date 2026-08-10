@@ -255,4 +255,6 @@
     <string name="settings_download_pc">Tải trình cài đặt cho PC</string>
     <string name="screen_capture_stop">Dừng</string>
     <string name="screen_notification_denied">Không có thông báo, bạn chỉ có thể dừng phát từ trong ứng dụng</string>
+    <string name="settings_download_pc_mirror">Bản sao trên Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive có thể cảnh báo tệp đáng ngờ)</string>
 </resources>

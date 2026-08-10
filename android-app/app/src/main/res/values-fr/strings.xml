@@ -257,4 +257,6 @@
     <string name="settings_download_pc">Télécharger l\'installateur PC</string>
     <string name="screen_capture_stop">Arrêter</string>
     <string name="screen_notification_denied">Sans notifications, vous ne pourrez arrêter la diffusion que dans l\'app</string>
+    <string name="settings_download_pc_mirror">Miroir sur Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive peut signaler un fichier suspect)</string>
 </resources>

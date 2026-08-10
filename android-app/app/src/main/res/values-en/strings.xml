@@ -256,4 +256,6 @@
     <string name="settings_download_pc">Download the PC installer</string>
     <string name="screen_capture_stop">Stop</string>
     <string name="screen_notification_denied">Without notifications you can only stop the cast from inside the app</string>
+    <string name="settings_download_pc_mirror">Mirror on Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive may warn about a suspicious file)</string>
 </resources>

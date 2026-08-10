@@ -257,4 +257,6 @@
     <string name="settings_download_pc">Baixar o instalador para PC</string>
     <string name="screen_capture_stop">Parar</string>
     <string name="screen_notification_denied">Sem notificações, você só poderá parar a transmissão dentro do app</string>
+    <string name="settings_download_pc_mirror">Espelho no Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(O Drive pode avisar sobre arquivo suspeito)</string>
 </resources>

@@ -256,4 +256,6 @@
     <string name="settings_download_pc">PC-Installer herunterladen</string>
     <string name="screen_capture_stop">Stoppen</string>
     <string name="screen_notification_denied">Ohne Benachrichtigungen kannst du die Übertragung nur in der App stoppen</string>
+    <string name="settings_download_pc_mirror">Spiegel auf Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive warnt eventuell vor einer verdächtigen Datei)</string>
 </resources>

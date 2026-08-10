@@ -255,4 +255,6 @@
     <string name="settings_download_pc">Unduh installer PC</string>
     <string name="screen_capture_stop">Hentikan</string>
     <string name="screen_notification_denied">Tanpa notifikasi, Anda hanya bisa menghentikan siaran dari dalam aplikasi</string>
+    <string name="settings_download_pc_mirror">Cermin di Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive mungkin memperingatkan file mencurigakan)</string>
 </resources>

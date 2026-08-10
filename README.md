@@ -56,7 +56,9 @@ propia app te lo indica al activarlo.
 **En el móvil:**
 1. Instala **FrameCast** desde **Google Play**.
 2. En la app: Ajustes → Control del PC → **"Descargar el instalador de PC"**
-   te lleva a este ZIP, por si aún no lo tienes en el ordenador.
+   te lleva a este ZIP (GitHub), por si aún no lo tienes en el ordenador.
+   Debajo hay un espejo en Google Drive; Drive avisa de “archivo
+   sospechoso” en cualquier ZIP con ejecutables, y basta con continuar.
 3. Para USB: activa **Depuración USB** (Ajustes → Información del teléfono →
    toca 7 veces "Número de compilación" → Opciones de desarrollador →
    Depuración USB).
@@ -204,7 +206,9 @@ you enable it.
 **On the phone:**
 1. Install **FrameCast** from **Google Play**.
 2. In the app: Settings → PC control → **"Download the PC installer"** takes
-   you to this ZIP, in case it is not on your computer yet.
+   you to this ZIP (GitHub), in case it is not on your computer yet. A Google
+   Drive mirror sits below it; Drive warns about a “suspicious file” for any
+   archive containing executables — continuing is safe.
 3. For USB: enable **USB debugging** (Settings → About phone → tap "Build
    number" 7 times → Developer options → USB debugging).
 

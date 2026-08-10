@@ -95,19 +95,13 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnStopPc.setOnClickListener { stopPcServices() }
         binding.btnRefreshPcStatus.setOnClickListener { checkPcStatus() }
         binding.btnAdbReverse.setOnClickListener { setupAdbReverse() }
+        // The PC half of the product: the app comes from the Play Store, the
+        // receiver from one of these two hosts (see the strings for why both).
         binding.downloadPcRow.setOnClickListener {
-            // The PC half of the product: the app comes from the Play Store,
-            // the receiver comes from this Drive folder.
-            try {
-                startActivity(
-                    Intent(
-                        Intent.ACTION_VIEW,
-                        android.net.Uri.parse(getString(R.string.pc_installer_url)),
-                    ),
-                )
-            } catch (e: Exception) {
-                AppToast.error(this, getString(R.string.pc_installer_url))
-            }
+            openLink(R.string.pc_installer_url)
+        }
+        binding.downloadPcMirrorRow.setOnClickListener {
+            openLink(R.string.pc_installer_mirror_url)
         }
         binding.btnSpeedTest.setOnClickListener { runSpeedTest() }
 
@@ -303,6 +297,17 @@ class SettingsActivity : AppCompatActivity() {
     /** Token fetched over USB pairing (MainActivity stores it on stream start).
      * The PC requires it for any control call arriving over Wi-Fi; loopback
      * ignores it, so passing it unconditionally is safe for the USB path. */
+    /** Hands a URL to whatever the user browses with; shows the address if
+     * this device somehow has nothing that can open one. */
+    private fun openLink(urlRes: Int) {
+        val url = getString(urlRes)
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            AppToast.error(this, url)
+        }
+    }
+
     private fun getPcToken(): String =
         getSharedPreferences("stream_settings", MODE_PRIVATE)
             .getString("pc_token", "").orEmpty()

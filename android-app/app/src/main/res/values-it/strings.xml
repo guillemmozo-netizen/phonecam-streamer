@@ -257,4 +257,6 @@
     <string name="settings_download_pc">Scarica l\'installer per PC</string>
     <string name="screen_capture_stop">Ferma</string>
     <string name="screen_notification_denied">Senza notifiche potrai fermare la trasmissione solo dall\'app</string>
+    <string name="settings_download_pc_mirror">Mirror su Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive può segnalare un file sospetto)</string>
 </resources>

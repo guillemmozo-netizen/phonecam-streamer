@@ -256,4 +256,6 @@
     <string name="settings_download_pc">Pc-installatieprogramma downloaden</string>
     <string name="screen_capture_stop">Stoppen</string>
     <string name="screen_notification_denied">Zonder meldingen kun je de uitzending alleen in de app stoppen</string>
+    <string name="settings_download_pc_mirror">Mirror op Google Drive</string>
+    <string name="settings_download_pc_mirror_hint">(Drive waarschuwt mogelijk voor een verdacht bestand)</string>
 </resources>

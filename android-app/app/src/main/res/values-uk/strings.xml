@@ -258,4 +258,6 @@
     <string name="settings_download_pc">Завантажити інсталятор для ПК</string>
     <string name="screen_capture_stop">Стоп</string>
     <string name="screen_notification_denied">Без сповіщень зупинити трансляцію можна лише в застосунку</string>
+    <string name="settings_download_pc_mirror">Дзеркало на Google Диску</string>
+    <string name="settings_download_pc_mirror_hint">(Диск може попередити про підозрілий файл)</string>
 </resources>
