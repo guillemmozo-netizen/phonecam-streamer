@@ -8,13 +8,22 @@ object PcControl {
     private const val PORT = 8790
     private const val TIMEOUT = 4000
 
+    // The PC's control server trusts loopback (the USB tunnel) but requires
+    // this header from anything arriving over the network — i.e. every Wi-Fi
+    // call. Without it, all of these endpoints answered 403 on Wi-Fi: status
+    // showed "PC not reachable" while the stream itself (whose Hello carries
+    // the same token) worked fine. Empty token = header omitted, which keeps
+    // the USB path byte-identical.
+    private const val TOKEN_HEADER = "X-PhoneCam-Token"
+
     data class Status(val running: Boolean, val services: List<String>)
 
-    fun getStatus(host: String): Status? {
+    fun getStatus(host: String, token: String = ""): Status? {
         return try {
             val conn = URL("http://$host:$PORT/status").openConnection() as HttpURLConnection
             conn.connectTimeout = TIMEOUT
             conn.readTimeout = TIMEOUT
+            if (token.isNotEmpty()) conn.setRequestProperty(TOKEN_HEADER, token)
             val json = JSONObject(conn.inputStream.bufferedReader().readText())
             conn.disconnect()
             val services = json.getJSONArray("services")
@@ -27,16 +36,16 @@ object PcControl {
         }
     }
 
-    fun startServices(host: String): Boolean {
-        return post(host, "/start")
+    fun startServices(host: String, token: String = ""): Boolean {
+        return post(host, "/start", token)
     }
 
-    fun stopServices(host: String): Boolean {
-        return post(host, "/stop")
+    fun stopServices(host: String, token: String = ""): Boolean {
+        return post(host, "/stop", token)
     }
 
-    fun setupAdbReverse(host: String): Boolean {
-        return post(host, "/adb-reverse")
+    fun setupAdbReverse(host: String, token: String = ""): Boolean {
+        return post(host, "/adb-reverse", token)
     }
 
     /**
@@ -60,6 +69,7 @@ object PcControl {
         videoBitrateBps: Int,
         audioBitrateBps: Int,
         sampleRate: Int,
+        token: String = "",
     ): Boolean {
         val body = JSONObject().apply {
             put("width", width)
@@ -74,6 +84,7 @@ object PcControl {
             conn.requestMethod = "POST"
             conn.connectTimeout = TIMEOUT
             conn.readTimeout = TIMEOUT
+            if (token.isNotEmpty()) conn.setRequestProperty(TOKEN_HEADER, token)
             conn.setRequestProperty("Content-Type", "application/json")
             conn.doOutput = true
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -111,12 +122,13 @@ object PcControl {
         }
     }
 
-    private fun post(host: String, path: String): Boolean {
+    private fun post(host: String, path: String, token: String = ""): Boolean {
         return try {
             val conn = URL("http://$host:$PORT$path").openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.connectTimeout = TIMEOUT
             conn.readTimeout = TIMEOUT
+            if (token.isNotEmpty()) conn.setRequestProperty(TOKEN_HEADER, token)
             conn.setRequestProperty("Content-Length", "0")
             conn.doOutput = true
             val code = conn.responseCode

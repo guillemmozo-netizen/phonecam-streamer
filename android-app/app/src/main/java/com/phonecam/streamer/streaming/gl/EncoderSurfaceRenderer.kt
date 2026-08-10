@@ -234,15 +234,31 @@ class EncoderSurfaceRenderer(inputSurface: Surface, private val targetWidth: Int
         eglCore.release()
     }
 
+    // Last texMatrix classification, cached so the (cheap) measurement and
+    // its log line only run when the matrix actually changes shape.
+    private var measuredTexRotation = -1
+
     private fun drawCamera(rotationDegrees: Int) {
         // The vertex matrix applies only what the texture matrix has not
         // already applied: [rotationDegrees] is the TOTAL rotation the content
         // needs (CameraX convention: clockwise to reach the output
-        // orientation), and the source's own transform may carry part of it
-        // (Camera2's HAL hint does; see textureRotationDegrees). Applying the
-        // total on top of the carried part is what turned already-straight
-        // Camera2 frames sideways.
-        val vertexDegrees = ContentGeometry.vertexRotation(rotationDegrees, textureRotationDegrees)
+        // orientation), and the source's own transform may carry part of it.
+        // How much is MEASURED from the live matrix (see
+        // ContentGeometry.textureMatrixRotation); the declared
+        // textureRotationDegrees only covers the frames before the first
+        // matrix exists.
+        val texRotation = ContentGeometry.textureMatrixRotation(texMatrix, textureRotationDegrees)
+        if (texRotation != measuredTexRotation) {
+            measuredTexRotation = texRotation
+            android.util.Log.i(
+                "EncoderSurfaceRenderer",
+                "texmat: [%.2f %.2f / %.2f %.2f] measured=%d declared=%d total=%d".format(
+                    texMatrix[0], texMatrix[1], texMatrix[4], texMatrix[5],
+                    texRotation, textureRotationDegrees, rotationDegrees,
+                ),
+            )
+        }
+        val vertexDegrees = ContentGeometry.vertexRotation(rotationDegrees, texRotation)
         Matrix.setRotateM(rotationMatrix, 0, -vertexDegrees.toFloat(), 0f, 0f, 1f)
 
         // The fix for the orientation-dependent stretch: a bare rotation of

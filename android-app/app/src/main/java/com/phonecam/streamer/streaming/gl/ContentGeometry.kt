@@ -79,6 +79,43 @@ object ContentGeometry {
         ((contentRotationDegrees - textureRotationDegrees) % 360 + 360) % 360
 
     /**
+     * The rotation a SurfaceTexture transform matrix ALREADY applies to the
+     * content — 0/90/180/270 — measured from the matrix itself, or
+     * [fallback] while no frame has been latched yet (all-zero matrix).
+     *
+     * Measured, not assumed, because the assumption broke on hardware: "the
+     * CameraX stream carries no rotation" is only true while CameraX's
+     * internal processing node is in the pipeline. On the direct path
+     * (first observed when a 9:16 composition's capture escalated buckets),
+     * the HAL's transform hint rides this matrix exactly as it does on the
+     * Camera2 backend — and compensating for a rotation the matrix had
+     * already applied rendered whole sessions sideways, which OBS showed as
+     * "shifted and too large" in every non-16:9 composition.
+     *
+     * [m] is column-major (android.opengl.Matrix / SurfaceTexture layout);
+     * its linear part maps sampling axes into content space with a Y-flip
+     * folded in. The flip changes signs, never which axis maps to which — so
+     * |m0| vs |m1| separates 0/180 from 90/270, and the surviving sign picks
+     * within the pair. The sign convention is calibrated against hardware:
+     * [0,-1 / -1,0] is the matrix the S23 Ultra produces on both the direct
+     * CameraX path and the Camera2 backend, and Camera2's was already
+     * validated as carrying 90; classifying it as 270 drew the first
+     * measured frame exactly 180 degrees off, which pinned the mapping.
+     */
+    fun textureMatrixRotation(m: FloatArray, fallback: Int): Int {
+        val m0 = m[0]
+        val m1 = m[1]
+        val m4 = m[4]
+        val m5 = m[5]
+        if (m0 == 0f && m1 == 0f && m4 == 0f && m5 == 0f) return fallback
+        return if (kotlin.math.abs(m0) >= kotlin.math.abs(m1)) {
+            if (m0 >= 0f) 0 else 180
+        } else {
+            if (m1 >= 0f) 270 else 90
+        }
+    }
+
+    /**
      * Homogeneous texture coordinates (x, y, 0, 1 per vertex, matching the
      * shader's vec4 aTexCoord and the quad's vertex order) that sample only
      * the [left, top, right, bottom] pixel rect of a [bufferWidth]x

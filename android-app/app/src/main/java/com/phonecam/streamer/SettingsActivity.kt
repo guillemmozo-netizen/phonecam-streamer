@@ -1,5 +1,6 @@
 package com.phonecam.streamer
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +14,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.phonecam.streamer.databinding.ActivitySettingsBinding
+import com.phonecam.streamer.device.BrandBadge
 import com.phonecam.streamer.device.DeviceCapabilities
 import com.phonecam.streamer.network.PcControl
 import com.phonecam.streamer.network.PcDiscovery
@@ -93,7 +95,25 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnStopPc.setOnClickListener { stopPcServices() }
         binding.btnRefreshPcStatus.setOnClickListener { checkPcStatus() }
         binding.btnAdbReverse.setOnClickListener { setupAdbReverse() }
+        binding.downloadPcRow.setOnClickListener {
+            // The PC half of the product: the app comes from the Play Store,
+            // the receiver comes from this Drive folder.
+            try {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        android.net.Uri.parse(getString(R.string.pc_installer_url)),
+                    ),
+                )
+            } catch (e: Exception) {
+                AppToast.error(this, getString(R.string.pc_installer_url))
+            }
+        }
         binding.btnSpeedTest.setOnClickListener { runSpeedTest() }
+
+        binding.openDiagnosticsRow.setOnClickListener {
+            startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
 
         setupSpinners()
         loadPreferences()
@@ -163,7 +183,8 @@ class SettingsActivity : AppCompatActivity() {
             listOf("360p", "480p", "720p", "1080p", "1440p ⟐ Pro", "2160p 4K ⟐ Pro", "4320p 8K ⟐ Pro", custom),
         )
         setupSpinner(binding.spinnerAspectRatio, listOf("4:3", "16:9", "1:1", "9:16", "3:4"))
-        setupSpinner(binding.spinnerVideoCodec, listOf("H.264", "H.265 (HEVC)", "AV1"))
+        // Video-codec selector removed for launch (decorative — the encoder
+        // negotiates H.264/HEVC by resolution, ignoring the preference).
         setupSpinner(binding.spinnerVideoBitrate, listOf("10 Mbps", "20 Mbps", "35 Mbps", "50 Mbps", "100 Mbps ⟐ Pro", custom))
         setupSpinner(binding.spinnerFps, listOf("24 fps", "30 fps", "60 fps", "120 fps ⟐ Pro", custom))
         setupSpinner(
@@ -279,6 +300,13 @@ class SettingsActivity : AppCompatActivity() {
      * result so the next call (and the IP field on screen) doesn't need to
      * re-discover.
      */
+    /** Token fetched over USB pairing (MainActivity stores it on stream start).
+     * The PC requires it for any control call arriving over Wi-Fi; loopback
+     * ignores it, so passing it unconditionally is safe for the USB path. */
+    private fun getPcToken(): String =
+        getSharedPreferences("stream_settings", MODE_PRIVATE)
+            .getString("pc_token", "").orEmpty()
+
     private fun getPcHost(): String {
         val connMode = binding.spinnerConnectionMode.selectedItemPosition
         if (connMode == 1) return "127.0.0.1"
@@ -318,7 +346,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun checkPcStatus() {
         testExecutor.execute {
             val host = getPcHost()
-            val status = PcControl.getStatus(host)
+            val status = PcControl.getStatus(host, getPcToken())
             runOnUiThread {
                 if (status != null) {
                     if (status.running) {
@@ -344,7 +372,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnStartPc.text = getString(R.string.pc_starting)
         testExecutor.execute {
             val host = getPcHost()
-            val ok = PcControl.startServices(host)
+            val ok = PcControl.startServices(host, getPcToken())
             runOnUiThread {
                 binding.btnStartPc.isEnabled = true
                 binding.btnStartPc.text = getString(R.string.pc_start)
@@ -361,7 +389,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun stopPcServices() {
         testExecutor.execute {
             val host = getPcHost()
-            PcControl.stopServices(host)
+            PcControl.stopServices(host, getPcToken())
             runOnUiThread {
                 AppToast.info(this, getString(R.string.pc_services_stopped))
                 checkPcStatus()
@@ -373,7 +401,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnAdbReverse.isEnabled = false
         testExecutor.execute {
             val host = getPcHost()
-            val ok = PcControl.setupAdbReverse(host)
+            val ok = PcControl.setupAdbReverse(host, getPcToken())
             runOnUiThread {
                 binding.btnAdbReverse.isEnabled = true
                 if (ok) {
@@ -385,6 +413,25 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Fills the circular brand monogram and writes "Brand Model" beside it.
+     *
+     * The badge background is built here rather than as a drawable resource
+     * because the colour is per brand: one shape tinted at runtime beats
+     * shipping a drawable per manufacturer, and it means a phone whose maker
+     * is not in the table still gets a correctly shaped badge.
+     */
+    private fun applyBrandBadge(badgeView: TextView, manufacturer: String, model: String) {
+        val badge = BrandBadge.resolve(manufacturer, android.os.Build.BRAND)
+        badgeView.text = badge.letter
+        badgeView.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(runCatching { android.graphics.Color.parseColor(badge.colorHex) }
+                .getOrDefault(getColor(R.color.text_tertiary)))
+        }
+        binding.deviceModelText.text = "${badge.name} $model"
+    }
+
     private fun populateDeviceInfo() {
         testExecutor.execute {
             val info = try {
@@ -392,7 +439,13 @@ class SettingsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("SettingsActivity", "device probe failed", e)
                 runOnUiThread {
-                    binding.deviceModelText.text = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+                    // The probe failed, but the brand still comes straight
+                    // from Build — no reason to show a bare model number.
+                    applyBrandBadge(
+                        binding.deviceBrandBadge,
+                        android.os.Build.MANUFACTURER,
+                        android.os.Build.MODEL,
+                    )
                     binding.deviceOsText.text = getString(R.string.device_capabilities_unavailable)
                 }
                 null
@@ -401,7 +454,7 @@ class SettingsActivity : AppCompatActivity() {
             deviceInfo = info
 
             runOnUiThread {
-                binding.deviceModelText.text = "${info.manufacturer} ${info.model}"
+                applyBrandBadge(binding.deviceBrandBadge, info.manufacturer, info.model)
                 binding.deviceOsText.text = "Android ${info.androidVersion} · SDK ${info.sdkInt}"
                 binding.deviceRamText.text = DeviceCapabilities.formatRamGb(info.ramTotalMb)
                 binding.deviceStorageText.text = "%.0f / %.0f GB".format(info.storageFreeGb, info.storageTotalGb)
@@ -431,13 +484,9 @@ class SettingsActivity : AppCompatActivity() {
 
                 addSuperTelephotoLensOptionIfPresent(info)
 
-                // HDR is only offered when some camera on this device can capture 10-bit
-                val hdrSupported = info.cameras.any { it.supportsHdr }
-                binding.switchHdr.isEnabled = hdrSupported
-                if (!hdrSupported) {
-                    binding.switchHdr.isChecked = false
-                    binding.switchHdr.alpha = 0.4f
-                }
+                // HDR switch removed for launch — see AUDIT.md F11: a 10-bit
+                // stream corrupts the PC sink, so the toggle is gated off
+                // until that path has a real pixel-format mapping.
 
                 updateCompatibilityWarnings()
             }
@@ -623,14 +672,12 @@ class SettingsActivity : AppCompatActivity() {
         // Video
         binding.spinnerResolution.setSelection(prefs.getInt("resolution", 3))
         binding.spinnerAspectRatio.setSelection(prefs.getInt("aspect_ratio", 1))
-        binding.spinnerVideoCodec.setSelection(prefs.getInt("video_codec", 0))
         binding.spinnerVideoBitrate.setSelection(prefs.getInt("video_bitrate", 1))
         binding.spinnerFps.setSelection(prefs.getInt("fps", 2))
         binding.inputCustomWidth.setText(prefs.getInt("custom_res_width", 1920).toString())
         binding.inputCustomHeight.setText(prefs.getInt("custom_res_height", 1080).toString())
         binding.inputCustomBitrate.setText(prefs.getString("custom_bitrate", ""))
         binding.inputCustomFps.setText(prefs.getString("custom_fps", ""))
-        binding.switchHdr.isChecked = prefs.getBoolean("hdr", false)
         binding.switchStabilization.isChecked = prefs.getBoolean("stabilization", true)
         binding.spinnerAutofocus.setSelection(prefs.getInt("autofocus", 0))
         binding.spinnerAfSpeed.setSelection(prefs.getInt("af_speed", 0))
@@ -698,14 +745,12 @@ class SettingsActivity : AppCompatActivity() {
         // Video
         prefs.putInt("resolution", binding.spinnerResolution.selectedItemPosition)
         prefs.putInt("aspect_ratio", binding.spinnerAspectRatio.selectedItemPosition)
-        prefs.putInt("video_codec", binding.spinnerVideoCodec.selectedItemPosition)
         prefs.putInt("video_bitrate", binding.spinnerVideoBitrate.selectedItemPosition)
         prefs.putInt("fps", binding.spinnerFps.selectedItemPosition)
         binding.inputCustomWidth.text.toString().toIntOrNull()?.let { prefs.putInt("custom_res_width", it) }
         binding.inputCustomHeight.text.toString().toIntOrNull()?.let { prefs.putInt("custom_res_height", it) }
         prefs.putString("custom_bitrate", binding.inputCustomBitrate.text.toString())
         prefs.putString("custom_fps", binding.inputCustomFps.text.toString())
-        prefs.putBoolean("hdr", binding.switchHdr.isChecked)
         prefs.putBoolean("stabilization", binding.switchStabilization.isChecked)
         prefs.putInt("autofocus", binding.spinnerAutofocus.selectedItemPosition)
         prefs.putInt("af_speed", binding.spinnerAfSpeed.selectedItemPosition)
@@ -800,6 +845,7 @@ class SettingsActivity : AppCompatActivity() {
                 videoBitrateBps = cfg.videoBitrateBps,
                 audioBitrateBps = audioBitrateKbps * 1000,
                 sampleRate = sampleRate,
+                token = getPcToken(),
             )
         }.start()
     }

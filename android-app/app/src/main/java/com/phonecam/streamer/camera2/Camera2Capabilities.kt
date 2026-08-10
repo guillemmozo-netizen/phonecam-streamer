@@ -58,6 +58,10 @@ object Camera2Capabilities {
      * Rows are 6 ints: width, height, fpsMin, fpsMax, and two fields whose
      * meaning Samsung doesn't document (they vary per row and are ignored).
      */
+    // NewApi: the Key(String, Class) constructor is API 29, but the whole read
+    // is wrapped in catch(Throwable) — on an older device it degrades to "no
+    // vendor table", exactly like a non-Samsung.
+    @android.annotation.SuppressLint("NewApi")
     fun vendorVideoConfigs(chars: CameraCharacteristics): List<VideoConfig>? {
         val raw = try {
             chars.get(CameraCharacteristics.Key(VENDOR_VIDEO_CONFIGS, IntArray::class.java))

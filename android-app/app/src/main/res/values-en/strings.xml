@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Free</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">While streaming</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">FREE</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Unlock 4K recording, remove watermarks, advanced audio controls, and priority support.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Thank you for supporting this independent app ❤️</string>
-    <string name="welcome_message">PhoneCam is being developed independently by a single person.\n\nDuring the Alpha and Beta phases, we want to thank you for your support by offering every Pro feature through rewarded ads.\n\nYour help testing the app, sending feedback, and sharing it with others lets us keep improving it.\n\nThanks for being part of the project from the start.</string>
+    <string name="welcome_message">FrameCast is being developed independently by a single person.\n\nDuring the Alpha and Beta phases, we want to thank you for your support by offering every Pro feature through rewarded ads.\n\nYour help testing the app, sending feedback, and sharing it with others lets us keep improving it.\n\nThanks for being part of the project from the start.</string>
     <string name="welcome_button">Continue</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">During Alpha and Beta, every Pro feature can be unlocked for free by watching rewarded ads.</string>
-    <string name="pro_feature_locked_desc">This setting requires PhoneCam Pro — watch ads on the camera screen to unlock</string>
+    <string name="pro_feature_locked_desc">This setting requires FrameCast Pro — watch ads on the camera screen to unlock</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Earn %1$d hours of Pro</string>
@@ -148,7 +147,7 @@
     <string name="pc_status_unreachable">PC not reachable</string>
     <string name="pc_starting">Starting…</string>
     <string name="pc_services_started">PC services started</string>
-    <string name="pc_unreachable_hint">Cannot reach PC — run PhoneCam_PC.bat first</string>
+    <string name="pc_unreachable_hint">Cannot reach PC — run FrameCast_PC.bat first</string>
     <string name="pc_services_stopped">PC services stopped</string>
     <string name="pc_usb_forwarded">USB ports forwarded</string>
     <string name="pc_usb_failed">Failed — check USB connection</string>
@@ -216,4 +215,45 @@
     <string name="speedtest_uploading">Uploading to PC…</string>
     <string name="speedtest_downloading">Downloading from PC…</string>
     <string name="speedtest_cleaning_up">Cleaning up…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Experimental Camera2 capture</string>
+    <string name="settings_experimental_camera2_hint">Unlocks true 4K60. Camera controls are disabled while streaming.</string>
+    <string name="toast_camera2_fallback">Camera2 backend unavailable — using CameraX</string>
+    <string name="toast_capture_frozen_restart">Camera frozen by the system — restarting the stream</string>
+    <string name="diagnostics_title">Camera diagnostics</string>
+    <string name="diagnostics_open">Camera2 capabilities</string>
+    <string name="diagnostics_open_summary">Full Camera2 report · export JSON</string>
+    <string name="diagnostics_device_section">DEVICE &amp; DISPLAY</string>
+    <string name="diagnostics_cameras_section">CAMERAS (%1$d)</string>
+    <string name="diagnostics_logical_camera">Logical camera</string>
+    <string name="diagnostics_physical_camera">Physical sub-camera</string>
+    <string name="diagnostics_see_more">See more</string>
+    <string name="diagnostics_sensor">Sensor</string>
+    <string name="diagnostics_max_resolution">Max resolution</string>
+    <string name="diagnostics_sensor_size">Sensor size</string>
+    <string name="diagnostics_pixel_pitch">Pixel pitch</string>
+    <string name="diagnostics_focal_length">Focal length</string>
+    <string name="diagnostics_aperture">Aperture</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Shutter</string>
+    <string name="diagnostics_max_fps">Max fps</string>
+    <string name="diagnostics_empty">(none)</string>
+    <string name="diagnostics_copy_json">Copy JSON</string>
+    <string name="diagnostics_export_json">Export JSON</string>
+    <string name="diagnostics_copied">Report copied to clipboard</string>
+    <string name="diagnostics_export_failed">Could not write the report</string>
+    <string name="diagnostics_probe_failed">Could not read this device\'s camera capabilities</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Camera</string>
+    <string name="source_screen">Screen</string>
+    <string name="source_button_desc">Choose source: camera or screen</string>
+    <string name="screen_mode_limits">Screen: %1$d×%2$d · %3$d Hz — the screen\'s limits apply, not the camera\'s</string>
+    <string name="screen_capture_denied">Screen capture permission denied</string>
+    <string name="screen_streaming_note">Casting the screen — you can leave the app</string>
+    <string name="screen_controls_unavailable">Camera controls are unavailable while casting the screen</string>
+    <string name="screen_capture_notification_title">FrameCast — casting the screen</string>
+    <string name="screen_capture_notification_text">The screen is being streamed to the PC</string>
+    <string name="settings_download_pc">Download the PC installer</string>
+    <string name="screen_capture_stop">Stop</string>
+    <string name="screen_notification_denied">Without notifications you can only stop the cast from inside the app</string>
 </resources>

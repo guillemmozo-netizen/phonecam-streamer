@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">مجاني</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">أثناء البث</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">مجاني</string>
     <string name="sub_pro">Pro</string>
     <string name="sub_description">افتح تسجيل 4K، وأزل العلامات المائية، واحصل على أدوات تحكم صوتية متقدمة ودعم ذو أولوية.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">شكرًا لدعمك هذا التطبيق المستقل ❤️</string>
-    <string name="welcome_message">يتم تطوير PhoneCam بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
+    <string name="welcome_message">يتم تطوير FrameCast بشكل مستقل من قِبل شخص واحد.\n\nخلال مرحلتي Alpha وBeta، نريد أن نشكرك على دعمك من خلال إتاحة جميع ميزات Pro عبر الإعلانات المكافئة.\n\nمساعدتك في تجربة التطبيق وإرسال ملاحظاتك ومشاركته مع الآخرين تتيح لنا الاستمرار في تحسينه.\n\nشكرًا لكونك جزءًا من المشروع منذ البداية.</string>
     <string name="welcome_button">متابعة</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">خلال مرحلتي Alpha وBeta، يمكن فتح جميع ميزات Pro مجانًا بمشاهدة الإعلانات المكافئة.</string>
-    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد PhoneCam Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
+    <string name="pro_feature_locked_desc">يتطلب هذا الإعداد FrameCast Pro — شاهد الإعلانات في شاشة الكاميرا لفتحه</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">احصل على %1$d ساعة من Pro</string>
@@ -129,6 +128,8 @@
     <string name="ad_reward_celebration_desc">شكرًا لدعمك هذا التطبيق المستقل — استمتع بـ %1$d ساعة من البث بجودة 4K60 دون علامة مائية.</string>
     <string name="ad_progress_title">تمت مشاهدة %1$d من %2$d</string>
     <plurals name="ads_remaining_desc">
+        <item quantity="zero">لا إعلانات أخرى لـ %2$d ساعة من Pro</item>
+        <item quantity="many">%1$d إعلانًا آخر لـ %2$d ساعة من Pro</item>
         <item quantity="one">إعلان واحد آخر لـ %2$d ساعة من Pro</item>
         <item quantity="two">إعلانان آخران لـ %2$d ساعة من Pro</item>
         <item quantity="few">%1$d إعلانات أخرى لـ %2$d ساعة من Pro</item>
@@ -150,7 +151,7 @@
     <string name="pc_status_unreachable">الكمبيوتر غير متاح</string>
     <string name="pc_starting">جارٍ التشغيل…</string>
     <string name="pc_services_started">تم تشغيل خدمات الكمبيوتر</string>
-    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل PhoneCam_PC.bat أولاً</string>
+    <string name="pc_unreachable_hint">تعذّر الوصول إلى الكمبيوتر — شغّل FrameCast_PC.bat أولاً</string>
     <string name="pc_services_stopped">تم إيقاف خدمات الكمبيوتر</string>
     <string name="pc_usb_forwarded">تم توجيه منافذ USB</string>
     <string name="pc_usb_failed">فشل — تحقق من اتصال USB</string>
@@ -218,4 +219,45 @@
     <string name="speedtest_uploading">جارٍ الرفع إلى الكمبيوتر…</string>
     <string name="speedtest_downloading">جارٍ التنزيل من الكمبيوتر…</string>
     <string name="speedtest_cleaning_up">جارٍ التنظيف…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">التقاط Camera2 تجريبي</string>
+    <string name="settings_experimental_camera2_hint">يتيح 4K60 حقيقيًا. تُعطَّل عناصر التحكم بالكاميرا أثناء البث.</string>
+    <string name="toast_camera2_fallback">خلفية Camera2 غير متاحة — يُستخدم CameraX</string>
+    <string name="toast_capture_frozen_restart">جمّد النظام الكاميرا — تتم إعادة تشغيل البث</string>
+    <string name="diagnostics_title">تشخيص الكاميرا</string>
+    <string name="diagnostics_open">قدرات Camera2</string>
+    <string name="diagnostics_open_summary">تقرير Camera2 كامل · تصدير JSON</string>
+    <string name="diagnostics_device_section">الجهاز والشاشة</string>
+    <string name="diagnostics_cameras_section">الكاميرات (%1$d)</string>
+    <string name="diagnostics_logical_camera">كاميرا منطقية</string>
+    <string name="diagnostics_physical_camera">كاميرا فرعية فعلية</string>
+    <string name="diagnostics_see_more">عرض المزيد</string>
+    <string name="diagnostics_sensor">المستشعر</string>
+    <string name="diagnostics_max_resolution">أقصى دقة</string>
+    <string name="diagnostics_sensor_size">حجم المستشعر</string>
+    <string name="diagnostics_pixel_pitch">خطوة البكسل</string>
+    <string name="diagnostics_focal_length">البعد البؤري</string>
+    <string name="diagnostics_aperture">فتحة العدسة</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">الغالق</string>
+    <string name="diagnostics_max_fps">أقصى fps</string>
+    <string name="diagnostics_empty">(فارغ)</string>
+    <string name="diagnostics_copy_json">نسخ JSON</string>
+    <string name="diagnostics_export_json">تصدير JSON</string>
+    <string name="diagnostics_copied">تم نسخ التقرير إلى الحافظة</string>
+    <string name="diagnostics_export_failed">تعذّرت كتابة التقرير</string>
+    <string name="diagnostics_probe_failed">تعذّرت قراءة قدرات كاميرا هذا الجهاز</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">الكاميرا</string>
+    <string name="source_screen">الشاشة</string>
+    <string name="source_button_desc">اختر المصدر: الكاميرا أو الشاشة</string>
+    <string name="screen_mode_limits">الشاشة: %1$d×%2$d · %3$d هرتز — تنطبق حدود الشاشة، لا حدود الكاميرا</string>
+    <string name="screen_capture_denied">رُفض إذن التقاط الشاشة</string>
+    <string name="screen_streaming_note">يجري بث الشاشة — يمكنك مغادرة التطبيق</string>
+    <string name="screen_controls_unavailable">عناصر تحكم الكاميرا غير متاحة أثناء بث الشاشة</string>
+    <string name="screen_capture_notification_title">FrameCast — يجري بث الشاشة</string>
+    <string name="screen_capture_notification_text">يتم إرسال الشاشة إلى الكمبيوتر</string>
+    <string name="settings_download_pc">تنزيل مثبّت الكمبيوتر</string>
+    <string name="screen_capture_stop">إيقاف</string>
+    <string name="screen_notification_denied">بدون الإشعارات يمكنك إيقاف البث من داخل التطبيق فقط</string>
 </resources>

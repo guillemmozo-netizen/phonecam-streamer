@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Gratis</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Mentre es transmet</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Desbloqueja la gravació en 4K, elimina les marques d\'aigua, obtén controls d\'àudio avançats i suport prioritari.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Gràcies per donar suport a aquesta aplicació independent ❤️</string>
-    <string name="welcome_message">PhoneCam està sent desenvolupada de manera independent per una sola persona.\n\nDurant les fases Alpha i Beta volem agrair-vos el vostre suport oferint totes les funcions Pro mitjançant anuncis amb recompensa.\n\nLa vostra ajuda provant l\'aplicació, enviant comentaris i compartint-la amb altres persones ens permet seguir millorant-la.\n\nGràcies per formar part del projecte des del principi.</string>
+    <string name="welcome_message">FrameCast està sent desenvolupada de manera independent per una sola persona.\n\nDurant les fases Alpha i Beta volem agrair-vos el vostre suport oferint totes les funcions Pro mitjançant anuncis amb recompensa.\n\nLa vostra ajuda provant l\'aplicació, enviant comentaris i compartint-la amb altres persones ens permet seguir millorant-la.\n\nGràcies per formar part del projecte des del principi.</string>
     <string name="welcome_button">Continua</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Durant l\'Alpha i la Beta, totes les funcions Pro es poden desbloquejar gratuïtament mirant anuncis amb recompensa.</string>
-    <string name="pro_feature_locked_desc">Aquest ajust requereix PhoneCam Pro — mira anuncis a la pantalla de la càmera per desbloquejar-lo</string>
+    <string name="pro_feature_locked_desc">Aquest ajust requereix FrameCast Pro — mira anuncis a la pantalla de la càmera per desbloquejar-lo</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Aconsegueix %1$d hores de Pro</string>
@@ -129,6 +128,7 @@
     <string name="ad_reward_celebration_desc">Gràcies per donar suport a aquesta aplicació independent — gaudeix de %1$dh de transmissió en 4K60 sense marca d\'aigua.</string>
     <string name="ad_progress_title">%1$d/%2$d vistos</string>
     <plurals name="ads_remaining_desc">
+        <item quantity="many">Falten %1$d anuncis més per a %2$dh de Pro</item>
         <item quantity="one">Falta %1$d anunci més per a %2$dh de Pro</item>
         <item quantity="other">Falten %1$d anuncis més per a %2$dh de Pro</item>
     </plurals>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC no accessible</string>
     <string name="pc_starting">S\'està iniciant…</string>
     <string name="pc_services_started">Serveis del PC iniciats</string>
-    <string name="pc_unreachable_hint">No es pot accedir al PC — executa primer PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">No es pot accedir al PC — executa primer FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Serveis del PC aturats</string>
     <string name="pc_usb_forwarded">Ports USB redirigits</string>
     <string name="pc_usb_failed">Error — comprova la connexió USB</string>
@@ -181,6 +181,31 @@
 
     <!-- Device info -->
     <string name="device_section_title">DISPOSITIU</string>
+
+    <!-- Diagnòstic Camera2 -->
+    <string name="diagnostics_title">Diagnòstic de càmera</string>
+    <string name="diagnostics_open">Capacitats Camera2</string>
+    <string name="diagnostics_open_summary">Informe complet · exportar JSON</string>
+    <string name="diagnostics_device_section">DISPOSITIU I PANTALLA</string>
+    <string name="diagnostics_cameras_section">CÀMERES (%1$d)</string>
+    <string name="diagnostics_logical_camera">Càmera lògica</string>
+    <string name="diagnostics_physical_camera">Subcàmera física</string>
+    <string name="diagnostics_see_more">Veure\'n més</string>
+    <string name="diagnostics_sensor">Sensor</string>
+    <string name="diagnostics_max_resolution">Resolució màxima</string>
+    <string name="diagnostics_sensor_size">Mida del sensor</string>
+    <string name="diagnostics_pixel_pitch">Mida de píxel</string>
+    <string name="diagnostics_focal_length">Distància focal</string>
+    <string name="diagnostics_aperture">Obertura</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Obturador</string>
+    <string name="diagnostics_max_fps">FPS màxims</string>
+    <string name="diagnostics_empty">(cap)</string>
+    <string name="diagnostics_copy_json">Copiar JSON</string>
+    <string name="diagnostics_export_json">Exportar JSON</string>
+    <string name="diagnostics_copied">Informe copiat al porta-retalls</string>
+    <string name="diagnostics_export_failed">No s\'ha pogut escriure l\'informe</string>
+    <string name="diagnostics_probe_failed">No s\'han pogut llegir les capacitats de càmera d\'aquest dispositiu</string>
     <string name="device_label_ram">RAM</string>
     <string name="device_label_storage">EMMAGATZEMATGE</string>
     <string name="device_label_codecs">CÒDECS</string>
@@ -216,4 +241,22 @@
     <string name="speedtest_uploading">Pujant al PC…</string>
     <string name="speedtest_downloading">Baixant del PC…</string>
     <string name="speedtest_cleaning_up">Netejant…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Captura Camera2 experimental</string>
+    <string name="settings_experimental_camera2_hint">Desbloqueja el 4K60 real. Els controls de càmera es desactiven durant l\'emissió.</string>
+    <string name="toast_camera2_fallback">Backend Camera2 no disponible — s\'està usant CameraX</string>
+    <string name="toast_capture_frozen_restart">El sistema ha congelat la càmera — s\'està reiniciant l\'emissió</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Càmera</string>
+    <string name="source_screen">Pantalla</string>
+    <string name="source_button_desc">Triar font: càmera o pantalla</string>
+    <string name="screen_mode_limits">Pantalla: %1$d×%2$d · %3$d Hz — s\'apliquen els límits de la pantalla, no de la càmera</string>
+    <string name="screen_capture_denied">Permís de captura de pantalla denegat</string>
+    <string name="screen_streaming_note">Emetent la pantalla — pots sortir de l\'app</string>
+    <string name="screen_controls_unavailable">Controls de càmera no disponibles mentre s\'emet la pantalla</string>
+    <string name="screen_capture_notification_title">FrameCast — emetent la pantalla</string>
+    <string name="screen_capture_notification_text">La pantalla s\'està enviant al PC</string>
+    <string name="settings_download_pc">Descarregar l\'instal·lador de PC</string>
+    <string name="screen_capture_stop">Aturar</string>
+    <string name="screen_notification_denied">Sense notificacions només podràs aturar l\'emissió des de dins de l\'app</string>
 </resources>

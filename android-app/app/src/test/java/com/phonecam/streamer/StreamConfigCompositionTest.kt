@@ -249,6 +249,67 @@ class StreamConfigCompositionTest {
         }
     }
 
+    // ---------- sensorOriented: what the viewfinder actually asks the camera ----------
+
+    @Test
+    fun aLandscapeSizeIsAlreadySensorOriented() {
+        assertEquals(1920 to 1080, StreamConfig.sensorOriented(1920, 1080))
+    }
+
+    @Test
+    fun aPortraitSizeIsTransposedIntoTheSensorsFrame() {
+        // The whole defect in one assertion. CameraX matches this bound against
+        // StreamConfigurationMap's sizes, which are landscape, and never
+        // rotates it — so 1080x1920 meant "nothing wider than 1080" and the
+        // 9:16 viewfinder bound at 320x240 on a real S23 Ultra.
+        assertEquals(1920 to 1080, StreamConfig.sensorOriented(1080, 1920))
+    }
+
+    @Test
+    fun everyCompositionAsksForAtLeastTheFramesOwnPixelsAtTenEighty() {
+        // The bound the viewfinder hands ResolutionSelector, composed exactly
+        // as startCamera() does it: pixel-budget cap, then sensor orientation.
+        // Each one must cover the frame it is previewing — the property the
+        // old fitWithin box broke for every non-landscape composition, where
+        // 9:16 asked for 608x1080 (34% of the frame's pixels) and 3:4 for
+        // 810x1080 (56%).
+        for (ratio in listOf("16:9", "4:3", "1:1", "9:16", "3:4")) {
+            val (w, h) = StreamConfig.outputSizeFor("1080p", ratio)
+            val (bw, bh) = StreamConfig.fitPixelBudget(w, h, 1920L * 1080)
+            val (boundW, boundH) = StreamConfig.sensorOriented(bw, bh)
+            assertTrue("$ratio is asked for in sensor orientation", boundW >= boundH)
+            assertEquals(
+                "$ratio keeps the frame's pixel count",
+                w.toLong() * h,
+                boundW.toLong() * boundH,
+            )
+        }
+    }
+
+    @Test
+    fun theViewfinderBoundStaysWithinTheOneEightyCeiling() {
+        // The cap that exists because a raw 4K/8K surface into PreviewView
+        // cost ~0.5s of viewfinder lag. It has to keep holding after the
+        // orientation fix, for vertical compositions too.
+        //
+        // Note the budget is honoured "up to even-pixel rounding", not
+        // exactly: evenPixels rounds each axis UP to the next legal value, so
+        // 4:3 and 3:4 land on 1662x1248 — 576 pixels (0.03%) over 1920x1080.
+        // That is the arithmetic working as documented, not slack in the cap,
+        // and the assertion says so rather than quietly widening to a round
+        // number that would also pass a real regression.
+        for (ratio in listOf("16:9", "4:3", "1:1", "9:16", "3:4")) {
+            val (w, h) = StreamConfig.outputSizeFor("4320p", ratio)
+            val (bw, bh) = StreamConfig.fitPixelBudget(w, h, 1920L * 1080)
+            val (boundW, boundH) = StreamConfig.sensorOriented(bw, bh)
+            val roundingMargin = 2L * (boundW + boundH) + 4
+            assertTrue(
+                "$ratio stays inside the budget (${boundW}x$boundH)",
+                boundW.toLong() * boundH <= 1920L * 1080 + roundingMargin,
+            )
+        }
+    }
+
     @Test
     fun theCeilingIsNeverExceeded() {
         for (ratio in listOf("16:9", "4:3", "1:1", "9:16", "3:4")) {
@@ -256,6 +317,29 @@ class StreamConfigCompositionTest {
             val (fw, fh) = StreamConfig.fitWithin(w, h, 1920, 1080)
             assertEquals("$ratio fits horizontally", true, fw <= 1920)
             assertEquals("$ratio fits vertically", true, fh <= 1080)
+        }
+    }
+
+    @Test
+    fun eightKIsDeliveredAsFourKBecauseTheVirtualCameraCannotCarryMore() {
+        // Measured on the reference PC: OBS's virtual camera refuses to start
+        // at 7680x4320, and the failed attempt leaves it unusable for every
+        // resolution — including ones that worked a minute earlier — until
+        // OBS is restarted. So an 8K pick must reach the encoder as 4K.
+        //
+        // The capture still runs at 8K and is downscaled on the GPU into this
+        // encoder, which is why the pick is worth keeping rather than hiding.
+        val premium = com.phonecam.streamer.rewards.StreamProfile(
+            quality = "4k60", watermark = false, adsEnabled = false,
+            premiumActive = true, balanceSeconds = 3600.0,
+        )
+        for (ratio in listOf("16:9", "4:3", "1:1", "9:16", "3:4")) {
+            val cfg = baseConfig(qualityLabel = "4320p", aspectRatio = ratio)
+            val (w, h, _) = com.phonecam.streamer.streaming.CameraStreamer.effectiveTarget(cfg, premium)
+            assertTrue(
+                "$ratio stays within a 4K pixel budget (got ${w}x$h)",
+                w.toLong() * h <= 3840L * 2160 + 2L * (w + h) + 4,
+            )
         }
     }
 }

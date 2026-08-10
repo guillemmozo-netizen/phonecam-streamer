@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">免费</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">直播时</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">免费</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">解锁4K录制、去除水印、高级音频控制和优先支持。</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">感谢您支持这款独立应用 ❤️</string>
-    <string name="welcome_message">PhoneCam 由一个人独立开发。\n\n在 Alpha 和 Beta 阶段，我们想通过激励广告解锁所有 Pro 功能，来感谢您的支持。\n\n您帮忙测试应用、发送反馈、并分享给其他人，让我们能够持续改进它。\n\n感谢您从一开始就参与这个项目。</string>
+    <string name="welcome_message">FrameCast 由一个人独立开发。\n\n在 Alpha 和 Beta 阶段，我们想通过激励广告解锁所有 Pro 功能，来感谢您的支持。\n\n您帮忙测试应用、发送反馈、并分享给其他人，让我们能够持续改进它。\n\n感谢您从一开始就参与这个项目。</string>
     <string name="welcome_button">继续</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">在 Alpha 和 Beta 阶段，观看激励广告即可免费解锁所有 Pro 功能。</string>
-    <string name="pro_feature_locked_desc">此设置需要 PhoneCam Pro — 在相机界面观看广告即可解锁</string>
+    <string name="pro_feature_locked_desc">此设置需要 FrameCast Pro — 在相机界面观看广告即可解锁</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">获得 %1$d 小时 Pro</string>
@@ -147,7 +146,7 @@
     <string name="pc_status_unreachable">无法连接电脑</string>
     <string name="pc_starting">正在启动…</string>
     <string name="pc_services_started">电脑服务已启动</string>
-    <string name="pc_unreachable_hint">无法连接电脑 — 请先运行 PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">无法连接电脑 — 请先运行 FrameCast_PC.bat</string>
     <string name="pc_services_stopped">电脑服务已停止</string>
     <string name="pc_usb_forwarded">USB 端口已转发</string>
     <string name="pc_usb_failed">失败 — 请检查 USB 连接</string>
@@ -215,4 +214,45 @@
     <string name="speedtest_uploading">正在上传到电脑…</string>
     <string name="speedtest_downloading">正在从电脑下载…</string>
     <string name="speedtest_cleaning_up">正在清理…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">实验性 Camera2 采集</string>
+    <string name="settings_experimental_camera2_hint">解锁真正的 4K60。直播期间相机控制将被禁用。</string>
+    <string name="toast_camera2_fallback">Camera2 后端不可用 — 已改用 CameraX</string>
+    <string name="toast_capture_frozen_restart">相机被系统冻结 — 正在重启推流</string>
+    <string name="diagnostics_title">相机诊断</string>
+    <string name="diagnostics_open">Camera2 能力</string>
+    <string name="diagnostics_open_summary">完整 Camera2 报告 · 导出 JSON</string>
+    <string name="diagnostics_device_section">设备与屏幕</string>
+    <string name="diagnostics_cameras_section">相机 (%1$d)</string>
+    <string name="diagnostics_logical_camera">逻辑相机</string>
+    <string name="diagnostics_physical_camera">物理子相机</string>
+    <string name="diagnostics_see_more">查看更多</string>
+    <string name="diagnostics_sensor">传感器</string>
+    <string name="diagnostics_max_resolution">最大分辨率</string>
+    <string name="diagnostics_sensor_size">传感器尺寸</string>
+    <string name="diagnostics_pixel_pitch">像素间距</string>
+    <string name="diagnostics_focal_length">焦距</string>
+    <string name="diagnostics_aperture">光圈</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">快门</string>
+    <string name="diagnostics_max_fps">最大 fps</string>
+    <string name="diagnostics_empty">（无）</string>
+    <string name="diagnostics_copy_json">复制 JSON</string>
+    <string name="diagnostics_export_json">导出 JSON</string>
+    <string name="diagnostics_copied">报告已复制到剪贴板</string>
+    <string name="diagnostics_export_failed">无法写入报告</string>
+    <string name="diagnostics_probe_failed">无法读取此设备的相机能力</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">相机</string>
+    <string name="source_screen">屏幕</string>
+    <string name="source_button_desc">选择来源：相机或屏幕</string>
+    <string name="screen_mode_limits">屏幕: %1$d×%2$d · %3$d Hz — 适用屏幕的限制，而非相机</string>
+    <string name="screen_capture_denied">屏幕录制权限被拒绝</string>
+    <string name="screen_streaming_note">正在投送屏幕 — 可以离开应用</string>
+    <string name="screen_controls_unavailable">投送屏幕时无法使用相机控制</string>
+    <string name="screen_capture_notification_title">FrameCast — 正在投送屏幕</string>
+    <string name="screen_capture_notification_text">屏幕正在发送到 PC</string>
+    <string name="settings_download_pc">下载 PC 安装程序</string>
+    <string name="screen_capture_stop">停止</string>
+    <string name="screen_notification_denied">没有通知时，只能在应用内停止投送</string>
 </resources>

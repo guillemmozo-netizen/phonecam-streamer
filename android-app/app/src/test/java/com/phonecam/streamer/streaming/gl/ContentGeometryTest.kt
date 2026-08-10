@@ -240,4 +240,47 @@ class ContentGeometryTest {
             assertEquals(1f, s[1], 0f)
         }
     }
+
+    // ─── textureMatrixRotation: the classifier behind the 9:16/1:1/3:4 fix ───
+
+    private fun matrix(m0: Float, m1: Float, m4: Float, m5: Float): FloatArray {
+        val m = FloatArray(16)
+        m[0] = m0; m[1] = m1; m[4] = m4; m[5] = m5
+        m[10] = 1f; m[15] = 1f
+        return m
+    }
+
+    @Test
+    fun theIdentityWithFlipMatrixCarriesNoRotation() {
+        // SurfaceTexture's standard no-rotation transform: y flipped, x kept.
+        assertEquals(0, ContentGeometry.textureMatrixRotation(matrix(1f, 0f, 0f, -1f), fallback = 7))
+    }
+
+    @Test
+    fun theS23UltraHintMatrixCarries90Degrees() {
+        // Measured on-device while fixing the sideways 9:16 sessions:
+        // produced by BOTH the direct CameraX path and the Camera2 backend,
+        // whose declared 90 had already been hardware-validated. Misreading
+        // this as 270 drew the frame exactly 180 degrees off.
+        assertEquals(90, ContentGeometry.textureMatrixRotation(matrix(0f, -1f, -1f, 0f), fallback = 7))
+    }
+
+    @Test
+    fun cropScalingInTheMatrixDoesNotChangeTheClassification() {
+        // Real matrices fold the sensor crop into the linear part, so entries
+        // are rarely exactly +-1; only the surviving axis and its sign count.
+        assertEquals(90, ContentGeometry.textureMatrixRotation(matrix(0f, -0.9f, -0.97f, 0f), fallback = 7))
+        assertEquals(0, ContentGeometry.textureMatrixRotation(matrix(0.94f, 0f, 0f, -0.88f), fallback = 7))
+    }
+
+    @Test
+    fun theRemainingTwoQuadrantsClassifySymmetrically() {
+        assertEquals(180, ContentGeometry.textureMatrixRotation(matrix(-1f, 0f, 0f, 1f), fallback = 7))
+        assertEquals(270, ContentGeometry.textureMatrixRotation(matrix(0f, 1f, 1f, 0f), fallback = 7))
+    }
+
+    @Test
+    fun anAllZeroMatrixMeansNoFrameYetAndYieldsTheFallback() {
+        assertEquals(7, ContentGeometry.textureMatrixRotation(FloatArray(16), fallback = 7))
+    }
 }

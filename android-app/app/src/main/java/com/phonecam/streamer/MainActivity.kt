@@ -6,12 +6,14 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CaptureRequest
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Range
 import android.util.Size
+import android.view.HapticFeedbackConstants
 import android.view.TextureView
 import android.view.View
 import android.view.MotionEvent
@@ -41,11 +43,19 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.VideoCapture
 import androidx.core.content.ContextCompat
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.util.DisplayMetrics
+import android.widget.PopupMenu
+import com.phonecam.streamer.screen.ScreenCaptureService
 import java.util.concurrent.TimeUnit
 import com.phonecam.streamer.audio.AudioLevelMeter
 import com.phonecam.streamer.consent.ConsentManager
@@ -108,6 +118,26 @@ class MainActivity : AppCompatActivity() {
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private var wasScaling = false
     private var audioLevelMeter: AudioLevelMeter? = null
+
+    // ─── screen-capture session state (source = "Pantalla") ───
+    private var mediaProjection: MediaProjection? = null
+    private var virtualDisplay: VirtualDisplay? = null
+    private var screenSessionActive = false
+    // What the encoder was actually built at, for the status line — the
+    // camera-mode label logic reads Settings, which screen mode ignores.
+    private var screenSessionLabel: String? = null
+    private val mediaProjectionManager by lazy {
+        getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+    }
+    // The system can revoke a projection at any moment (the user taps "stop
+    // sharing" in the status bar, or another app takes the projection). That
+    // MUST end the session cleanly rather than leave the encoder feeding a
+    // dead display.
+    private val projectionCallback = object : MediaProjection.Callback() {
+        override fun onStop() {
+            uiHandler.post { if (screenSessionActive) stopStreaming() }
+        }
+    }
 
     // The use case CameraStreamer's encoder actually reads frames from —
     // kept as a field (rather than a local in startCamera()'s binding
@@ -212,6 +242,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    /**
+     * Asked for right before a screen session, never at launch.
+     *
+     * Without it on Android 13+, the capture service's notification is simply
+     * not shown — the service still runs, so casting works, but the only
+     * control that exists while the user is in another app is invisible.
+     * Reported from use as "there is no way to stop it", and the shade
+     * confirmed it: no FrameCast notification at all, just the system's cast
+     * icon. The session continues either way; a refusal only costs the
+     * outside-the-app Stop button, which the toast explains.
+     */
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) {
+                AppToast.warning(this, getString(R.string.screen_notification_denied))
+            }
+            if (pendingScreenStart) {
+                pendingScreenStart = false
+                screenCaptureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+            }
+        }
+
+    /** A screen session waiting for the notification prompt to be answered. */
+    private var pendingScreenStart = false
+
+    // The system's screen-capture consent dialog. Launched instead of
+    // startStreaming() when the source is "screen" and no projection exists
+    // yet — so a refusal changes nothing: no session was started.
+    private val screenCaptureLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == RESULT_OK && data != null) {
+                startScreenServiceThenStream(result.resultCode, data)
+            } else {
+                AppToast.warning(this, getString(R.string.screen_capture_denied))
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -241,9 +309,21 @@ class MainActivity : AppCompatActivity() {
         }
         binding.flipCameraButton.setOnClickListener { flipCamera() }
         binding.torchButton.setOnClickListener { toggleTorch() }
+        binding.sourceButton.setOnClickListener { showSourceMenu() }
         addPressPop(binding.settingsButton)
         addPressPop(binding.flipCameraButton)
         addPressPop(binding.torchButton)
+        addPressPop(binding.sourceButton)
+        updateSourceIcon()
+
+        // A capture service left over from an activity that was destroyed
+        // mid-cast: nothing owns it now, so without this it would sit in the
+        // notification shade with the system still marking the screen as
+        // shared, and the fresh UI would look idle next to it.
+        if (ScreenCaptureService.isRunning && mediaProjection == null) {
+            Log.w(TAG, "an orphaned screen-capture service was still running — stopping it")
+            ScreenCaptureService.stop(this)
+        }
 
         cameraLifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
@@ -253,6 +333,36 @@ class MainActivity : AppCompatActivity() {
         initializeAdsWithConsent()
         startUiTicker()
         animateEntrance()
+        warmUpDeviceProbe()
+    }
+
+    /** The probed device, once it lands. Null until then — never blocked on. */
+    private var deviceInfo: DeviceCapabilities.DeviceInfo? = null
+
+    /**
+     * Runs the camera probe off the main thread so the zoom chips can be built
+     * from this phone's real lenses.
+     *
+     * Rebuilds the chips when it finishes, because on a cold start the camera
+     * binds before the probe completes and the first pass has nothing to work
+     * from. Cached in DeviceCapabilities, so Settings opening later is free.
+     */
+    private fun warmUpDeviceProbe() {
+        deviceInfo = DeviceCapabilities.cachedOrNull()
+        if (deviceInfo != null) return
+        cameraExecutor.execute {
+            val probed = try {
+                DeviceCapabilities.probe(this)
+            } catch (e: Exception) {
+                Log.w(TAG, "device probe failed — zoom chips fall back to digital", e)
+                null
+            } ?: return@execute
+            runOnUiThread {
+                deviceInfo = probed
+                val cam = camera ?: return@runOnUiThread
+                currentConfig?.let { buildZoomChips(cam, it) }
+            }
+        }
     }
 
     private fun animateEntrance() {
@@ -290,69 +400,264 @@ class MainActivity : AppCompatActivity() {
     // ISO and shutter speed set on the sliders (true CONTROL_AE_MODE_OFF manual).
     private var aeEnabled = true
     private var manualSensorSupported = false
-    private var isoRange: Range<Int> = Range(100, 3200)
-    private var shutterRangeNs: Range<Long> = Range(125_000L, 33_333_333L)  // 1/8000s .. 1/30s
+    // The stops actually offered, built from this camera's own reported limits
+    // in setupExposureControls. The fallbacks are only ever seen before the
+    // first bind; every real session replaces them with hardware values.
+    private var isoStops: List<Int> = ExposureScale.isoStops(100, 3200)
+    private var shutterStopsNs: List<Long> = ExposureScale.shutterStopsNs(125_000L, 33_333_333L)
+    private var isoIndex = 0
+    private var shutterIndex = 0
+    private var evIndex = 0
     private var manualFocusDiopters: Float? = null
+    private var focusProgress = 0
 
-    private fun isoFromProgress(progress: Int): Int {
-        // Log scale feels natural for ISO (100→200 matters more than 6300→6400)
-        val lo = kotlin.math.ln(isoRange.lower.toDouble())
-        val hi = kotlin.math.ln(isoRange.upper.toDouble())
-        return kotlin.math.exp(lo + (progress / 100.0) * (hi - lo)).toInt()
-    }
+    /** Which control owns the shared slider right now, or null while it is closed. */
+    private enum class ExposureControl { SHUTTER, ISO, EV, FOCUS }
+    private var openControl: ExposureControl? = null
 
-    private fun shutterNsFromProgress(progress: Int): Long {
-        val lo = kotlin.math.ln(shutterRangeNs.lower.toDouble())
-        val hi = kotlin.math.ln(shutterRangeNs.upper.toDouble())
-        return kotlin.math.exp(lo + (progress / 100.0) * (hi - lo)).toLong()
-    }
-
-    private fun formatShutter(ns: Long): String {
-        val denominator = (1_000_000_000.0 / ns).roundToInt().coerceAtLeast(1)
-        return "1/$denominator"
-    }
+    private fun currentIso(): Int = isoStops.getOrElse(isoIndex) { isoStops.first() }
+    private fun currentShutterNs(): Long = shutterStopsNs.getOrElse(shutterIndex) { shutterStopsNs.first() }
 
     private fun setupCameraControls() {
-        binding.isoSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.panelSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                binding.isoValue.text = isoFromProgress(progress).toString()
-                if (fromUser) rebuildCaptureOptions()
+                onPanelProgress(progress, fromUser)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                // Persist on release rather than on every pixel of the drag:
+                // a manual look is worth keeping across restarts, an
+                // apply()-per-frame is not.
+                saveExposurePrefs()
+            }
         })
 
-        binding.ssSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                binding.ssValue.text = formatShutter(shutterNsFromProgress(progress))
-                if (fromUser) rebuildCaptureOptions()
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
-
-        binding.exposureSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                val cam = camera ?: return
-                val range = cam.cameraInfo.exposureState.exposureCompensationRange
-                val ev = mapProgressToRange(progress, range)
-                cam.cameraControl.setExposureCompensationIndex(ev)
-                val step = cam.cameraInfo.exposureState.exposureCompensationStep.toFloat()
-                binding.exposureValue.text = "%.1f".format(ev * step)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
+        binding.shutterChip.setOnClickListener { toggleControl(ExposureControl.SHUTTER) }
+        binding.isoChip.setOnClickListener { toggleControl(ExposureControl.ISO) }
+        binding.evChip.setOnClickListener { toggleControl(ExposureControl.EV) }
+        binding.mfChip.setOnClickListener { toggleControl(ExposureControl.FOCUS) }
 
         binding.aeToggle.setOnClickListener {
             aeEnabled = !aeEnabled
-            getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
-                .putBoolean("auto_exposure", aeEnabled).apply()
+            saveExposurePrefs()
+            // The open slider may be one that no longer exists in the new mode
+            // (EV is meaningless under manual, shutter under AE), so close it
+            // rather than leave a slider driving a control nothing reads.
+            if (openControl == ExposureControl.EV || openControl == ExposureControl.SHUTTER ||
+                openControl == ExposureControl.ISO
+            ) {
+                closePanel()
+            }
             updateExposureUi()
             rebuildCaptureOptions()
             // When AE comes back, clear any leftover manual bias look by resetting EV
-            if (aeEnabled) camera?.cameraControl?.setExposureCompensationIndex(0)
+            if (aeEnabled) {
+                evIndex = 0
+                camera?.cameraControl?.setExposureCompensationIndex(0)
+                updateExposureReadouts()
+            }
         }
+    }
+
+    /**
+     * The one place a slider movement becomes a camera setting. Which control
+     * it belongs to is [openControl], so all four share a single SeekBar and
+     * a single listener instead of four near-identical ones.
+     */
+    private fun onPanelProgress(progress: Int, fromUser: Boolean) {
+        when (openControl) {
+            ExposureControl.SHUTTER -> {
+                val next = progress.coerceIn(0, shutterStopsNs.lastIndex)
+                if (fromUser && next != shutterIndex) tickDetent()
+                shutterIndex = next
+                if (fromUser) rebuildCaptureOptions()
+            }
+            ExposureControl.ISO -> {
+                val next = progress.coerceIn(0, isoStops.lastIndex)
+                if (fromUser && next != isoIndex) tickDetent()
+                isoIndex = next
+                if (fromUser) rebuildCaptureOptions()
+            }
+            ExposureControl.EV -> {
+                val cam = camera ?: return
+                val range = cam.cameraInfo.exposureState.exposureCompensationRange
+                evIndex = mapProgressToRange(progress, range)
+                cam.cameraControl.setExposureCompensationIndex(evIndex)
+            }
+            ExposureControl.FOCUS -> {
+                focusProgress = progress
+                applyFocusDistance(progress)
+            }
+            null -> return
+        }
+        updateExposureReadouts()
+    }
+
+    /**
+     * One click of feedback per stop crossed, the way a physical dial detents.
+     *
+     * This is what makes 1/6-stop density controllable rather than just
+     * denser: the stops are ~4dp apart on the rail, close enough that the eye
+     * cannot confirm a single-stop nudge mid-drag, and CLOCK_TICK — the same
+     * constant the platform's own pickers use — reports each one through the
+     * finger instead. Only ever fired for a real value change, so holding
+     * still is silent.
+     *
+     * Deliberately without FLAG_IGNORE_GLOBAL_SETTING: someone who turned
+     * system haptics off meant it, and a camera app is not the place to
+     * overrule that.
+     */
+    private fun tickDetent() {
+        binding.panelSeekBar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+    }
+
+    /** Opens [control]'s slider, or closes it if it is already the open one. */
+    private fun toggleControl(control: ExposureControl) {
+        if (openControl == control) closePanel() else openPanel(control)
+    }
+
+    /**
+     * Slides the shared slider out from behind the rail.
+     *
+     * translationX rather than an animated width: the SeekBar inside is
+     * rotated 270°, so its measured box is its own length and animating that
+     * re-lays-out (and visibly re-rotates) the track on every frame. Sliding
+     * a laid-out panel is one property, runs on the render thread, and is the
+     * same idiom animateEntrance already uses for this rail.
+     */
+    private fun openPanel(control: ExposureControl) {
+        openControl = control
+        val (title, max, progress) = when (control) {
+            ExposureControl.SHUTTER ->
+                Triple(getString(R.string.shutter_label), shutterStopsNs.lastIndex, shutterIndex)
+            ExposureControl.ISO ->
+                Triple(getString(R.string.iso_label), isoStops.lastIndex, isoIndex)
+            ExposureControl.EV -> {
+                val range = camera?.cameraInfo?.exposureState?.exposureCompensationRange
+                Triple(
+                    getString(R.string.ev_label),
+                    100,
+                    if (range == null) 50 else mapRangeToProgress(evIndex, range),
+                )
+            }
+            ExposureControl.FOCUS ->
+                Triple(getString(R.string.manual_focus_label), 100, focusProgress)
+        }
+        binding.panelTitle.text = title
+        // max before progress: a progress above the previous max is clamped.
+        binding.panelSeekBar.max = max.coerceAtLeast(1)
+        binding.panelSeekBar.progress = progress.coerceIn(0, max.coerceAtLeast(1))
+        binding.panelSeekBar.thumbTintList = android.content.res.ColorStateList.valueOf(
+            if (control == ExposureControl.FOCUS) getColor(R.color.focus_ring) else 0xFFFFFFFF.toInt(),
+        )
+        updateExposureReadouts()
+        updateChipHighlight()
+
+        val panel = binding.exposurePanel
+        if (panel.visibility != View.VISIBLE) {
+            panel.visibility = View.VISIBLE
+            panel.alpha = 0f
+            // Starts tucked behind the rail (positive X is toward it) and
+            // slides left into place.
+            panel.translationX = dp(28).toFloat()
+        }
+        panel.animate().cancel()
+        panel.animate()
+            .translationX(0f)
+            .alpha(1f)
+            .setDuration(220)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction(null)
+            .start()
+    }
+
+    private fun closePanel() {
+        openControl = null
+        updateChipHighlight()
+        val panel = binding.exposurePanel
+        if (panel.visibility != View.VISIBLE) return
+        panel.animate().cancel()
+        panel.animate()
+            .translationX(dp(28).toFloat())
+            .alpha(0f)
+            .setDuration(180)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction { panel.visibility = View.GONE }
+            .start()
+    }
+
+    /** The open chip reads as selected; the rest stay quiet. */
+    private fun updateChipHighlight() {
+        listOf(
+            ExposureControl.SHUTTER to binding.shutterChipValue,
+            ExposureControl.ISO to binding.isoChipValue,
+            ExposureControl.EV to binding.evChipValue,
+            ExposureControl.FOCUS to binding.mfChipValue,
+        ).forEach { (control, valueView) ->
+            valueView.setTextColor(
+                if (openControl == control) getColor(R.color.focus_ring) else 0xFFFFFFFF.toInt(),
+            )
+        }
+    }
+
+    /**
+     * Every readout that shows an exposure value: the chips (always visible)
+     * and the open panel (when there is one). One function so a chip can never
+     * disagree with the slider that set it.
+     */
+    private fun updateExposureReadouts() {
+        val shutterText = ExposureScale.formatShutter(currentShutterNs())
+        val isoText = currentIso().toString()
+        val evText = "%.1f".format(evIndex * evStep())
+        binding.shutterChipValue.text = shutterText
+        binding.isoChipValue.text = isoText
+        binding.evChipValue.text = evText
+
+        when (openControl) {
+            ExposureControl.SHUTTER -> {
+                binding.panelValue.text = shutterText
+                // The honest part: a shutter slower than the frame interval
+                // caps the capture rate, so say which rate rather than let the
+                // stream quietly halve.
+                val ceiling = ExposureScale.frameRateCeiling(currentShutterNs())
+                val targetFps = currentConfig?.fps ?: 30
+                if (ceiling < targetFps) {
+                    binding.panelHint.text = getString(R.string.fps_ceiling_format, ceiling)
+                    binding.panelHint.visibility = View.VISIBLE
+                    binding.panelValue.setTextColor(getColor(R.color.accent_amber))
+                } else {
+                    binding.panelHint.visibility = View.GONE
+                    binding.panelValue.setTextColor(0xFFFFFFFF.toInt())
+                }
+            }
+            ExposureControl.ISO -> {
+                binding.panelValue.text = isoText
+                binding.panelValue.setTextColor(0xFFFFFFFF.toInt())
+                binding.panelHint.visibility = View.GONE
+            }
+            ExposureControl.EV -> {
+                binding.panelValue.text = evText
+                binding.panelValue.setTextColor(0xFFFFFFFF.toInt())
+                binding.panelHint.visibility = View.GONE
+            }
+            ExposureControl.FOCUS -> {
+                binding.panelValue.text = binding.mfChipValue.text
+                binding.panelValue.setTextColor(0xFFFFFFFF.toInt())
+                binding.panelHint.visibility = View.GONE
+            }
+            null -> Unit
+        }
+    }
+
+    private fun evStep(): Float =
+        camera?.cameraInfo?.exposureState?.exposureCompensationStep?.toFloat() ?: (1f / 6f)
+
+    private fun saveExposurePrefs() {
+        getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
+            .putBoolean("auto_exposure", aeEnabled)
+            .putInt("manual_iso", currentIso())
+            .putLong("manual_shutter_ns", currentShutterNs())
+            .apply()
     }
 
     /** Show EV under auto-exposure; show shutter+ISO under manual. */
@@ -360,19 +665,21 @@ class MainActivity : AppCompatActivity() {
         if (!manualSensorSupported) {
             // Camera can't do manual sensor control — EV-only, hide the AE toggle
             binding.aeToggle.visibility = View.GONE
-            binding.ssGroup.visibility = View.GONE
-            binding.isoGroup.visibility = View.GONE
-            binding.evGroup.visibility = View.VISIBLE
+            binding.shutterChip.visibility = View.GONE
+            binding.isoChip.visibility = View.GONE
+            binding.evChip.visibility = View.VISIBLE
             return
         }
         binding.aeToggle.visibility = View.VISIBLE
         binding.aeToggle.setTextColor(
-            if (aeEnabled) getColor(R.color.focus_ring) else 0x77FFFFFF,
+            if (aeEnabled) getColor(R.color.focus_ring) else 0xFFFFFFFF.toInt(),
         )
-        binding.aeToggle.text = if (aeEnabled) getString(R.string.ae_label) else "M"
-        binding.ssGroup.visibility = if (aeEnabled) View.GONE else View.VISIBLE
-        binding.isoGroup.visibility = if (aeEnabled) View.GONE else View.VISIBLE
-        binding.evGroup.visibility = if (aeEnabled) View.VISIBLE else View.GONE
+        binding.aeToggle.text =
+            if (aeEnabled) getString(R.string.ae_label) else getString(R.string.manual_exposure_label)
+        binding.shutterChip.visibility = if (aeEnabled) View.GONE else View.VISIBLE
+        binding.isoChip.visibility = if (aeEnabled) View.GONE else View.VISIBLE
+        binding.evChip.visibility = if (aeEnabled) View.VISIBLE else View.GONE
+        updateExposureReadouts()
     }
 
     /**
@@ -403,9 +710,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!aeEnabled && manualSensorSupported) {
+            val exposureNs = currentShutterNs()
             b.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
-            b.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, isoFromProgress(binding.isoSeekBar.progress))
-            b.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, shutterNsFromProgress(binding.ssSeekBar.progress))
+            b.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, currentIso())
+            b.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureNs)
+            // Without this, a long shutter is a request the HAL is entitled to
+            // ignore. Camera2's contract is exposure_time <= frame_duration,
+            // and frame duration otherwise comes from the session's target fps
+            // — so at 60fps every exposure longer than 16.7ms was silently
+            // clamped back to 16.7ms, which is why the slider's slow end used
+            // to do visibly nothing. Asking for a frame duration that fits the
+            // exposure is what actually buys the long end of the range; the
+            // frame rate drops to match, which is what the panel's amber
+            // "≤N fps" is warning about.
+            val framePeriodNs = 1_000_000_000L / (currentConfig?.fps ?: 30).coerceAtLeast(1)
+            b.setCaptureRequestOption(
+                CaptureRequest.SENSOR_FRAME_DURATION,
+                maxOf(exposureNs, framePeriodNs),
+            )
         }
 
         Camera2CameraControl.from(cam.cameraControl).captureRequestOptions = b.build()
@@ -480,6 +802,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun flipCamera() {
+        if (screenSessionActive) {
+            AppToast.info(this, getString(R.string.screen_controls_unavailable))
+            return
+        }
         // Icon spin mirrors the physical camera swap
         binding.flipCameraButton.animate()
             .rotationBy(180f)
@@ -518,6 +844,16 @@ class MainActivity : AppCompatActivity() {
     private fun mapProgressToRange(progress: Int, range: Range<Int>): Int {
         val fraction = progress / 100f
         return (range.lower + fraction * (range.upper - range.lower)).toInt()
+    }
+
+    /**
+     * The inverse, so reopening the EV slider puts the thumb where the value
+     * already is instead of snapping back to the middle of the range.
+     */
+    private fun mapRangeToProgress(value: Int, range: Range<Int>): Int {
+        val span = range.upper - range.lower
+        if (span <= 0) return 50
+        return (((value - range.lower).toFloat() / span) * 100).roundToInt().coerceIn(0, 100)
     }
 
     private fun toggleTorch() {
@@ -652,7 +988,49 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Unknown model: generic digital-zoom steps clipped to the camera's range
+        // Unknown model, but the probe found real lenses: build the chips from
+        // those instead of from generic digital-zoom steps.
+        //
+        // This is the path every phone that is not in the database takes, and
+        // it used to end at the digital fallback below — measured on a Redmi
+        // Note 11S, which has a real 0.6x ultra-wide and was showing 1x/2x/5x
+        // digital crops of the main sensor and no way to reach the second
+        // lens at all.
+        // One chip per lens category, and where a category has several
+        // cameras the biggest sensor wins. Phones expose more back ids than
+        // they have lenses — a Redmi Note 11S reports both the 12MP main at
+        // 1.0x and a logical wrapper around it at 0.8x, and picking by list
+        // order would have made the wrapper the "1x". Sensor size is the
+        // property that actually distinguishes the real lens from a wrapper.
+        val probedLenses = deviceInfo?.cameras
+            ?.filter { it.facing == "back" && it.zoomFactor != null }
+            ?.groupBy { it.lens }
+            ?.mapNotNull { (_, cams) -> cams.maxByOrNull { it.sensorMegapixels } }
+            ?.sortedBy { it.zoomFactor }
+        if (probedLenses != null && probedLenses.size >= 2) {
+            row.visibility = View.VISIBLE
+            probedLenses.forEach { probed ->
+                val active = probed.lens == cfg.lensType
+                row.addView(makeZoomChip(formatZoomFactor(probed.zoomFactor ?: 1f), active) {
+                    if (probed.lens == cfg.lensType) return@makeZoomChip
+                    getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
+                        .putInt("lens", lensPrefIndex[probed.lens] ?: 0)
+                        .apply()
+                    // Same restart contract as the known-model branch above.
+                    if (isStreaming) {
+                        Log.i(TAG, "lens change while streaming — restarting the session")
+                        stopStreaming()
+                        startStreaming()
+                    } else {
+                        startCamera()
+                    }
+                })
+            }
+            return
+        }
+
+        // Nothing distinct to switch to: generic digital-zoom steps clipped to
+        // the camera's range, which is all a single-lens phone can offer.
         val zoomState = cam.cameraInfo.zoomState.value
         val minRatio = zoomState?.minZoomRatio ?: 1f
         val maxRatio = zoomState?.maxZoomRatio ?: 1f
@@ -703,6 +1081,10 @@ class MainActivity : AppCompatActivity() {
             background = ContextCompat.getDrawable(this@MainActivity, R.drawable.btn_circle_dark)
             setChipActive(this, active)
             setOnClickListener {
+                if (screenSessionActive) {
+                    AppToast.info(this@MainActivity, getString(R.string.screen_controls_unavailable))
+                    return@setOnClickListener
+                }
                 onTap()
                 // Pop feedback on the tapped chip
                 animate().cancel()
@@ -714,18 +1096,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    /**
+     * The focus distance the MF chip's slider maps onto, in diopters — kept as
+     * state because the slider that drives it is now shared with ISO, shutter
+     * and EV, so the conversion can no longer live in a closure that only
+     * exists while the MF slider does.
+     */
+    private var minFocusDiopters = 0f
+
+    private fun applyFocusDistance(progress: Int) {
+        if (minFocusDiopters <= 0f) return
+        val diopters = (progress / 100f) * minFocusDiopters
+        manualFocusDiopters = diopters
+        rebuildCaptureOptions()
+        binding.mfChipValue.text = if (diopters < 0.05f) "∞" else "%.1fm".format(1f / diopters)
+    }
+
     @OptIn(ExperimentalCamera2Interop::class)
     private fun applyFocusMode(cam: Camera, cfg: StreamConfig) {
         val manual = cfg.autofocusMode == StreamConfig.AutofocusMode.MANUAL
-        val mfVisibility = if (manual) View.VISIBLE else View.GONE
-        binding.mfDivider.visibility = mfVisibility
-        binding.mfLabel.visibility = mfVisibility
-        binding.mfSeekBar.visibility = mfVisibility
-        binding.mfValue.visibility = mfVisibility
 
-        if (!manual) {
+        fun disableManualFocus() {
+            binding.mfChip.visibility = View.GONE
+            if (openControl == ExposureControl.FOCUS) closePanel()
+            minFocusDiopters = 0f
             manualFocusDiopters = null
             rebuildCaptureOptions()
+        }
+
+        if (!manual) {
+            disableManualFocus()
             return
         }
 
@@ -735,33 +1135,32 @@ class MainActivity : AppCompatActivity() {
             ?: 0f
         if (minFocusDistance <= 0f) {
             // Fixed-focus camera: manual mode is meaningless, quietly fall back
-            binding.mfDivider.visibility = View.GONE
-            binding.mfLabel.visibility = View.GONE
-            binding.mfSeekBar.visibility = View.GONE
-            binding.mfValue.visibility = View.GONE
-            manualFocusDiopters = null
-            rebuildCaptureOptions()
+            disableManualFocus()
             return
         }
 
-        fun applyFocusDistance(progress: Int) {
-            val diopters = (progress / 100f) * minFocusDistance
-            manualFocusDiopters = diopters
-            rebuildCaptureOptions()
-            binding.mfValue.text = if (diopters < 0.05f) "∞" else "%.1fm".format(1f / diopters)
-        }
-
-        applyFocusDistance(binding.mfSeekBar.progress)
-        binding.mfSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                applyFocusDistance(progress)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
+        binding.mfChip.visibility = View.VISIBLE
+        minFocusDiopters = minFocusDistance
+        applyFocusDistance(focusProgress)
     }
 
-    /** Reads sensor limits of the bound camera and syncs the exposure rail to them. */
+    /**
+     * Reads the sensor's own limits and builds the stops the manual controls
+     * offer from them.
+     *
+     * **No clamp.** The previous version narrowed the shutter to a hardcoded
+     * 1/8000..1/15 "video-sensible" window. On the S23 Ultra the sensor
+     * reports 1/18570..0.15s, so a third of the real range was unreachable,
+     * and on a phone whose HAL reports whole seconds it would have hidden all
+     * of them. Whatever SENSOR_INFO_EXPOSURE_TIME_RANGE and
+     * SENSOR_INFO_SENSITIVITY_RANGE say is what the user gets, ISO 50 and
+     * 30-second exposures included where the hardware has them.
+     *
+     * Called on every bind, and the stops change with the camera (the
+     * ultra-wide and the tele report different floors), so the saved values
+     * are re-snapped to the new list rather than the raw index being reused —
+     * index 12 means a different ISO on a different lens.
+     */
     @OptIn(ExperimentalCamera2Interop::class)
     private fun setupExposureControls(cam: Camera) {
         val info = Camera2CameraInfo.from(cam.cameraInfo)
@@ -774,22 +1173,46 @@ class MainActivity : AppCompatActivity() {
         if (manualSensorSupported) {
             info.getCameraCharacteristic(
                 android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE,
-            )?.let { isoRange = it }
+            )?.let { isoStops = ExposureScale.isoStops(it.lower, it.upper) }
             info.getCameraCharacteristic(
                 android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE,
-            )?.let { hw ->
-                // Clamp to video-sensible shutter speeds: 1/8000s .. 1/15s
-                shutterRangeNs = Range(
-                    maxOf(hw.lower, 125_000L),
-                    minOf(hw.upper, 66_666_666L),
-                )
+            )?.let {
+                // The fast end is the sensor's; the slow end is the slower of
+                // the sensor's and 1/24 — see ExposureScale.slowestForVideo.
+                // Clamped at the call site rather than inside shutterStopsNs
+                // so the policy is visible where the hardware range is read,
+                // and so the table itself stays a plain description of what a
+                // shutter dial offers.
+                shutterStopsNs =
+                    ExposureScale.shutterStopsNs(it.lower, ExposureScale.slowestForVideo(it.upper))
             }
         }
 
-        aeEnabled = getSharedPreferences("stream_settings", MODE_PRIVATE)
-            .getBoolean("auto_exposure", true)
-        binding.isoValue.text = isoFromProgress(binding.isoSeekBar.progress).toString()
-        binding.ssValue.text = formatShutter(shutterNsFromProgress(binding.ssSeekBar.progress))
+        val prefs = getSharedPreferences("stream_settings", MODE_PRIVATE)
+        aeEnabled = prefs.getBoolean("auto_exposure", true)
+        // Restore by VALUE, not by slider position: the last ISO the user
+        // chose is a number, and it should come back as that number (or the
+        // nearest this camera can do) rather than as whatever "60% along the
+        // rail" happens to mean here. Defaults land on 1/60 and ISO 400, a
+        // usable video starting point instead of the two arbitrary slider
+        // positions the layout used to hardcode.
+        val savedIso = prefs.getInt("manual_iso", 400).toLong()
+        val savedShutter = prefs.getLong("manual_shutter_ns", 16_666_666L)
+        isoIndex = ExposureScale.nearestIndex(isoStops.map { it.toLong() }, savedIso)
+        shutterIndex = ExposureScale.nearestIndex(shutterStopsNs, savedShutter)
+        evIndex = cam.cameraInfo.exposureState.exposureCompensationIndex
+
+        Log.i(
+            TAG,
+            "exposure: manual=$manualSensorSupported iso=${isoStops.first()}..${isoStops.last()} " +
+                "(${isoStops.size} stops) shutter=${ExposureScale.formatShutter(shutterStopsNs.first())}.." +
+                "${ExposureScale.formatShutter(shutterStopsNs.last())} (${shutterStopsNs.size} stops) " +
+                "-> iso=${currentIso()} ss=${ExposureScale.formatShutter(currentShutterNs())}",
+        )
+
+        // A rebind can arrive with a control open whose stop list just changed
+        // under it; reopening re-reads max/progress from the new list.
+        openControl?.let { openPanel(it) }
         updateExposureUi()
         rebuildCaptureOptions()
     }
@@ -905,9 +1328,185 @@ class MainActivity : AppCompatActivity() {
     private fun onToggleStreamClicked() {
         if (isStreaming) {
             stopStreaming()
+        } else if (captureSourceIsScreen() && mediaProjection == null) {
+            // Notification permission first, projection consent second: the
+            // notification is the only way to stop a cast from outside the
+            // app, and asking for it after the projection dialog would put a
+            // second prompt on top of a session that already started. One
+            // prompt at a time, in the order the session needs them.
+            if (needsNotificationPermission()) {
+                pendingScreenStart = true
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                screenCaptureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+            }
         } else {
             startStreaming()
         }
+    }
+
+    // ─────────────── capture source: camera vs screen ───────────────
+
+    private fun needsNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+
+    private fun captureSourceIsScreen(): Boolean =
+        getSharedPreferences("stream_settings", MODE_PRIVATE).getInt("capture_source", 0) == 1
+
+    private fun updateSourceIcon() {
+        binding.sourceButton.setImageResource(
+            if (captureSourceIsScreen()) R.drawable.ic_source_screen else R.drawable.ic_source_camera,
+        )
+    }
+
+    private fun showSourceMenu() {
+        val popup = PopupMenu(this, binding.sourceButton)
+        popup.menu.add(0, 0, 0, getString(R.string.source_camera))
+        popup.menu.add(0, 1, 1, getString(R.string.source_screen))
+        popup.menu.setGroupCheckable(0, true, true)
+        popup.menu.getItem(if (captureSourceIsScreen()) 1 else 0).isChecked = true
+        popup.setOnMenuItemClickListener { item ->
+            onSourceSelected(screen = item.itemId == 1)
+            true
+        }
+        popup.show()
+    }
+
+    private fun onSourceSelected(screen: Boolean) {
+        val wasScreen = captureSourceIsScreen()
+        getSharedPreferences("stream_settings", MODE_PRIVATE).edit()
+            .putInt("capture_source", if (screen) 1 else 0).apply()
+        updateSourceIcon()
+        if (screen) {
+            // The honest numbers for this mode, up front: what limits the
+            // stream here is the panel — its resolution and refresh rate —
+            // not the camera sensor.
+            val dm = realDisplayMetrics()
+            AppToast.info(
+                this,
+                getString(R.string.screen_mode_limits, dm.widthPixels, dm.heightPixels, displayRefreshHz()),
+            )
+        }
+        if (wasScreen == screen) return
+        if (isStreaming) {
+            // Same treatment as a Settings geometry change: restart the
+            // session into the newly chosen source.
+            stopStreaming()
+            onToggleStreamClicked()
+        }
+    }
+
+    private fun realDisplayMetrics(): DisplayMetrics {
+        val dm = DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(dm)
+        return dm
+    }
+
+    @Suppress("DEPRECATION")
+    private fun displayRefreshHz(): Int = windowManager.defaultDisplay.refreshRate.roundToInt()
+
+    /**
+     * Consent granted: bring up the foreground service the projection APIs
+     * require, and only once it reports startForeground has run (the moment
+     * the mediaProjection type check passes) create the projection and start
+     * the session. Doing it in that order is not style — Android 14 throws
+     * on any other sequence.
+     */
+    private fun startScreenServiceThenStream(resultCode: Int, data: Intent) {
+        ScreenCaptureService.onReady = {
+            uiHandler.post {
+                try {
+                    val projection = mediaProjectionManager.getMediaProjection(resultCode, data)
+                        ?: throw IllegalStateException("system returned no MediaProjection")
+                    projection.registerCallback(projectionCallback, uiHandler)
+                    mediaProjection = projection
+                    startStreaming()
+                } catch (e: Exception) {
+                    Log.e(TAG, "getMediaProjection failed", e)
+                    AppToast.error(this, getString(R.string.screen_capture_denied))
+                    ScreenCaptureService.stop(this)
+                }
+            }
+        }
+        ScreenCaptureService.start(this)
+    }
+
+    /**
+     * Screen-capture backend: the mirrored display replaces the camera as the
+     * producer into the streamer's input surface — everything downstream
+     * (watermark, tier gating, encoder, socket, OBS sync) is the same code the
+     * camera paths run. The camera itself is released for the session: the
+     * sensor has no business being on while the screen is what streams.
+     */
+    private fun startScreenBackend(projection: MediaProjection, activeStreamer: CameraStreamer) {
+        screenSessionActive = true
+        // The notification's Stop action, wired to the same teardown the REC
+        // button uses — the only control that exists while the user is in
+        // another app, which is where screen casting puts them.
+        ScreenCaptureService.onStopRequested = {
+            uiHandler.post { if (isStreaming) stopStreaming() }
+        }
+        stopCamera2Backend()
+        try {
+            ProcessCameraProvider.getInstance(this).get().unbindAll()
+        } catch (e: Exception) {
+            Log.w(TAG, "unbindAll before screen capture failed", e)
+        }
+        camera = null
+
+        val dm = realDisplayMetrics()
+        val refreshHz = displayRefreshHz()
+        // The panel is this session's true fps ceiling, exactly as the
+        // sensor's negotiated range is for the camera backends.
+        activeStreamer.cameraFpsCeiling = refreshHz
+        activeStreamer.setRotationDegrees(0) // screen content is already upright
+
+        activeStreamer.attachScreenSource(
+            screenWidth = dm.widthPixels,
+            screenHeight = dm.heightPixels,
+            onSurfaceReady = { surface, encWidth, encHeight ->
+                uiHandler.post {
+                    if (!isStreaming || !screenSessionActive) return@post
+                    try {
+                        virtualDisplay = projection.createVirtualDisplay(
+                            "FrameCast",
+                            encWidth, encHeight, dm.densityDpi,
+                            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                            surface, null, null,
+                        )
+                        screenSessionLabel = "${encWidth}x$encHeight"
+                        binding.screenModeLabel.visibility = View.VISIBLE
+                        binding.previewView.visibility = View.INVISIBLE
+                        binding.camera2PreviewView.visibility = View.GONE
+                        AppToast.info(
+                            this,
+                            getString(
+                                R.string.screen_mode_limits,
+                                dm.widthPixels, dm.heightPixels, refreshHz,
+                            ),
+                        )
+                        Log.i(
+                            TAG,
+                            "screen session: display=${dm.widthPixels}x${dm.heightPixels}@${refreshHz}Hz " +
+                                "encoder=${encWidth}x$encHeight",
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "createVirtualDisplay failed", e)
+                        AppToast.error(this, getString(R.string.screen_capture_denied))
+                        stopStreaming()
+                    }
+                }
+            },
+            onFailed = {
+                uiHandler.post {
+                    Log.e(TAG, "screen session could not get an encoder surface")
+                    stopStreaming()
+                }
+            },
+        )
     }
 
     /**
@@ -935,6 +1534,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startStreaming() {
+        // Screen mode without a live projection cannot start a session —
+        // onToggleStreamClicked routes through the consent dialog first, so
+        // landing here without one means the projection died in between.
+        if (captureSourceIsScreen() && mediaProjection == null) {
+            AppToast.warning(this, getString(R.string.screen_capture_denied))
+            return
+        }
         isStreaming = true
 
         // Constructed synchronously, *before* startCamera() binds the
@@ -992,7 +1598,11 @@ class MainActivity : AppCompatActivity() {
             newStreamer.authToken = prefs.getString("pc_token", "").orEmpty()
         }
 
-        if (shouldUseCamera2(cfg)) {
+        val projection = if (captureSourceIsScreen()) mediaProjection else null
+        if (projection != null) {
+            newStreamer.metrics.backend = "screen"
+            startScreenBackend(projection, newStreamer)
+        } else if (shouldUseCamera2(cfg)) {
             newStreamer.metrics.backend = "camera2"
             startCamera2Backend(cfg, newStreamer)
         } else {
@@ -1013,11 +1623,48 @@ class MainActivity : AppCompatActivity() {
         // newStreamer's own host resolution/connect above.
         pcConnectExecutor.execute {
             val host = resolveStreamHost()
-            PcControl.startServices(host)
+            val token = getSharedPreferences("stream_settings", MODE_PRIVATE)
+                .getString("pc_token", "").orEmpty()
+            PcControl.startServices(host, token)
         }
     }
 
+    /**
+     * Releases everything a screen session owns, and returns whether there was
+     * one. Safe to call twice, and safe to call while the activity is being
+     * destroyed — which is precisely why it is separate from [stopStreaming]:
+     * onDestroy must free the projection without rebinding a camera.
+     *
+     * Leaving this out of onDestroy was a real defect: an activity destroyed
+     * in the background (which screen casting invites, since the point is to
+     * be in another app) left the projection and its foreground service alive
+     * with no owner. The system kept sharing the screen, and reopening the
+     * app showed an idle-looking UI that could not stop it.
+     */
+    private fun releaseScreenSession(): Boolean {
+        // Flag first: projection.stop() fires projectionCallback.onStop, whose
+        // re-entry guard is this flag.
+        val wasScreen = screenSessionActive
+        screenSessionActive = false
+        screenSessionLabel = null
+        virtualDisplay?.release()
+        virtualDisplay = null
+        mediaProjection?.let { projection ->
+            projection.unregisterCallback(projectionCallback)
+            projection.stop()
+        }
+        mediaProjection = null
+        ScreenCaptureService.onStopRequested = null
+        if (wasScreen) ScreenCaptureService.stop(this)
+        return wasScreen
+    }
+
     private fun stopStreaming() {
+        if (releaseScreenSession()) {
+            binding.screenModeLabel.visibility = View.GONE
+            binding.previewView.visibility = View.VISIBLE
+        }
+
         stopCamera2Backend()
         streamer?.stop()
         streamer = null
@@ -1268,6 +1915,7 @@ class MainActivity : AppCompatActivity() {
      * −90° on every hold. The parity machinery stays; only the shared
      * reference changes to the one the hardware validated.
      */
+    @android.annotation.SuppressLint("NewApi") // camera2Source is only ever non-null on API 28+ (isSupported gates)
     private fun applyCamera2Rotation(surfaceRotation: Int) {
         if (camera2AppliedRotation == surfaceRotation) return
         val source = camera2Source ?: return
@@ -1298,6 +1946,7 @@ class MainActivity : AppCompatActivity() {
         view.setTransform(matrix)
     }
 
+    @android.annotation.SuppressLint("NewApi") // camera2Source is only ever non-null on API 28+ (isSupported gates)
     private fun stopCamera2Backend() {
         camera2Source?.stop()
         camera2Source = null
@@ -1493,23 +2142,59 @@ class MainActivity : AppCompatActivity() {
             // 360p etc, real pixels in, not a post-processing effect) — only
             // capped downward for very high targets, since pushing a raw 4K/8K
             // surface into PreviewView is what caused the ~0.5s viewfinder lag.
-            // Capped through fitWithin so the cap shrinks the target without
-            // reshaping it — a flat 1920x1080 here would hand a vertical
-            // composition a landscape preview target to fall back from.
+            //
+            // Two things this has to get right, and both were measured wrong:
+            //
+            //  - The cap is a PIXEL BUDGET, not a 1920x1080 box. The box was
+            //    the same defect fitPixelBudget already removed from the
+            //    reward-tier ceiling: it charged every vertical composition
+            //    44% of its linear size for nothing, turning a 1080x1920
+            //    request into 608x1080.
+            //  - The bound is expressed in SENSOR orientation. CameraX never
+            //    rotates it — see StreamConfig.sensorOriented for the measured
+            //    consequence (a 9:16 viewfinder bound at 320x240).
+            //
+            // Together those two produced the "vertical looks pixelated, but
+            // fake-pixelated" report: 320x240 stretched across a 1440x2560
+            // view. Neither ever touched the streamed frames, which is why the
+            // PC side looked fine while the phone did not.
+            val (budgetWidth, budgetHeight) =
+                StreamConfig.fitPixelBudget(targetWidth, targetHeight, 1920L * 1080)
             val (previewWidth, previewHeight) =
-                StreamConfig.fitWithin(targetWidth, targetHeight, 1920, 1080)
+                StreamConfig.sensorOriented(budgetWidth, budgetHeight)
             val previewSelector = ResolutionSelector.Builder()
+                // Without this the search runs in CameraX's default 4:3 group
+                // (RATIO_4_3_FALLBACK_AUTO_STRATEGY), so even a correct
+                // 1920x1080 bound comes back as 1440x1080 and the ViewPort
+                // then crops a 16:9 composition out of it at 1440x810. Asking
+                // in the composition's own shape is the same principle the
+                // capture side already follows: don't make the camera produce
+                // pixels the crop is going to throw away.
+                .setAspectRatioStrategy(aspectRatioStrategyFor(previewWidth, previewHeight))
                 .setResolutionStrategy(
                     ResolutionStrategy(
                         android.util.Size(previewWidth, previewHeight),
+                        // Kept deliberately: "closest lower" is what makes the
+                        // viewfinder honest about a 480p or 360p preset instead
+                        // of showing a sharper image than the PC receives.
                         ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
                     ),
                 )
                 .build()
+            // Sensor-oriented for the same reason as the preview. In practice
+            // this selector is not consulted at all — VideoCapture's
+            // OPTION_CUSTOM_ORDERED_RESOLUTIONS, built from StreamingVideoOutput's
+            // MediaSpec, outranks it and getSortedSupportedOutputSizes returns
+            // that list before ever reading a ResolutionSelector — but the
+            // portrait bound sat here as a loaded gun aimed at the streamed
+            // frames for the day that list comes back empty, which is exactly
+            // the failure getMediaCapabilities was added to prevent.
+            val (videoBoundWidth, videoBoundHeight) =
+                StreamConfig.sensorOriented(targetWidth, targetHeight)
             val videoSelector = ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
-                        android.util.Size(targetWidth, targetHeight),
+                        android.util.Size(videoBoundWidth, videoBoundHeight),
                         ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
                     ),
                 )
@@ -1593,6 +2278,10 @@ class MainActivity : AppCompatActivity() {
                 mainVideoOutput.neededWidth = needW
                 mainVideoOutput.neededHeight = needH
                 Log.i(TAG, "capture need: ${needW}x$needH (encoder=${targetWidth}x$targetHeight hold=$knownBucket)")
+                // WrongConstant: knownBucket IS a Surface.ROTATION_* value — it
+                // comes from the rotation debouncer's bucket — lint just can't
+                // see through the Int.
+                @android.annotation.SuppressLint("WrongConstant")
                 val videoCaptureBuilder = VideoCapture.Builder(mainVideoOutput)
                     .setResolutionSelector(videoSelector)
                     // The RAW physical hold, not the display rotation (locked
@@ -1629,6 +2318,9 @@ class MainActivity : AppCompatActivity() {
             // inversion goes with it. Held landscape, 16:9 crops the full
             // sensor; held vertical, 16:9 is the upright wide slice — exactly
             // what the letterboxed viewfinder shows.
+            // WrongConstant: knownBucket is a Surface.ROTATION_* bucket, same
+            // as setTargetRotation above.
+            @android.annotation.SuppressLint("WrongConstant")
             val viewPort = ViewPort.Builder(
                 android.util.Rational(ratioNum, ratioDenom),
                 knownBucket,
@@ -1644,6 +2336,23 @@ class MainActivity : AppCompatActivity() {
                 cameraProvider.unbindAll()
                 camera = cameraProvider.bindToLifecycle(cameraLifecycleOwner, selector, buildUseCaseGroup(preview))
                 Log.i(TAG, "camera bound: ${cfg.qualityLabel} · ${cfg.aspectRatio} · lens=$currentLensFacing · streaming=$isStreaming")
+                // What the bound camera will actually zoom to, as opposed to
+                // what its characteristics advertise. A minZoomRatio below 1
+                // means the wider lens is reachable through this camera by
+                // zoom alone — no second id to open, no hidden id to guess.
+                camera?.cameraInfo?.zoomState?.value?.let { z ->
+                    Log.i(TAG, "zoomState: min=${z.minZoomRatio} max=${z.maxZoomRatio} current=${z.zoomRatio}")
+                }
+                // The viewfinder's own geometry line, and the one number that
+                // had no log at all while the vertical viewfinder was running
+                // at 320x240: what the selector ASKED for versus what CameraX
+                // actually bound. `dumpsys media.camera` was the only way to
+                // see it, and only while the session was live.
+                Log.i(
+                    TAG,
+                    "preview: asked=${previewWidth}x$previewHeight " +
+                        "bound=${preview.resolutionInfo?.resolution} view=${cfg.aspectRatio}",
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "camera bind failed for ${cfg.qualityLabel}", e)
                 AppToast.warning(this, "${cfg.qualityLabel} not supported by this camera")
@@ -1678,10 +2387,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Which of CameraX's two aspect-ratio groups a sensor-oriented
+     * [width]x[height] belongs in.
+     *
+     * The candidate list is grouped by aspect ratio *before* the resolution
+     * strategy runs, and the group matching the preferred ratio is searched
+     * first — so the preferred ratio, not the bound size, decides which sizes
+     * are even considered. RATIO_16_9 and RATIO_4_3 are the only two values
+     * the API takes; every composition this app offers is nearer one or the
+     * other (16:9 and 9:16 land on 16:9 once sensor-oriented; 4:3, 3:4 and 1:1
+     * on 4:3). FALLBACK_RULE_AUTO keeps the other group available underneath,
+     * so a camera that offers only one of the two still binds.
+     */
+    private fun aspectRatioStrategyFor(width: Int, height: Int): AspectRatioStrategy {
+        val ratio = width.toFloat() / height.coerceAtLeast(1)
+        val nearerWide = kotlin.math.abs(ratio - 16f / 9) < kotlin.math.abs(ratio - 4f / 3)
+        return if (nearerWide) {
+            AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        } else {
+            AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        }
+    }
+
+    /**
      * Video stabilization and white balance were previously Settings toggles with no
      * effect at all — saved to prefs, never read by the camera pipeline. Camera2Interop
      * lets CameraX carry raw CaptureRequest options through to the capture session.
      */
+    // NewApi: setPhysicalCameraId is API 28, but physicalCameraId is only ever
+    // non-null on API 28+ — every discovery path (physicalIdFor, the inventory)
+    // returns null/empty below P.
+    @android.annotation.SuppressLint("NewApi")
     @OptIn(ExperimentalCamera2Interop::class)
     private fun applyCamera2Options(
         builder: Preview.Builder,
@@ -1715,6 +2451,8 @@ class MainActivity : AppCompatActivity() {
      * is null (either facing the front camera, "wide" was picked, or this device has
      * no distinct id for that lens at all).
      */
+    // NewApi: same argument as applyCamera2Options — null below API 28.
+    @android.annotation.SuppressLint("NewApi")
     @OptIn(ExperimentalCamera2Interop::class)
     private fun applyPhysicalCameraId(
         builder: VideoCapture.Builder<com.phonecam.streamer.streaming.StreamingVideoOutput>,
@@ -1760,6 +2498,7 @@ class MainActivity : AppCompatActivity() {
     /** cameraId is the top-level id CameraManager can query characteristics for (e.g. AE fps ranges) even when physicalCameraId is also set. */
     private data class CameraBinding(val selector: CameraSelector, val cameraId: String?, val physicalCameraId: String?)
 
+    @OptIn(ExperimentalCamera2Interop::class) // Camera2CameraInfo.from in the camera filter
     private fun resolveCameraBinding(cfg: StreamConfig): CameraBinding {
         val plainSelector = CameraSelector.Builder()
             .requireLensFacing(currentLensFacing)
@@ -1890,7 +2629,10 @@ class MainActivity : AppCompatActivity() {
         Log.w(TAG, "capture frozen for ${age}ms — restarting the session (watchdog)")
         AppToast.warning(this, getString(R.string.toast_capture_frozen_restart))
         stopStreaming()
-        startStreaming()
+        // Through the toggle, not startStreaming() directly: a screen session
+        // lost its projection in stopStreaming() and needs the consent flow
+        // again; camera sessions take the direct path as before.
+        onToggleStreamClicked()
     }
 
     private fun refreshStatusUi() {
@@ -1925,6 +2667,19 @@ class MainActivity : AppCompatActivity() {
      * the tier ceiling only if a session hasn't actually started yet.
      */
     private fun streamingResolutionLabel(): String {
+        // Screen sessions ignore the camera Settings entirely; what the
+        // encoder was really built at is the only honest label.
+        screenSessionLabel?.let { return it }
+        // Same rule for the camera: what is actually being encoded and sent,
+        // not what was asked for. The two differ whenever a backend cannot
+        // honour the request — 60fps on CameraX here really is 30, and an 8K
+        // pick is delivered as 4K because that is all the PC's virtual camera
+        // can carry (see FrameEncoder's tier ceiling).
+        streamer?.let { active ->
+            if (active.streamedWidth > 0 && active.streamedFps > 0) {
+                return "${active.streamedWidth}x${active.streamedHeight} ${active.streamedFps}fps"
+            }
+        }
         val cfg = currentConfig ?: return if (rewardManager.currentProfile().premiumActive) "4K60" else "1080p60"
         // Camera2 reports what it actually negotiated with the HAL, which is
         // the number worth showing — under CameraX the label can only ever
@@ -1973,6 +2728,9 @@ class MainActivity : AppCompatActivity() {
         // The only place cameraLifecycleOwner ever moves down — see its doc.
         cameraLifecycleOwner.registry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         recDotAnimator?.cancel()
+        // Before the streamer: the projection feeds the encoder, so it is the
+        // producer that has to go first. See releaseScreenSession.
+        releaseScreenSession()
         streamer?.stop()
         stopAudioMeter()
         cameraExecutor.shutdown()

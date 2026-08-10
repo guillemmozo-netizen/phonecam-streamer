@@ -12,6 +12,14 @@
          gated behind the UMP consent flow in ConsentManager — not for analytics. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID"
         tools:ignore="AdvertisingId" />
+    <!-- Screen-capture mode: the projection APIs demand a foreground service
+         of type mediaProjection (its notification is the user's guarantee
+         that the screen can never be shared invisibly). POST_NOTIFICATIONS
+         lets that notification actually show on 13+; the service itself runs
+         either way. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />
 
     <!-- PcControl.kt talks to the PC's control_server over plain http:// on the
@@ -62,6 +70,34 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.PhoneCamStreamer"
             tools:ignore="LockedOrientationActivity" />
+
+        <activity
+            android:name=".DiagnosticsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.PhoneCamStreamer"
+            tools:ignore="LockedOrientationActivity" />
+
+        <!-- Foreground anchor for screen-capture sessions — see its class
+             doc. Not exported; started/stopped only by MainActivity. -->
+        <service
+            android:name=".screen.ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- Only exists to hand the exported diagnostics JSON to the system
+             chooser. Not exported, no permission granted by default: the
+             grant rides on the Intent, for one file, for as long as the
+             chooser target holds it. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

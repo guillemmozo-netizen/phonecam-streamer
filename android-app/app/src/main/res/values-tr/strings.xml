@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Ücretsiz</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Yayın sırasında</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">ÜCRETSİZ</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">4K kayıt, filigran kaldırma, gelişmiş ses kontrolleri ve öncelikli destek kilidini açın.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Bu bağımsız uygulamayı desteklediğin için teşekkürler ❤️</string>
-    <string name="welcome_message">PhoneCam tek bir kişi tarafından bağımsız olarak geliştiriliyor.\n\nAlpha ve Beta aşamalarında desteğin için teşekkür etmek amacıyla tüm Pro özelliklerini ödüllü reklamlar aracılığıyla sunuyoruz.\n\nUygulamayı test etmen, geri bildirim göndermen ve başkalarıyla paylaşman, onu geliştirmeye devam etmemizi sağlıyor.\n\nProjenin en başından beri bir parçası olduğun için teşekkürler.</string>
+    <string name="welcome_message">FrameCast tek bir kişi tarafından bağımsız olarak geliştiriliyor.\n\nAlpha ve Beta aşamalarında desteğin için teşekkür etmek amacıyla tüm Pro özelliklerini ödüllü reklamlar aracılığıyla sunuyoruz.\n\nUygulamayı test etmen, geri bildirim göndermen ve başkalarıyla paylaşman, onu geliştirmeye devam etmemizi sağlıyor.\n\nProjenin en başından beri bir parçası olduğun için teşekkürler.</string>
     <string name="welcome_button">Devam et</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Alpha ve Beta süresince, tüm Pro özellikleri ödüllü reklamlar izlenerek ücretsiz olarak açılabilir.</string>
-    <string name="pro_feature_locked_desc">Bu ayar PhoneCam Pro gerektirir — kilidini açmak için kamera ekranında reklam izle</string>
+    <string name="pro_feature_locked_desc">Bu ayar FrameCast Pro gerektirir — kilidini açmak için kamera ekranında reklam izle</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">%1$d saat Pro kazan</string>
@@ -148,7 +147,7 @@
     <string name="pc_status_unreachable">PC\'ye ulaşılamıyor</string>
     <string name="pc_starting">Başlatılıyor…</string>
     <string name="pc_services_started">PC hizmetleri başlatıldı</string>
-    <string name="pc_unreachable_hint">PC\'ye ulaşılamıyor — önce PhoneCam_PC.bat dosyasını çalıştırın</string>
+    <string name="pc_unreachable_hint">PC\'ye ulaşılamıyor — önce FrameCast_PC.bat dosyasını çalıştırın</string>
     <string name="pc_services_stopped">PC hizmetleri durduruldu</string>
     <string name="pc_usb_forwarded">USB portları yönlendirildi</string>
     <string name="pc_usb_failed">Başarısız — USB bağlantısını kontrol edin</string>
@@ -216,4 +215,45 @@
     <string name="speedtest_uploading">Bilgisayara yükleniyor…</string>
     <string name="speedtest_downloading">Bilgisayardan indiriliyor…</string>
     <string name="speedtest_cleaning_up">Temizleniyor…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Deneysel Camera2 yakalama</string>
+    <string name="settings_experimental_camera2_hint">Gerçek 4K60\'ı açar. Yayın sırasında kamera kontrolleri devre dışıdır.</string>
+    <string name="toast_camera2_fallback">Camera2 arka ucu kullanılamıyor — CameraX kullanılıyor</string>
+    <string name="toast_capture_frozen_restart">Kamera sistem tarafından donduruldu — yayın yeniden başlatılıyor</string>
+    <string name="diagnostics_title">Kamera tanılama</string>
+    <string name="diagnostics_open">Camera2 özellikleri</string>
+    <string name="diagnostics_open_summary">Tam Camera2 raporu · JSON dışa aktar</string>
+    <string name="diagnostics_device_section">CİHAZ VE EKRAN</string>
+    <string name="diagnostics_cameras_section">KAMERALAR (%1$d)</string>
+    <string name="diagnostics_logical_camera">Mantıksal kamera</string>
+    <string name="diagnostics_physical_camera">Fiziksel alt kamera</string>
+    <string name="diagnostics_see_more">Daha fazla gör</string>
+    <string name="diagnostics_sensor">Sensör</string>
+    <string name="diagnostics_max_resolution">Maks. çözünürlük</string>
+    <string name="diagnostics_sensor_size">Sensör boyutu</string>
+    <string name="diagnostics_pixel_pitch">Piksel aralığı</string>
+    <string name="diagnostics_focal_length">Odak uzaklığı</string>
+    <string name="diagnostics_aperture">Diyafram</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Deklanşör</string>
+    <string name="diagnostics_max_fps">Maks. fps</string>
+    <string name="diagnostics_empty">(boş)</string>
+    <string name="diagnostics_copy_json">JSON\'u kopyala</string>
+    <string name="diagnostics_export_json">JSON\'u dışa aktar</string>
+    <string name="diagnostics_copied">Rapor panoya kopyalandı</string>
+    <string name="diagnostics_export_failed">Rapor yazılamadı</string>
+    <string name="diagnostics_probe_failed">Bu cihazın kamera özellikleri okunamadı</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Kamera</string>
+    <string name="source_screen">Ekran</string>
+    <string name="source_button_desc">Kaynak seç: kamera veya ekran</string>
+    <string name="screen_mode_limits">Ekran: %1$d×%2$d · %3$d Hz — kameranın değil, ekranın sınırları geçerlidir</string>
+    <string name="screen_capture_denied">Ekran kaydı izni reddedildi</string>
+    <string name="screen_streaming_note">Ekran yayınlanıyor — uygulamadan çıkabilirsiniz</string>
+    <string name="screen_controls_unavailable">Ekran yayını sırasında kamera kontrolleri kullanılamaz</string>
+    <string name="screen_capture_notification_title">FrameCast — ekran yayınlanıyor</string>
+    <string name="screen_capture_notification_text">Ekran PC\'ye gönderiliyor</string>
+    <string name="settings_download_pc">PC yükleyicisini indir</string>
+    <string name="screen_capture_stop">Durdur</string>
+    <string name="screen_notification_denied">Bildirimler olmadan yayını yalnızca uygulama içinden durdurabilirsiniz</string>
 </resources>

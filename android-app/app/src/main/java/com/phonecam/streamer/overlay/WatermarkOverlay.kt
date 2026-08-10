@@ -13,7 +13,7 @@ import android.graphics.Paint
  */
 object WatermarkOverlay {
 
-    fun apply(source: Bitmap, text: String = "PhoneCam Streamer - FREE"): Bitmap {
+    fun apply(source: Bitmap, text: String = "FrameCast - FREE"): Bitmap {
         // Bitmap.getConfig() is nullable (hardware bitmaps can report null) —
         // ARGB_8888 is a safe, universally-supported fallback for a fresh copy.
         val out = source.copy(source.config ?: Bitmap.Config.ARGB_8888, true)
@@ -41,7 +41,7 @@ object WatermarkOverlay {
      * composites this as an alpha-blended texture on the GPU rather than
      * re-drawing text on every frame's Bitmap on the CPU.
      */
-    fun renderOverlay(width: Int, height: Int, text: String = "PhoneCam Streamer - FREE"): Bitmap {
+    fun renderOverlay(width: Int, height: Int, text: String = "FrameCast - FREE"): Bitmap {
         val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
 

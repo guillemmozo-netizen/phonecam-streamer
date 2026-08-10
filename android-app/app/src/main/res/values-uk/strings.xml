@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Безкоштовно</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Під час трансляції</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">БЕЗКОШТОВНО</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Розблокуйте запис у 4K, приберіть водяні знаки, отримайте розширене керування звуком і пріоритетну підтримку.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Дякуємо за підтримку цього незалежного застосунку ❤️</string>
-    <string name="welcome_message">PhoneCam розробляється незалежно однією людиною.\n\nПід час фаз Alpha і Beta ми хочемо подякувати вам за підтримку, відкривши всі функції Pro через рекламу з винагородою.\n\nВаша допомога в тестуванні застосунку, надсиланні відгуків і поширенні серед інших людей дає нам змогу й далі його вдосконалювати.\n\nДякуємо, що ви з нами від самого початку проєкту.</string>
+    <string name="welcome_message">FrameCast розробляється незалежно однією людиною.\n\nПід час фаз Alpha і Beta ми хочемо подякувати вам за підтримку, відкривши всі функції Pro через рекламу з винагородою.\n\nВаша допомога в тестуванні застосунку, надсиланні відгуків і поширенні серед інших людей дає нам змогу й далі його вдосконалювати.\n\nДякуємо, що ви з нами від самого початку проєкту.</string>
     <string name="welcome_button">Продовжити</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Під час Alpha і Beta всі функції Pro можна безкоштовно розблокувати, переглянувши рекламу з винагородою.</string>
-    <string name="pro_feature_locked_desc">Це налаштування потребує PhoneCam Pro — перегляньте рекламу на екрані камери, щоб розблокувати його</string>
+    <string name="pro_feature_locked_desc">Це налаштування потребує FrameCast Pro — перегляньте рекламу на екрані камери, щоб розблокувати його</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Отримайте %1$d годин Pro</string>
@@ -150,7 +149,7 @@
     <string name="pc_status_unreachable">ПК недоступний</string>
     <string name="pc_starting">Запуск…</string>
     <string name="pc_services_started">Служби ПК запущено</string>
-    <string name="pc_unreachable_hint">Не вдається підключитися до ПК — спочатку запустіть PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">Не вдається підключитися до ПК — спочатку запустіть FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Служби ПК зупинено</string>
     <string name="pc_usb_forwarded">USB-порти перенаправлено</string>
     <string name="pc_usb_failed">Помилка — перевірте USB-з\'єднання</string>
@@ -218,4 +217,45 @@
     <string name="speedtest_uploading">Надсилання на ПК…</string>
     <string name="speedtest_downloading">Завантаження з ПК…</string>
     <string name="speedtest_cleaning_up">Очищення…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Експериментальне захоплення Camera2</string>
+    <string name="settings_experimental_camera2_hint">Відкриває справжнє 4K60. Керування камерою вимкнено під час стриму.</string>
+    <string name="toast_camera2_fallback">Бекенд Camera2 недоступний — використовується CameraX</string>
+    <string name="toast_capture_frozen_restart">Система заморозила камеру — стрим перезапускається</string>
+    <string name="diagnostics_title">Діагностика камери</string>
+    <string name="diagnostics_open">Можливості Camera2</string>
+    <string name="diagnostics_open_summary">Повний звіт Camera2 · експорт JSON</string>
+    <string name="diagnostics_device_section">ПРИСТРІЙ І ЕКРАН</string>
+    <string name="diagnostics_cameras_section">КАМЕРИ (%1$d)</string>
+    <string name="diagnostics_logical_camera">Логічна камера</string>
+    <string name="diagnostics_physical_camera">Фізична субкамера</string>
+    <string name="diagnostics_see_more">Докладніше</string>
+    <string name="diagnostics_sensor">Сенсор</string>
+    <string name="diagnostics_max_resolution">Макс. роздільність</string>
+    <string name="diagnostics_sensor_size">Розмір сенсора</string>
+    <string name="diagnostics_pixel_pitch">Крок пікселя</string>
+    <string name="diagnostics_focal_length">Фокусна відстань</string>
+    <string name="diagnostics_aperture">Діафрагма</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Затвор</string>
+    <string name="diagnostics_max_fps">Макс. fps</string>
+    <string name="diagnostics_empty">(порожньо)</string>
+    <string name="diagnostics_copy_json">Копіювати JSON</string>
+    <string name="diagnostics_export_json">Експортувати JSON</string>
+    <string name="diagnostics_copied">Звіт скопійовано в буфер обміну</string>
+    <string name="diagnostics_export_failed">Не вдалося записати звіт</string>
+    <string name="diagnostics_probe_failed">Не вдалося прочитати можливості камери цього пристрою</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Камера</string>
+    <string name="source_screen">Екран</string>
+    <string name="source_button_desc">Вибір джерела: камера чи екран</string>
+    <string name="screen_mode_limits">Екран: %1$d×%2$d · %3$d Гц — діють обмеження екрана, а не камери</string>
+    <string name="screen_capture_denied">У дозволі на запис екрана відмовлено</string>
+    <string name="screen_streaming_note">Триває трансляція екрана — можна вийти з застосунку</string>
+    <string name="screen_controls_unavailable">Керування камерою недоступне під час трансляції екрана</string>
+    <string name="screen_capture_notification_title">FrameCast — трансляція екрана</string>
+    <string name="screen_capture_notification_text">Екран передається на ПК</string>
+    <string name="settings_download_pc">Завантажити інсталятор для ПК</string>
+    <string name="screen_capture_stop">Стоп</string>
+    <string name="screen_notification_denied">Без сповіщень зупинити трансляцію можна лише в застосунку</string>
 </resources>

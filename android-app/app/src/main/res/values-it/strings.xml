@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Gratis</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Durante la trasmissione</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">GRATIS</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Sblocca la registrazione in 4K, rimuovi le filigrane, ottieni controlli audio avanzati e assistenza prioritaria.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Grazie per aver sostenuto questa app indipendente ❤️</string>
-    <string name="welcome_message">PhoneCam è sviluppata in modo indipendente da una sola persona.\n\nDurante le fasi Alpha e Beta vogliamo ringraziarti del tuo supporto offrendo tutte le funzioni Pro tramite annunci con premio.\n\nIl tuo aiuto nel testare l\'app, inviare feedback e condividerla con altre persone ci permette di continuare a migliorarla.\n\nGrazie per far parte del progetto fin dall\'inizio.</string>
+    <string name="welcome_message">FrameCast è sviluppata in modo indipendente da una sola persona.\n\nDurante le fasi Alpha e Beta vogliamo ringraziarti del tuo supporto offrendo tutte le funzioni Pro tramite annunci con premio.\n\nIl tuo aiuto nel testare l\'app, inviare feedback e condividerla con altre persone ci permette di continuare a migliorarla.\n\nGrazie per far parte del progetto fin dall\'inizio.</string>
     <string name="welcome_button">Continua</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Durante l\'Alpha e la Beta, tutte le funzioni Pro possono essere sbloccate gratuitamente guardando annunci con premio.</string>
-    <string name="pro_feature_locked_desc">Questa impostazione richiede PhoneCam Pro — guarda gli annunci nella schermata della fotocamera per sbloccarla</string>
+    <string name="pro_feature_locked_desc">Questa impostazione richiede FrameCast Pro — guarda gli annunci nella schermata della fotocamera per sbloccarla</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Ottieni %1$d ore di Pro</string>
@@ -129,6 +128,7 @@
     <string name="ad_reward_celebration_desc">Grazie per aver sostenuto questa app indipendente — goditi %1$dh di streaming 4K60 senza filigrana.</string>
     <string name="ad_progress_title">%1$d/%2$d visti</string>
     <plurals name="ads_remaining_desc">
+        <item quantity="many">Mancano %1$d altri annunci per %2$dh di Pro</item>
         <item quantity="one">Manca %1$d altro annuncio per %2$dh di Pro</item>
         <item quantity="other">Mancano %1$d altri annunci per %2$dh di Pro</item>
     </plurals>
@@ -148,7 +148,7 @@
     <string name="pc_status_unreachable">PC non raggiungibile</string>
     <string name="pc_starting">Avvio…</string>
     <string name="pc_services_started">Servizi PC avviati</string>
-    <string name="pc_unreachable_hint">Impossibile raggiungere il PC — avvia prima PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">Impossibile raggiungere il PC — avvia prima FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Servizi PC fermati</string>
     <string name="pc_usb_forwarded">Porte USB inoltrate</string>
     <string name="pc_usb_failed">Errore — verifica la connessione USB</string>
@@ -216,4 +216,45 @@
     <string name="speedtest_uploading">Caricamento sul PC…</string>
     <string name="speedtest_downloading">Download dal PC…</string>
     <string name="speedtest_cleaning_up">Pulizia…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Cattura Camera2 sperimentale</string>
+    <string name="settings_experimental_camera2_hint">Sblocca il vero 4K60. I controlli della fotocamera sono disattivati durante lo streaming.</string>
+    <string name="toast_camera2_fallback">Backend Camera2 non disponibile — in uso CameraX</string>
+    <string name="toast_capture_frozen_restart">Fotocamera bloccata dal sistema — riavvio dello stream</string>
+    <string name="diagnostics_title">Diagnostica fotocamera</string>
+    <string name="diagnostics_open">Capacità Camera2</string>
+    <string name="diagnostics_open_summary">Report Camera2 completo · esporta JSON</string>
+    <string name="diagnostics_device_section">DISPOSITIVO E DISPLAY</string>
+    <string name="diagnostics_cameras_section">FOTOCAMERE (%1$d)</string>
+    <string name="diagnostics_logical_camera">Fotocamera logica</string>
+    <string name="diagnostics_physical_camera">Sotto-fotocamera fisica</string>
+    <string name="diagnostics_see_more">Mostra di più</string>
+    <string name="diagnostics_sensor">Sensore</string>
+    <string name="diagnostics_max_resolution">Risoluzione max</string>
+    <string name="diagnostics_sensor_size">Dimensione sensore</string>
+    <string name="diagnostics_pixel_pitch">Pixel pitch</string>
+    <string name="diagnostics_focal_length">Lunghezza focale</string>
+    <string name="diagnostics_aperture">Apertura</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Otturatore</string>
+    <string name="diagnostics_max_fps">fps max</string>
+    <string name="diagnostics_empty">(vuoto)</string>
+    <string name="diagnostics_copy_json">Copia JSON</string>
+    <string name="diagnostics_export_json">Esporta JSON</string>
+    <string name="diagnostics_copied">Report copiato negli appunti</string>
+    <string name="diagnostics_export_failed">Impossibile scrivere il report</string>
+    <string name="diagnostics_probe_failed">Impossibile leggere le capacità della fotocamera di questo dispositivo</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Fotocamera</string>
+    <string name="source_screen">Schermo</string>
+    <string name="source_button_desc">Scegli sorgente: fotocamera o schermo</string>
+    <string name="screen_mode_limits">Schermo: %1$d×%2$d · %3$d Hz — valgono i limiti dello schermo, non della fotocamera</string>
+    <string name="screen_capture_denied">Permesso di cattura schermo negato</string>
+    <string name="screen_streaming_note">Trasmissione dello schermo — puoi uscire dall\'app</string>
+    <string name="screen_controls_unavailable">Controlli fotocamera non disponibili durante la trasmissione dello schermo</string>
+    <string name="screen_capture_notification_title">FrameCast — trasmissione schermo</string>
+    <string name="screen_capture_notification_text">Lo schermo viene inviato al PC</string>
+    <string name="settings_download_pc">Scarica l\'installer per PC</string>
+    <string name="screen_capture_stop">Ferma</string>
+    <string name="screen_notification_denied">Senza notifiche potrai fermare la trasmissione solo dall\'app</string>
 </resources>

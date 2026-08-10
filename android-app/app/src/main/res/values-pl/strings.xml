@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Darmowy</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Podczas transmisji</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">DARMOWY</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Odblokuj nagrywanie w 4K, usuń znaki wodne, uzyskaj zaawansowane sterowanie dźwiękiem i priorytetowe wsparcie.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Dziękujemy za wsparcie tej niezależnej aplikacji ❤️</string>
-    <string name="welcome_message">PhoneCam jest tworzony niezależnie przez jedną osobę.\n\nW fazach Alpha i Beta chcemy podziękować za Wasze wsparcie, udostępniając wszystkie funkcje Pro poprzez reklamy z nagrodą.\n\nWasza pomoc w testowaniu aplikacji, przesyłaniu opinii i udostępnianiu jej innym pozwala nam ją stale ulepszać.\n\nDziękujemy za bycie częścią projektu od samego początku.</string>
+    <string name="welcome_message">FrameCast jest tworzony niezależnie przez jedną osobę.\n\nW fazach Alpha i Beta chcemy podziękować za Wasze wsparcie, udostępniając wszystkie funkcje Pro poprzez reklamy z nagrodą.\n\nWasza pomoc w testowaniu aplikacji, przesyłaniu opinii i udostępnianiu jej innym pozwala nam ją stale ulepszać.\n\nDziękujemy za bycie częścią projektu od samego początku.</string>
     <string name="welcome_button">Kontynuuj</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">W fazach Alpha i Beta wszystkie funkcje Pro można odblokować bezpłatnie, oglądając reklamy z nagrodą.</string>
-    <string name="pro_feature_locked_desc">To ustawienie wymaga PhoneCam Pro — obejrzyj reklamy na ekranie aparatu, aby je odblokować</string>
+    <string name="pro_feature_locked_desc">To ustawienie wymaga FrameCast Pro — obejrzyj reklamy na ekranie aparatu, aby je odblokować</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Zdobądź %1$d godzin Pro</string>
@@ -150,7 +149,7 @@
     <string name="pc_status_unreachable">Brak dostępu do PC</string>
     <string name="pc_starting">Uruchamianie…</string>
     <string name="pc_services_started">Usługi PC uruchomione</string>
-    <string name="pc_unreachable_hint">Brak dostępu do PC — najpierw uruchom PhoneCam_PC.bat</string>
+    <string name="pc_unreachable_hint">Brak dostępu do PC — najpierw uruchom FrameCast_PC.bat</string>
     <string name="pc_services_stopped">Usługi PC zatrzymane</string>
     <string name="pc_usb_forwarded">Porty USB przekierowane</string>
     <string name="pc_usb_failed">Błąd — sprawdź połączenie USB</string>
@@ -218,4 +217,45 @@
     <string name="speedtest_uploading">Wysyłanie do komputera…</string>
     <string name="speedtest_downloading">Pobieranie z komputera…</string>
     <string name="speedtest_cleaning_up">Czyszczenie…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Eksperymentalne przechwytywanie Camera2</string>
+    <string name="settings_experimental_camera2_hint">Odblokowuje prawdziwe 4K60. Sterowanie kamerą jest wyłączone podczas streamowania.</string>
+    <string name="toast_camera2_fallback">Backend Camera2 niedostępny — używany jest CameraX</string>
+    <string name="toast_capture_frozen_restart">System zawiesił kamerę — ponowne uruchamianie streamu</string>
+    <string name="diagnostics_title">Diagnostyka kamery</string>
+    <string name="diagnostics_open">Możliwości Camera2</string>
+    <string name="diagnostics_open_summary">Pełny raport Camera2 · eksport JSON</string>
+    <string name="diagnostics_device_section">URZĄDZENIE I EKRAN</string>
+    <string name="diagnostics_cameras_section">KAMERY (%1$d)</string>
+    <string name="diagnostics_logical_camera">Kamera logiczna</string>
+    <string name="diagnostics_physical_camera">Fizyczna podkamera</string>
+    <string name="diagnostics_see_more">Zobacz więcej</string>
+    <string name="diagnostics_sensor">Matryca</string>
+    <string name="diagnostics_max_resolution">Maks. rozdzielczość</string>
+    <string name="diagnostics_sensor_size">Rozmiar matrycy</string>
+    <string name="diagnostics_pixel_pitch">Rozstaw pikseli</string>
+    <string name="diagnostics_focal_length">Ogniskowa</string>
+    <string name="diagnostics_aperture">Przysłona</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Migawka</string>
+    <string name="diagnostics_max_fps">Maks. fps</string>
+    <string name="diagnostics_empty">(brak)</string>
+    <string name="diagnostics_copy_json">Kopiuj JSON</string>
+    <string name="diagnostics_export_json">Eksportuj JSON</string>
+    <string name="diagnostics_copied">Raport skopiowany do schowka</string>
+    <string name="diagnostics_export_failed">Nie można zapisać raportu</string>
+    <string name="diagnostics_probe_failed">Nie można odczytać możliwości kamery tego urządzenia</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Kamera</string>
+    <string name="source_screen">Ekran</string>
+    <string name="source_button_desc">Wybierz źródło: kamera lub ekran</string>
+    <string name="screen_mode_limits">Ekran: %1$d×%2$d · %3$d Hz — obowiązują limity ekranu, nie kamery</string>
+    <string name="screen_capture_denied">Odmówiono zgody na nagrywanie ekranu</string>
+    <string name="screen_streaming_note">Trwa przesyłanie ekranu — możesz wyjść z aplikacji</string>
+    <string name="screen_controls_unavailable">Sterowanie kamerą niedostępne podczas przesyłania ekranu</string>
+    <string name="screen_capture_notification_title">FrameCast — przesyłanie ekranu</string>
+    <string name="screen_capture_notification_text">Ekran jest przesyłany do komputera</string>
+    <string name="settings_download_pc">Pobierz instalator na PC</string>
+    <string name="screen_capture_stop">Zatrzymaj</string>
+    <string name="screen_notification_denied">Bez powiadomień zatrzymasz przesyłanie tylko w aplikacji</string>
 </resources>

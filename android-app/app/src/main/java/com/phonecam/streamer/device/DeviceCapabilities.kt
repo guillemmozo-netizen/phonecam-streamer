@@ -68,6 +68,21 @@ object DeviceCapabilities {
         Size(7680, 4320) to "4320p",
     )
 
+    /**
+     * Last completed probe, shared between screens.
+     *
+     * The probe walks every camera and every stream configuration, which is
+     * tens of binder round trips — Settings already ran it on a background
+     * thread, and the camera screen needs the same answer to build its zoom
+     * chips. Caching it means the second caller pays nothing rather than the
+     * two of them racing to compute the same thing.
+     */
+    @Volatile
+    private var cached: DeviceInfo? = null
+
+    /** The cached probe, or null if none has finished yet. Never blocks. */
+    fun cachedOrNull(): DeviceInfo? = cached
+
     fun probe(context: Context): DeviceInfo {
         val measuredRamMb = ramTotal(context)
         val ramValid = measuredRamMb > 256
@@ -82,10 +97,18 @@ object DeviceCapabilities {
         var cameras: List<CameraInfo>
         val notes = mutableListOf<String>()
 
+        // The inventory runs on every device, known or not. It is passive — it
+        // opens nothing — and on a model the database claims to know it is the
+        // only way to find out whether the database is still telling the
+        // truth about that hardware. The comparison is logged rather than
+        // acted on, so this cannot change behaviour on a tuned device.
+        val inventory = runCatching { CameraInventory.probe(context) }.getOrNull()
+
         if (known != null) {
             cameras = camerasFromSpec(known)
             notes += context.getString(com.phonecam.streamer.R.string.device_note_camera_specs_db)
             if (!ramValid) ramMb = known.ramGb * 1024L
+            inventory?.let { logDatabaseAgainstInventory(known, it) }
         } else {
             cameras = probeCameras(context)
             val camerasValid = cameras.any { it.supportedResolutions.isNotEmpty() }
@@ -116,7 +139,34 @@ object DeviceCapabilities {
             cameras = cameras,
             supportedCodecs = probeCodecs(),
             notes = notes,
-        )
+        ).also { cached = it }
+    }
+
+    /**
+     * Prints what the model database claims beside what the hardware reports.
+     *
+     * The database exists because OEM HALs used to under-report, and it is
+     * still authoritative for the models it lists — but a hand-maintained
+     * table drifts, and this is the line that catches it. It already caught
+     * one: the database credits an S23 Ultra's wide lens with 7680x4320,
+     * while every Camera2 output on that device tops out at 4080x3060.
+     */
+    private fun logDatabaseAgainstInventory(
+        known: DeviceModelDatabase.KnownSpec,
+        inventory: CameraInventory.Inventory,
+    ) {
+        val fromDatabase = known.cameras
+            .filter { it.lens != "front" }
+            .sortedBy { it.zoomFactor }
+            .joinToString(", ") { "${it.lens}@${it.zoomFactor}x/${it.megapixels}MP" }
+        val fromHardware = inventory.cameras
+            .filter { it.facing == "back" && it.role.isPhotographic }
+            .sortedBy { it.zoomRatio }
+            .joinToString(", ") {
+                "${it.role}@${it.zoomRatio}x/${"%.1f".format(it.megapixels)}MP"
+            }
+        Log.i(TAG, "database says: $fromDatabase")
+        Log.i(TAG, "hardware says: $fromHardware")
     }
 
     private fun sizeForLabel(label: String): Size? =
@@ -186,25 +236,58 @@ object DeviceCapabilities {
         return (stat.availableBlocksLong * stat.blockSizeLong) / 1_073_741_824f
     }
 
+    /**
+     * Every camera this device will admit to, classified from its own numbers.
+     *
+     * Three things this does that a plain `cameraIdList` scan does not, each
+     * one a lens the user would otherwise never see:
+     *
+     * 1. **Physical sub-cameras are enumerated too.** A logical camera hides
+     *    its members behind one id; on phones that do this, the ultra-wide and
+     *    the tele have no top-level id at all. (Measured on an S23 Ultra: 4
+     *    top-level ids, 8 real cameras.)
+     * 2. **Auxiliary sensors are dropped.** 2 MP macro and depth sensors
+     *    declare themselves as ordinary cameras — on a Redmi Note 11S not one
+     *    camera declares DEPTH_OUTPUT — so they are filtered on what they are
+     *    rather than on a flag they do not set. See [CameraInventory.isAuxiliarySensor].
+     * 3. **Lens and zoom come from the hardware**, via 35mm equivalence
+     *    relative to this device's own main camera, instead of the raw focal
+     *    length. That is what makes the answer right on a brand nobody has
+     *    entered into [DeviceModelDatabase].
+     */
+    /**
+     * Every camera this device will admit to, classified by [CameraInventory].
+     *
+     * The enumeration, the auxiliary filtering and the lens naming all live in
+     * that one class so there is a single source of truth: this used to hold a
+     * second, slightly different classifier, and two of those drift.
+     */
     private fun probeCameras(context: Context): List<CameraInfo> {
+        val inventory = try {
+            CameraInventory.probe(context)
+        } catch (e: Throwable) {
+            Log.e(TAG, "camera inventory failed", e)
+            return emptyList()
+        }
+
         val mgr = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        return try {
-            mgr.cameraIdList.mapNotNull { id ->
-                try {
-                    val c = mgr.getCameraCharacteristics(id)
-                    buildCameraInfo(id, c)
-                } catch (e: Exception) {
-                    Log.w(TAG, "camera $id probe failed", e)
-                    null
-                }
+        return inventory.cameras.mapNotNull { descriptor ->
+            // Helpers are real cameras but not lenses anyone streams from.
+            if (!descriptor.role.isPhotographic) {
+                Log.i(TAG, "camera ${descriptor.id} skipped: ${descriptor.role} — ${descriptor.evidence.joinToString(", ")}")
+                return@mapNotNull null
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "cannot list cameras", e)
-            emptyList()
+            val chars = runCatching { mgr.getCameraCharacteristics(descriptor.id) }.getOrNull()
+                ?: return@mapNotNull null
+            runCatching { buildCameraInfo(descriptor.id, chars, descriptor) }.getOrNull()
         }
     }
 
-    private fun buildCameraInfo(id: String, c: CameraCharacteristics): CameraInfo {
+    private fun buildCameraInfo(
+        id: String,
+        c: CameraCharacteristics,
+        descriptor: CameraInventory.CameraDescriptor?,
+    ): CameraInfo {
         val facing = when (c.get(CameraCharacteristics.LENS_FACING)) {
             CameraCharacteristics.LENS_FACING_BACK -> "back"
             CameraCharacteristics.LENS_FACING_FRONT -> "front"
@@ -213,7 +296,9 @@ object DeviceCapabilities {
         }
         val focalLengths = c.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)
         val focal = focalLengths?.firstOrNull()
-        val lens = classifyLens(focal, facing)
+        // Falls back to the old raw-focal rule only when the sensor size was
+        // not published and equivalence could not be computed at all.
+        val lens = descriptor?.let { lensNameFor(it.role) } ?: classifyLens(focal, facing)
 
         val sensorSize = c.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE)
         val megapixels = sensorSize?.let { (it.width.toLong() * it.height) / 1_000_000f } ?: 0f
@@ -246,7 +331,24 @@ object DeviceCapabilities {
             supportsHdr = hdr,
             supportsStabilization = stab,
             supportedResolutions = supported,
+            // Populated from the probe now, not left null for unknown models:
+            // this is what lets the zoom chips show real lenses on a phone
+            // that is not in DeviceModelDatabase.
+            zoomFactor = descriptor?.zoomRatio,
         )
+    }
+
+    /**
+     * The inventory's role in the vocabulary the rest of the app speaks.
+     *
+     * Both selfie roles collapse to "wide": lens selection only ever applies
+     * to the back camera, and the front is chosen by facing instead.
+     */
+    private fun lensNameFor(role: CameraInventory.LensRole): String = when (role) {
+        CameraInventory.LensRole.ULTRA_WIDE -> "ultra-wide"
+        CameraInventory.LensRole.TELEPHOTO -> "telephoto"
+        CameraInventory.LensRole.SUPER_TELEPHOTO -> "supertelephoto"
+        else -> "wide"
     }
 
     private fun classifyLens(focalMm: Float?, facing: String): String {

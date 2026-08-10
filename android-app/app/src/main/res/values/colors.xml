@@ -21,6 +21,10 @@
     <color name="accent_red">#FF453A</color>
     <color name="separator">#38383A</color>
     <color name="focus_ring">#FFD60A</color>
+    <!-- "This is allowed, and here is what it costs" — currently the fps a
+         long manual shutter caps the capture at. Not accent_red: nothing is
+         broken or refused, the user asked for it. -->
+    <color name="accent_amber">#FF9F0A</color>
     <color name="subscription_gradient_start">#0A84FF</color>
     <color name="subscription_gradient_end">#5E5CE6</color>
 </resources>

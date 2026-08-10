@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -16,16 +17,45 @@ android {
     compileSdk = 36
 
     defaultConfig {
+        // The applicationId predates the FrameCast rename and CANNOT change:
+        // it is the installed app's identity — a new id would be a different
+        // app that existing installs never update to.
         applicationId = "com.phonecam.streamer"
         minSdk = 26
         targetSdk = 34
-        versionCode = 14
-        versionName = "0.0.14-rc1"
+        // 15, not 14: lets the public 0.0.14 install cleanly over the
+        // rc1 builds already on testers' phones.
+        versionCode = 15
+        versionName = "0.0.14"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // Release signing from an untracked keystore.properties next to this
+    // module's parent (android-app/). Falls back to an UNSIGNED release build
+    // on machines without it (CI, collaborators) rather than failing.
+    val keystoreProps = rootProject.file("keystore.properties")
+    if (keystoreProps.exists()) {
+        val props = Properties()
+        keystoreProps.inputStream().use { stream -> props.load(stream) }
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            // Deliberately NOT minified for this launch: R8 has never been
+            // exercised against the CameraX internal-API usage this app
+            // depends on (see the camera-core pin below), and turning it on
+            // untested the night before a release trades a smaller APK for
+            // an unknown. Revisit with its own validation pass.
             isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
 
@@ -36,6 +66,15 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    lint {
+        // CameraX "impl" internal APIs are used deliberately and are pinned
+        // to the exact version they were verified against (see the
+        // camera-core dependency comment) — the pin is what manages that
+        // risk, so RestrictedApi is a known condition to keep visible in
+        // reports, not an error that should break the build.
+        informational += "RestrictedApi"
     }
 }
 
@@ -84,4 +123,10 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")
+
+    // On-device instrumentation, added for CameraDiagnosticsDeviceTest: the
+    // Camera2 probe is only meaningful against a real HAL, and org.json on the
+    // JVM is a stand-in that cannot tell you whether *this* phone answers.
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }

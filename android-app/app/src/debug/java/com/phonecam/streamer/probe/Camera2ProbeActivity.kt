@@ -57,6 +57,11 @@ private const val MEASURE_SECONDS = 10L
  * Results: logcat tag Camera2Probe, on screen, and
  *   /sdcard/Android/data/com.phonecam.streamer/files/camera2_probe.txt
  */
+// Lint: debug-only measurement harness, launched by hand over adb on a device
+// that already granted CAMERA (the app asked at first run). It targets the
+// API 28+/29+ Camera2 session APIs on purpose — that is what it measures —
+// and never ships in a release build (src/debug).
+@android.annotation.SuppressLint("NewApi", "MissingPermission")
 class Camera2ProbeActivity : Activity() {
 
     private lateinit var textView: TextView

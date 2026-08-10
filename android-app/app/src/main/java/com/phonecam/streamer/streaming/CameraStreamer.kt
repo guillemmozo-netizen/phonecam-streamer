@@ -192,6 +192,21 @@ class CameraStreamer(
     /** PC control token, required by the receiver for Wi-Fi senders. */
     @Volatile var authToken: String = ""
 
+    /**
+     * What this session is really sending: the encoder's own size and the fps
+     * it was actually built for, both 0/absent until the encoder exists.
+     *
+     * Exposed because the UI used to label a session from the *request* —
+     * the Settings preset and the fps the user picked — which is a different
+     * thing whenever the request could not be honoured. Picking 60fps on a
+     * backend that tops out at 30 showed "60", and picking 8K showed 8K while
+     * a 4K frame went out. The PC was never fooled (Hello carries these same
+     * numbers), so the screen was the only place still claiming otherwise.
+     */
+    val streamedWidth: Int get() = encoderWidth
+    val streamedHeight: Int get() = encoderHeight
+    val streamedFps: Int get() = targetFps
+
     // Updated live via the TransformationInfoListener registered in
     // onSurfaceRequested() — CameraX pushes a fresh TransformationInfo
     // whenever MainActivity's orientationEventListener changes the bound
@@ -493,6 +508,74 @@ class CameraStreamer(
     ) {
         val profile = rewardManager.currentProfile()
         val (encWidth, encHeight, fps) = effectiveTarget(streamConfig, profile)
+        beginEncoderSession(encWidth, encHeight, fps, cameraWidth, cameraHeight, profile, onSurfaceReady, onFailed)
+    }
+
+    /**
+     * Screen-capture entry point (MediaProjection). Same encoder, renderer,
+     * watermark, tier gating and network as the camera paths; two deliberate
+     * differences:
+     *
+     * - **The encoder is shaped like the screen**, not like the Settings
+     *   composition — scaled into min(user preset pixels, tier pixels) by
+     *   [screenTarget]. A screen share whose frame is the screen's own shape
+     *   is the honest geometry; cropping it to 16:9 would amputate it.
+     *   [onSurfaceReady] therefore receives the chosen size too: the caller
+     *   must create its VirtualDisplay at exactly that size, so the mirrored
+     *   screen scales 1:1 into the renderer with no letterboxing.
+     * - **A 1 Hz keepalive re-encodes the last frame.** A camera produces
+     *   frames unconditionally; a mirrored display only produces them when
+     *   the content changes, and a screen left static for 10 s would trip
+     *   the receiver's idle timeout and drop the session. Worst case a
+     *   static screen streams at 1 fps, which is also the cheapest it can be.
+     */
+    fun attachScreenSource(
+        screenWidth: Int,
+        screenHeight: Int,
+        onSurfaceReady: (android.view.Surface, Int, Int) -> Unit,
+        onFailed: () -> Unit,
+    ) {
+        sourceTextureRotation = 0
+        val profile = rewardManager.currentProfile()
+        val (encWidth, encHeight, fps) = screenTarget(screenWidth, screenHeight, streamConfig, profile)
+        beginEncoderSession(
+            encWidth, encHeight, fps,
+            // The VirtualDisplay renders at encoder size, so source == encoder
+            // and the renderer's cover-scale is exactly 1: no crop, no bars.
+            cameraWidth = encWidth, cameraHeight = encHeight,
+            profile = profile,
+            onSurfaceReady = { surface ->
+                startScreenKeepalive(profile)
+                onSurfaceReady(surface, encWidth, encHeight)
+            },
+            onFailed = onFailed,
+        )
+    }
+
+    /** Re-encodes the newest frame once a second while the screen is static — see [attachScreenSource]. */
+    private fun startScreenKeepalive(profile: StreamProfile) {
+        glHandler.postDelayed(object : Runnable {
+            override fun run() {
+                if (stopped) return
+                val age = millisSinceLastFrame()
+                // Not before the first real frame (age == -1): a session whose
+                // capture never started has its own failure paths.
+                if (age > 900) onFrameAvailable(profile)
+                glHandler.postDelayed(this, 1_000)
+            }
+        }, 1_000)
+    }
+
+    private fun beginEncoderSession(
+        encWidth: Int,
+        encHeight: Int,
+        fps: Int,
+        cameraWidth: Int,
+        cameraHeight: Int,
+        profile: StreamProfile,
+        onSurfaceReady: (android.view.Surface) -> Unit,
+        onFailed: () -> Unit,
+    ) {
         targetFps = minOf(fps, cameraFpsCeiling)
         encoderWidth = encWidth
         encoderHeight = encHeight
@@ -794,6 +877,28 @@ class CameraStreamer(
             val (width, height) =
                 StreamConfig.fitPixelBudget(userWidth, userHeight, ceilWidth.toLong() * ceilHeight)
             return Triple(width, height, minOf(streamConfig.fps, ceilFps))
+        }
+
+        /**
+         * [effectiveTarget]'s screen-mode sibling: the frame keeps the
+         * SCREEN's aspect ratio (composition describes a camera crop, and a
+         * screen share is never cropped), scaled down into the smaller of the
+         * user's resolution-preset pixels and the tier's pixel budget. Both
+         * are budgets, not boxes — the same rule the tier ceiling already
+         * follows. Dimensions are forced even for the encoder.
+         */
+        fun screenTarget(
+            screenWidth: Int,
+            screenHeight: Int,
+            streamConfig: StreamConfig,
+            profile: StreamProfile,
+        ): Triple<Int, Int, Int> {
+            val (userWidth, userHeight) =
+                StreamConfig.outputSizeFor(streamConfig.qualityLabel, streamConfig.aspectRatio)
+            val (ceilWidth, ceilHeight, ceilFps) = FrameEncoder.tierCeiling(profile.quality)
+            val budget = minOf(userWidth.toLong() * userHeight, ceilWidth.toLong() * ceilHeight)
+            val (width, height) = StreamConfig.fitPixelBudget(screenWidth, screenHeight, budget)
+            return Triple(width and -2, height and -2, minOf(streamConfig.fps, ceilFps))
         }
     }
 }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">Miễn phí</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">Trong khi phát trực tiếp</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">MIỄN PHÍ</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">Mở khóa quay video 4K, xóa hình mờ, nhận các tùy chỉnh âm thanh nâng cao và hỗ trợ ưu tiên.</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">Cảm ơn bạn đã ủng hộ ứng dụng độc lập này ❤️</string>
-    <string name="welcome_message">PhoneCam đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
+    <string name="welcome_message">FrameCast đang được phát triển độc lập bởi một người.\n\nTrong các giai đoạn Alpha và Beta, chúng tôi muốn cảm ơn sự ủng hộ của bạn bằng cách mở khóa mọi tính năng Pro thông qua quảng cáo có thưởng.\n\nSự giúp đỡ của bạn khi thử nghiệm ứng dụng, gửi phản hồi và chia sẻ với người khác giúp chúng tôi tiếp tục cải thiện nó.\n\nCảm ơn bạn đã đồng hành cùng dự án ngay từ những ngày đầu.</string>
     <string name="welcome_button">Tiếp tục</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">Trong giai đoạn Alpha và Beta, mọi tính năng Pro đều có thể được mở khóa miễn phí bằng cách xem quảng cáo có thưởng.</string>
-    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu PhoneCam Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
+    <string name="pro_feature_locked_desc">Cài đặt này yêu cầu FrameCast Pro — hãy xem quảng cáo trên màn hình camera để mở khóa</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">Nhận %1$d giờ Pro</string>
@@ -147,7 +146,7 @@
     <string name="pc_status_unreachable">Không thể kết nối PC</string>
     <string name="pc_starting">Đang khởi động…</string>
     <string name="pc_services_started">Đã khởi động dịch vụ PC</string>
-    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy PhoneCam_PC.bat trước</string>
+    <string name="pc_unreachable_hint">Không thể kết nối PC — hãy chạy FrameCast_PC.bat trước</string>
     <string name="pc_services_stopped">Đã dừng dịch vụ PC</string>
     <string name="pc_usb_forwarded">Đã chuyển tiếp cổng USB</string>
     <string name="pc_usb_failed">Thất bại — kiểm tra kết nối USB</string>
@@ -215,4 +214,45 @@
     <string name="speedtest_uploading">Đang tải lên PC…</string>
     <string name="speedtest_downloading">Đang tải xuống từ PC…</string>
     <string name="speedtest_cleaning_up">Đang dọn dẹp…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">Chụp Camera2 thử nghiệm</string>
+    <string name="settings_experimental_camera2_hint">Mở khóa 4K60 thực sự. Điều khiển máy ảnh bị tắt khi đang phát.</string>
+    <string name="toast_camera2_fallback">Backend Camera2 không khả dụng — đang dùng CameraX</string>
+    <string name="toast_capture_frozen_restart">Hệ thống đã đóng băng máy ảnh — đang khởi động lại luồng phát</string>
+    <string name="diagnostics_title">Chẩn đoán máy ảnh</string>
+    <string name="diagnostics_open">Khả năng Camera2</string>
+    <string name="diagnostics_open_summary">Báo cáo Camera2 đầy đủ · xuất JSON</string>
+    <string name="diagnostics_device_section">THIẾT BỊ &amp; MÀN HÌNH</string>
+    <string name="diagnostics_cameras_section">MÁY ẢNH (%1$d)</string>
+    <string name="diagnostics_logical_camera">Máy ảnh logic</string>
+    <string name="diagnostics_physical_camera">Máy ảnh phụ vật lý</string>
+    <string name="diagnostics_see_more">Xem thêm</string>
+    <string name="diagnostics_sensor">Cảm biến</string>
+    <string name="diagnostics_max_resolution">Độ phân giải tối đa</string>
+    <string name="diagnostics_sensor_size">Kích thước cảm biến</string>
+    <string name="diagnostics_pixel_pitch">Khoảng cách điểm ảnh</string>
+    <string name="diagnostics_focal_length">Tiêu cự</string>
+    <string name="diagnostics_aperture">Khẩu độ</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">Màn trập</string>
+    <string name="diagnostics_max_fps">fps tối đa</string>
+    <string name="diagnostics_empty">(trống)</string>
+    <string name="diagnostics_copy_json">Sao chép JSON</string>
+    <string name="diagnostics_export_json">Xuất JSON</string>
+    <string name="diagnostics_copied">Đã sao chép báo cáo vào bộ nhớ tạm</string>
+    <string name="diagnostics_export_failed">Không thể ghi báo cáo</string>
+    <string name="diagnostics_probe_failed">Không thể đọc khả năng máy ảnh của thiết bị này</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">Máy ảnh</string>
+    <string name="source_screen">Màn hình</string>
+    <string name="source_button_desc">Chọn nguồn: máy ảnh hoặc màn hình</string>
+    <string name="screen_mode_limits">Màn hình: %1$d×%2$d · %3$d Hz — áp dụng giới hạn của màn hình, không phải máy ảnh</string>
+    <string name="screen_capture_denied">Quyền ghi màn hình bị từ chối</string>
+    <string name="screen_streaming_note">Đang phát màn hình — bạn có thể rời ứng dụng</string>
+    <string name="screen_controls_unavailable">Không dùng được điều khiển máy ảnh khi phát màn hình</string>
+    <string name="screen_capture_notification_title">FrameCast — đang phát màn hình</string>
+    <string name="screen_capture_notification_text">Màn hình đang được gửi tới PC</string>
+    <string name="settings_download_pc">Tải trình cài đặt cho PC</string>
+    <string name="screen_capture_stop">Dừng</string>
+    <string name="screen_notification_denied">Không có thông báo, bạn chỉ có thể dừng phát từ trong ứng dụng</string>
 </resources>

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneCam</string>
-    <string name="app_version">v0.0.13-alpha</string>
+    <string name="app_name">FrameCast</string>
 
     <!-- Tier status -->
     <string name="status_free_tier">ฟรี</string>
@@ -36,7 +35,7 @@
     <string name="settings_stream_brightness">ขณะสตรีม</string>
 
     <!-- Subscription -->
-    <string name="sub_title">PhoneCam Pro</string>
+    <string name="sub_title">FrameCast Pro</string>
     <string name="sub_free">ฟรี</string>
     <string name="sub_pro">PRO</string>
     <string name="sub_description">ปลดล็อกการบันทึกวิดีโอ 4K ลบลายน้ำ ควบคุมเสียงขั้นสูง และรับการสนับสนุนก่อนใคร</string>
@@ -114,12 +113,12 @@
 
     <!-- Welcome dialog (first launch only) -->
     <string name="welcome_title">ขอบคุณที่สนับสนุนแอปอิสระนี้ ❤️</string>
-    <string name="welcome_message">PhoneCam กำลังได้รับการพัฒนาอย่างอิสระโดยคนเพียงคนเดียว\n\nในช่วง Alpha และ Beta เราอยากขอบคุณสำหรับการสนับสนุนของคุณ ด้วยการเปิดให้ใช้ฟีเจอร์ Pro ทั้งหมดผ่านการดูโฆษณาแบบมีรางวัล\n\nความช่วยเหลือของคุณในการทดสอบแอป ส่งความคิดเห็น และแชร์ให้ผู้อื่น ช่วยให้เราพัฒนาแอปนี้ต่อไปได้\n\nขอบคุณที่เป็นส่วนหนึ่งของโปรเจกต์นี้ตั้งแต่เริ่มต้น</string>
+    <string name="welcome_message">FrameCast กำลังได้รับการพัฒนาอย่างอิสระโดยคนเพียงคนเดียว\n\nในช่วง Alpha และ Beta เราอยากขอบคุณสำหรับการสนับสนุนของคุณ ด้วยการเปิดให้ใช้ฟีเจอร์ Pro ทั้งหมดผ่านการดูโฆษณาแบบมีรางวัล\n\nความช่วยเหลือของคุณในการทดสอบแอป ส่งความคิดเห็น และแชร์ให้ผู้อื่น ช่วยให้เราพัฒนาแอปนี้ต่อไปได้\n\nขอบคุณที่เป็นส่วนหนึ่งของโปรเจกต์นี้ตั้งแต่เริ่มต้น</string>
     <string name="welcome_button">ดำเนินการต่อ</string>
 
     <!-- Alpha/Beta Pro messaging (see AppPhase.kt) -->
     <string name="pro_ads_notice">ในช่วง Alpha และ Beta ฟีเจอร์ Pro ทั้งหมดสามารถปลดล็อกได้ฟรีโดยการดูโฆษณาแบบมีรางวัล</string>
-    <string name="pro_feature_locked_desc">การตั้งค่านี้ต้องใช้ PhoneCam Pro — ดูโฆษณาที่หน้าจอกล้องเพื่อปลดล็อก</string>
+    <string name="pro_feature_locked_desc">การตั้งค่านี้ต้องใช้ FrameCast Pro — ดูโฆษณาที่หน้าจอกล้องเพื่อปลดล็อก</string>
 
     <!-- Rewarded-ad flow -->
     <string name="ad_intro_title">รับ Pro %1$d ชั่วโมง</string>
@@ -147,7 +146,7 @@
     <string name="pc_status_unreachable">ไม่พบ PC</string>
     <string name="pc_starting">กำลังเริ่ม…</string>
     <string name="pc_services_started">เริ่มบริการ PC แล้ว</string>
-    <string name="pc_unreachable_hint">ไม่พบ PC — เปิด PhoneCam_PC.bat ก่อน</string>
+    <string name="pc_unreachable_hint">ไม่พบ PC — เปิด FrameCast_PC.bat ก่อน</string>
     <string name="pc_services_stopped">หยุดบริการ PC แล้ว</string>
     <string name="pc_usb_forwarded">ส่งต่อพอร์ต USB แล้ว</string>
     <string name="pc_usb_failed">ล้มเหลว — ตรวจสอบการเชื่อมต่อ USB</string>
@@ -215,4 +214,45 @@
     <string name="speedtest_uploading">กำลังอัปโหลดไปยัง PC…</string>
     <string name="speedtest_downloading">กำลังดาวน์โหลดจาก PC…</string>
     <string name="speedtest_cleaning_up">กำลังล้างข้อมูล…</string>
+    <!-- Camera2 & diagnostics -->
+    <string name="settings_experimental_camera2">การจับภาพ Camera2 (ทดลอง)</string>
+    <string name="settings_experimental_camera2_hint">ปลดล็อก 4K60 จริง การควบคุมกล้องจะถูกปิดระหว่างสตรีม</string>
+    <string name="toast_camera2_fallback">แบ็กเอนด์ Camera2 ใช้ไม่ได้ — กำลังใช้ CameraX</string>
+    <string name="toast_capture_frozen_restart">ระบบหยุดกล้องชั่วคราว — กำลังรีสตาร์ตสตรีม</string>
+    <string name="diagnostics_title">การวินิจฉัยกล้อง</string>
+    <string name="diagnostics_open">ความสามารถของ Camera2</string>
+    <string name="diagnostics_open_summary">รายงาน Camera2 ฉบับเต็ม · ส่งออก JSON</string>
+    <string name="diagnostics_device_section">อุปกรณ์และจอแสดงผล</string>
+    <string name="diagnostics_cameras_section">กล้อง (%1$d)</string>
+    <string name="diagnostics_logical_camera">กล้องแบบลอจิคัล</string>
+    <string name="diagnostics_physical_camera">กล้องย่อยทางกายภาพ</string>
+    <string name="diagnostics_see_more">ดูเพิ่มเติม</string>
+    <string name="diagnostics_sensor">เซ็นเซอร์</string>
+    <string name="diagnostics_max_resolution">ความละเอียดสูงสุด</string>
+    <string name="diagnostics_sensor_size">ขนาดเซ็นเซอร์</string>
+    <string name="diagnostics_pixel_pitch">พิกเซลพิตช์</string>
+    <string name="diagnostics_focal_length">ทางยาวโฟกัส</string>
+    <string name="diagnostics_aperture">รูรับแสง</string>
+    <string name="diagnostics_iso">ISO</string>
+    <string name="diagnostics_shutter">ชัตเตอร์</string>
+    <string name="diagnostics_max_fps">fps สูงสุด</string>
+    <string name="diagnostics_empty">(ว่าง)</string>
+    <string name="diagnostics_copy_json">คัดลอก JSON</string>
+    <string name="diagnostics_export_json">ส่งออก JSON</string>
+    <string name="diagnostics_copied">คัดลอกรายงานไปยังคลิปบอร์ดแล้ว</string>
+    <string name="diagnostics_export_failed">ไม่สามารถเขียนรายงานได้</string>
+    <string name="diagnostics_probe_failed">ไม่สามารถอ่านความสามารถของกล้องในอุปกรณ์นี้ได้</string>
+    <!-- Capture source (camera vs screen) -->
+    <string name="source_camera">กล้อง</string>
+    <string name="source_screen">หน้าจอ</string>
+    <string name="source_button_desc">เลือกแหล่งสัญญาณ: กล้องหรือหน้าจอ</string>
+    <string name="screen_mode_limits">หน้าจอ: %1$d×%2$d · %3$d Hz — ใช้ขีดจำกัดของหน้าจอ ไม่ใช่ของกล้อง</string>
+    <string name="screen_capture_denied">การอนุญาตบันทึกหน้าจอถูกปฏิเสธ</string>
+    <string name="screen_streaming_note">กำลังส่งภาพหน้าจอ — ออกจากแอปได้</string>
+    <string name="screen_controls_unavailable">ใช้การควบคุมกล้องไม่ได้ระหว่างส่งภาพหน้าจอ</string>
+    <string name="screen_capture_notification_title">FrameCast — กำลังส่งภาพหน้าจอ</string>
+    <string name="screen_capture_notification_text">กำลังส่งหน้าจอไปยัง PC</string>
+    <string name="settings_download_pc">ดาวน์โหลดตัวติดตั้งสำหรับ PC</string>
+    <string name="screen_capture_stop">หยุด</string>
+    <string name="screen_notification_denied">หากไม่มีการแจ้งเตือน คุณจะหยุดการส่งภาพได้จากในแอปเท่านั้น</string>
 </resources>

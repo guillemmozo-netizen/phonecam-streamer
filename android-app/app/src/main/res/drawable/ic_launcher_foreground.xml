@@ -1,21 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Minimal camera-lens icon for the alpha launcher icon -->
+<!--
+    FrameCast mark: a camera framing bracket around a broadcast signal.
+
+    Drawn as a vector rather than traced from the source PNG, and that is what
+    makes it sharp — a vector is re-rasterised at every launcher density
+    (48dp on mdpi through 192dp on xxxhdpi, plus the 512px Play listing) with
+    no resampling, so there is no size at which it softens or shows edge
+    artefacts.
+
+    The geometry is built around the adaptive-icon safe zone, and that is what
+    makes it centred. The layer is 108x108; a launcher may mask it with any
+    shape, and the strictest common one is a circle of radius 36 about the
+    centre. Everything here is laid out from (54,54):
+
+      brackets   corners at ±22  ->  22*sqrt(2) = 31.1 from centre,
+                 +2.5 for the round join = 33.6   (inside 36)
+      outer arc  radius 16 + 2 for the stroke = 18 (well inside)
+
+    So no mask can clip the mark, and it sits on the true centre rather than
+    on the bounding-box centre of a bitmap with uneven transparent padding.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Outer ring -->
+
+    <!-- Framing brackets. Round caps and joins so the corners read as a
+         viewfinder rather than as four cut pieces of a rectangle. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,27 A27,27 0 1,1 54,81 A27,27 0 1,1 54,27Z
-                          M54,33 A21,21 0 1,0 54,75 A21,21 0 1,0 54,33Z" />
-    <!-- Inner circle (lens) -->
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M32,43 L32,32 L43,32" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,42 A12,12 0 1,1 54,66 A12,12 0 1,1 54,42Z" />
-    <!-- Highlight dot -->
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M65,32 L76,32 L76,43" />
     <path
-        android:fillColor="#BBDEFB"
-        android:pathData="M48,47 A4,4 0 1,1 48,55 A4,4 0 1,1 48,47Z" />
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M76,65 L76,76 L65,76" />
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M43,76 L32,76 L32,65" />
+
+    <!-- Broadcast signal: a solid emitter with two arcs radiating each way.
+         Arc endpoints are the circle at ±52°, so the two sides are exact
+         mirrors and the symbol is symmetric about the vertical axis. -->
+    <path
+        android:fillColor="#0A84FF"
+        android:pathData="M54,49 A5,5 0 1,1 54,59 A5,5 0 1,1 54,49Z" />
+
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M60.46,45.73 A10.5,10.5 0 0,1 60.46,62.27" />
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M47.54,62.27 A10.5,10.5 0 0,1 47.54,45.73" />
+
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M63.85,41.39 A16,16 0 0,1 63.85,66.61" />
+    <path
+        android:strokeColor="#0A84FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M44.15,66.61 A16,16 0 0,1 44.15,41.39" />
 </vector>

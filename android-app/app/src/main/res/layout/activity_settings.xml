@@ -196,15 +196,39 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/deviceModelText"
+                <!-- Brand monogram + model. The badge is a letter in the
+                     maker's colour rather than its logo: logos are registered
+                     trademarks, and a letter also works for a brand this app
+                     has never seen. See BrandBadge. -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:letterSpacing="0.02" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/deviceBrandBadge"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:gravity="center"
+                        android:text="?"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:id="@+id/deviceModelText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="—"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.02" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/deviceOsText"
@@ -300,6 +324,57 @@
                     android:textColor="@color/text_tertiary"
                     android:textSize="11sp"
                     android:visibility="gone" />
+
+                <!-- The curated summary above is what DeviceCapabilities
+                     decides the user needs; this opens the uncurated Camera2
+                     report behind it, which is what the hardware actually
+                     says. -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@color/separator" />
+
+                <LinearLayout
+                    android:id="@+id/openDiagnosticsRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="12dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/diagnostics_open"
+                            android:textColor="@color/accent"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/diagnostics_open_summary"
+                            android:textColor="@color/text_tertiary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/text_tertiary"
+                        android:textSize="20sp" />
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -403,12 +478,10 @@
                     app:label="@string/settings_aspect_ratio" />
                 <View style="@style/Separator" />
 
-                <!-- 2. Codec -->
-                <com.phonecam.streamer.ui.ExpandableChoiceRow
-                    android:id="@+id/spinnerVideoCodec"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    app:label="@string/settings_video_codec" />
-                <View style="@style/Separator" />
+                <!-- Codec selector removed for launch: the pipeline always
+                     negotiates H.264 (HEVC only above 4K, by resolution), so
+                     the choice was decorative — see AUDIT.md F11 and the
+                     release notes. Reinstate only with a real backend. -->
 
                 <!-- 3. Bitrate -->
                 <com.phonecam.streamer.ui.ExpandableChoiceRow
@@ -506,16 +579,10 @@
 
                 <View style="@style/Separator" />
 
-                <!-- 5. HDR -->
-                <LinearLayout style="@style/SettingRow">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:text="@string/settings_hdr"
-                        android:textColor="@color/text_primary" android:textSize="16sp" />
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/switchHdr"
-                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
-                </LinearLayout>
-                <View style="@style/Separator" />
+                <!-- HDR switch removed for launch: a 10-bit stream corrupts
+                     the PC sink (AUDIT.md F11 — p010le falls through to the
+                     8-bit path), so shipping the toggle would ship a defect.
+                     Gate stays off until F11 has a real pixel-format fix. -->
 
                 <!-- 6. Stabilization -->
                 <LinearLayout style="@style/SettingRow">
@@ -850,6 +917,32 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
+
+                <!-- Download link for the PC installer (the app itself ships
+                     via the Play Store, so this is how a new user gets the
+                     other half). Opens the Drive folder in the browser. -->
+                <LinearLayout
+                    android:id="@+id/downloadPcRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:paddingVertical="8dp"
+                    android:layout_marginBottom="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_download_pc"
+                        android:textColor="#0A84FF"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif-medium" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_download_pc_hint"
+                        android:textColor="@color/text_tertiary"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
                 <!-- Status indicator -->
                 <LinearLayout

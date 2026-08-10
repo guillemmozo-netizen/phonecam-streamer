@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Themed-icon layer (Android 13+). Same geometry as the foreground, but the
+    colour is #FFFFFF because the system tints this layer itself from the
+    user's wallpaper palette — a coloured monochrome layer comes out muddy,
+    since the tint multiplies rather than replaces.
+
+    Without this the launcher falls back to shrinking the full-colour icon
+    into a grey circle when themed icons are on, which is where most apps
+    look broken on a themed home screen.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M32,43 L32,32 L43,32" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M65,32 L76,32 L76,43" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M76,65 L76,76 L65,76" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M43,76 L32,76 L32,65" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,49 A5,5 0 1,1 54,59 A5,5 0 1,1 54,49Z" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M60.46,45.73 A10.5,10.5 0 0,1 60.46,62.27" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M47.54,62.27 A10.5,10.5 0 0,1 47.54,45.73" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M63.85,41.39 A16,16 0 0,1 63.85,66.61" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M44.15,66.61 A16,16 0 0,1 44.15,41.39" />
+</vector>

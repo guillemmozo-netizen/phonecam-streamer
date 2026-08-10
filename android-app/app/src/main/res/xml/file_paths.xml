@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The only thing ever shared out of this app: the Camera2 diagnostic report,
+    written to cache/diagnostics and handed to the system chooser. Scoped to
+    that one subdirectory rather than the whole cache so a FileProvider grant
+    can never reach anything else the app has written.
+-->
+<paths>
+    <cache-path name="diagnostics" path="diagnostics/" />
+</paths>

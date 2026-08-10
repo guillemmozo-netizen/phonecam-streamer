@@ -114,7 +114,10 @@ data class StreamConfig(
                 qualityLabel = qualityLabel,
                 fps = fps,
                 videoBitrateBps = bitrateMbps * 1_000_000,
-                hdr = p.getBoolean("hdr", false),
+                // Forced off for launch regardless of any previously-saved
+                // preference: with HDR on, a 10-bit stream corrupts the PC
+                // sink (AUDIT.md F11). The UI switch is removed too.
+                hdr = false,
                 stabilization = p.getBoolean("stabilization", true),
                 whiteBalanceMode = whiteBalanceModeFor(p.getInt("white_balance", 0)),
                 lensFacing = lensFacingFor(p.getInt("camera_facing", 0)),
@@ -284,6 +287,31 @@ data class StreamConfig(
             val scale = kotlin.math.sqrt(maxPixels.toDouble() / pixels)
             return evenPixels((width * scale).toLong()) to evenPixels((height * scale).toLong())
         }
+
+        /**
+         * The same size expressed in the camera sensor's own frame: landscape,
+         * width >= height.
+         *
+         * CameraX's [androidx.camera.core.resolutionselector.ResolutionSelector]
+         * compares its bound size **directly** against StreamConfigurationMap's
+         * supported output sizes, and those are always in sensor orientation.
+         * Nothing rotates the bound for you — the deprecated
+         * setTargetResolution path did (SupportedOutputSizesSorterLegacy.
+         * flipSizeByRotation), the ResolutionSelector path deliberately does
+         * not. So a portrait bound does not ask for "a tall frame": it asks
+         * for "nothing wider than the short edge", and
+         * FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER then discards every size
+         * above it.
+         *
+         * Measured on an S23 Ultra, 9:16 at 1080p: the viewfinder asked for
+         * 608x1080 and CameraX bound the camera stream at **320x240** —
+         * `dumpsys media.camera` reporting `Dims: 320 x 240` for the live
+         * session — which a 1440x2560 view then blew up ~7x. That is the
+         * "looks pixelated, but like a fake pixelate filter" report: at that
+         * ratio the upscale shows the source pixels as flat blocks.
+         */
+        fun sensorOriented(width: Int, height: Int): Pair<Int, Int> =
+            maxOf(width, height) to minOf(width, height)
 
         /**
          * H.264/HEVC 4:2:0 chroma is subsampled by two in both directions, so
