@@ -1,4 +1,4 @@
-<title>PhoneCam — App Simulator</title>
+<title>FrameCast — App Simulator</title>
 <style>
 :root {
   /* iOS-style dark palette: true-black grounds, inset-grouped cells,
@@ -180,10 +180,6 @@ body {
   100% { transform: scale(1); }
 }
 
-.mf-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.mf-group input[type="range"]::-webkit-slider-thumb { background: var(--focus-ring); }
-
-.exp-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 
 .ae-toggle {
   border: none; background: none;
@@ -249,6 +245,75 @@ body {
 
 .cam-side .val { font-size: 10px; color: #fff; font-family: var(--mono); }
 .cam-side .divider { width: 16px; height: 1px; background: rgba(255,255,255,0.2); margin: 6px 0; }
+
+/* Chip rail + the one shared slider that slides out of it.
+   The rail is all that stays on screen; the panel is the only thing that
+   ever covers the viewfinder, and only while a chip is open. */
+.cam-side { width: auto; min-width: 42px; }
+
+.exp-chip {
+  border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 4px; border-radius: 8px;
+  transition: transform 0.35s var(--spring-bounce);
+}
+.exp-chip:active { transform: scale(0.88); }
+.exp-chip .chip-label { font-size: 8px; color: rgba(255,255,255,0.55); font-weight: 600; }
+.exp-chip .chip-value {
+  font-size: 11px; color: #fff; font-weight: 600; font-family: var(--mono);
+  transition: color 0.25s ease;
+}
+.exp-chip.open .chip-value { color: var(--focus-ring); }
+
+.exp-panel {
+  position: absolute;
+  right: 58px;
+  top: 50%;
+  background: rgba(0,0,0,0.5);
+  border-radius: 19px;
+  padding: 12px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  z-index: 10;
+  /* Closed state: tucked behind the rail and untouchable. Only these three
+     properties animate, so the slide runs on the compositor — same reason
+     the app animates translationX instead of a width. */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(14px);
+  transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.exp-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+.exp-panel label { font-size: 9px; color: rgba(255,255,255,0.7); font-weight: 500; }
+.exp-panel input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  /* Longer than the old rail: at 1/6-stop density the shutter has ~63 detents
+     inside one sensor's range, and length is the only thing that buys back
+     precision once the stops are that close. */
+  width: 4px; height: 190px;
+  appearance: none;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  outline: none; cursor: pointer;
+  margin: 4px 0;
+}
+.exp-panel input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.exp-panel.focus input[type="range"]::-webkit-slider-thumb { background: var(--focus-ring); }
+.panel-value { font-size: 13px; color: #fff; font-weight: 600; font-family: var(--mono); }
+/* Amber, not red: the shutter is allowed to be this slow, it just costs fps. */
+.panel-value.capped { color: #FF9F0A; }
+.panel-hint { font-size: 9px; color: #FF9F0A; font-weight: 600; display: none; }
+.panel-hint.visible { display: block; }
 
 /* Audio level meter — mirrors .cam-side on the opposite edge */
 .audio-meter {
@@ -341,6 +406,62 @@ body {
 .rec-btn.recording .rec-btn-inner { border-radius: 5px; width: 18px; height: 18px; }
 
 .spacer-btn { width: 48px; height: 48px; }
+
+.brand-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 700;
+  flex: 0 0 auto;
+}
+
+/* Camera2 diagnostics — same disclosure feel as ExpandableSection on the
+   app side: 220ms height, caret turning with it, content pushing the page
+   down rather than floating over it. */
+.diag-open-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.diag-open-row:active { opacity: 0.6; }
+
+.diag-card {
+  background: var(--card); border-radius: 14px;
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.diag-card-title { color: var(--text); font-size: 15px; font-weight: 600; }
+.diag-card-sub { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+.diag-kv { display: flex; padding: 3px 0; gap: 8px; }
+.diag-kv .k { color: var(--text-dim); font-size: 12px; flex: 1; }
+.diag-kv .v { color: var(--text); font-size: 12px; flex: 1; text-align: right; word-break: break-word; }
+.diag-group { color: var(--text-tertiary); font-size: 11px; margin: 6px 0 2px; }
+.diag-block-title {
+  color: var(--readout); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.05em; margin-top: 8px;
+}
+.diag-sep { height: 0.5px; background: var(--border); margin: 8px 0 4px; }
+.diag-badges { color: var(--accent); font-size: 12px; margin-top: 6px; }
+
+.diag-more {
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--accent); font-size: 14px; font-weight: 600;
+  padding: 10px 0; cursor: pointer; user-select: none;
+}
+.diag-more .caret { transition: transform 0.22s ease; }
+.diag-more.open .caret { transform: rotate(180deg); }
+/* Height is animated to a measured pixel value, then released to auto — a
+   fixed height goes stale the moment a long value rewraps. */
+.diag-content {
+  overflow: hidden; height: 0;
+  transition: height 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.diag-export-bar { display: flex; gap: 10px; padding: 8px 0 24px; }
+.diag-btn {
+  flex: 1; padding: 12px; border: none; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: transform 0.2s var(--spring-bounce);
+}
+.diag-btn:active { transform: scale(0.96); }
 
 /* Settings screen */
 .settings-screen {
@@ -684,7 +805,7 @@ body {
       <div class="pro-toast-icon">⟐</div>
       <div class="pro-toast-text">
         <div class="pro-toast-title" id="proToastTitle">Pro feature</div>
-        <div class="pro-toast-desc" id="proToastDesc">This setting requires PhoneCam Pro</div>
+        <div class="pro-toast-desc" id="proToastDesc">This setting requires FrameCast Pro</div>
       </div>
       <button class="pro-toast-btn" id="proToastBtn">Upgrade</button>
     </div>
@@ -697,38 +818,54 @@ body {
           <div class="cam-top">
             <div class="rec-dot" id="recDot"></div>
             <span class="cam-status" id="camStatus">IDLE</span>
+            <button class="cam-torch-btn" id="srcBtn" title="Fuente: c&#225;mara o pantalla">&#128247;</button>
             <button class="cam-torch-btn" id="torchBtn" title="Torch">&#9889;</button>
             <button class="cam-settings-btn" id="openSettings">&#9881;</button>
+            <!-- Minimal source dropdown, mirrors the app's top-right menu -->
+            <div id="srcMenu" style="display:none;position:absolute;top:44px;right:52px;background:#1A1F26;border:1px solid rgba(255,255,255,0.12);border-radius:10px;overflow:hidden;z-index:40;min-width:130px;box-shadow:0 6px 18px rgba(0,0,0,0.5);">
+              <div class="src-item" data-src="camera" style="padding:9px 14px;font-size:13px;color:#fff;cursor:pointer;">&#128247; C&#225;mara</div>
+              <div class="src-item" data-src="screen" style="padding:9px 14px;font-size:13px;color:#fff;cursor:pointer;">&#128241; Pantalla</div>
+            </div>
+          </div>
+          <!-- Shown centred while a screen session runs (camera released) -->
+          <div id="screenModeLabel" style="display:none;position:absolute;inset:0;z-index:5;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#0A0D12;color:rgba(255,255,255,0.62);font-size:14px;font-weight:500;">
+            <span style="font-size:34px;">&#128241;</span>
+            <span>Emitiendo la pantalla — puedes salir de la app</span>
+            <span id="screenModeLimits" style="font-size:12px;color:rgba(255,255,255,0.4);"></span>
           </div>
           <!-- Audio level meter — mirrors cam-side, only visible when the setting is on -->
           <div class="audio-meter" id="audioMeter">
             <div class="audio-meter-bar-track"><div class="audio-meter-bar-fill" id="audioMeterBarLeft"></div></div>
             <div class="audio-meter-bar-track"><div class="audio-meter-bar-fill" id="audioMeterBarRight"></div></div>
           </div>
+          <!-- The rail is chips only: each carries its own value, and tapping
+               one slides its slider out into #expPanel. Mirrors the app's
+               cameraControls + exposurePanel. -->
           <div class="cam-side">
             <button class="ae-toggle on" id="aeToggle">AE</button>
-            <div class="exp-group" id="ssGroup" style="display:none;">
-              <label>S</label>
-              <input type="range" id="ssSlider" min="0" max="100" value="50">
-              <span class="val" id="ssVal">1/60</span>
-              <div class="divider"></div>
-            </div>
-            <div class="exp-group" id="isoGroup" style="display:none;">
-              <label>ISO</label>
-              <input type="range" id="isoSlider" min="0" max="100" value="30">
-              <span class="val" id="isoVal">100</span>
-            </div>
-            <div class="exp-group" id="evGroup">
-              <label>EV</label>
-              <input type="range" id="evSlider" min="-20" max="20" value="0">
-              <span class="val" id="evVal">0.0</span>
-            </div>
-            <div class="mf-group" id="mfGroup" style="display:none;">
-              <div class="divider"></div>
-              <label>MF</label>
-              <input type="range" id="mfSlider" min="0" max="100" value="0">
-              <span class="val" id="mfVal">&#8734;</span>
-            </div>
+            <button class="exp-chip" id="ssChip" style="display:none;">
+              <span class="chip-label">S</span>
+              <span class="chip-value" id="ssVal">1/60</span>
+            </button>
+            <button class="exp-chip" id="isoChip" style="display:none;">
+              <span class="chip-label">ISO</span>
+              <span class="chip-value" id="isoVal">400</span>
+            </button>
+            <button class="exp-chip" id="evChip">
+              <span class="chip-label">EV</span>
+              <span class="chip-value" id="evVal">0.0</span>
+            </button>
+            <button class="exp-chip" id="mfChip" style="display:none;">
+              <span class="chip-label">MF</span>
+              <span class="chip-value" id="mfVal">&#8734;</span>
+            </button>
+          </div>
+          <!-- One slider, shared by whichever chip is open. -->
+          <div class="exp-panel" id="expPanel">
+            <label id="panelTitle">ISO</label>
+            <input type="range" id="panelSlider" min="0" max="100" value="50" orient="vertical">
+            <span class="panel-value" id="panelValue">400</span>
+            <span class="panel-hint" id="panelHint"></span>
           </div>
           <div class="cam-bottom">
             <!-- Lens set straight from the device database (S23 Ultra: 0.6/1/3/10) -->
@@ -761,7 +898,7 @@ body {
         <!-- Subscription -->
         <div class="sub-card">
           <div class="sub-top">
-            <span class="sub-name">PhoneCam Pro</span>
+            <span class="sub-name">FrameCast Pro</span>
             <span class="sub-badge">FREE</span>
           </div>
           <p class="sub-desc">Unlock 4K, remove watermarks, advanced audio, and priority support.</p>
@@ -779,7 +916,14 @@ body {
         <!-- Device (mock data, in real app queried from Camera2 API) -->
         <div class="section-label">DEVICE</div>
         <div class="section-card" style="padding:16px;">
-          <div style="color:var(--text);font-size:15px;font-weight:600;">Samsung SM-S918B</div>
+          <!-- Brand monogram, mirroring BrandBadge on the app side: a letter
+               in the maker's colour rather than the logo, because logos are
+               registered trademarks and a letter also works for a brand the
+               app has never seen. -->
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="brand-badge" style="background:#1428A0;">S</span>
+            <span style="color:var(--text);font-size:15px;font-weight:600;">Samsung SM-S918B</span>
+          </div>
           <div style="color:var(--text-dim);font-size:12px;font-family:monospace;margin-top:2px;">Android 16 · SDK 36</div>
           <div style="height:0.5px;background:var(--border);margin:12px 0;"></div>
           <div style="display:flex;gap:12px;">
@@ -818,6 +962,16 @@ body {
             <span style="color:var(--text);font-size:13px;">front · wide</span>
             <span style="color:var(--readout);font-size:12px;font-family:monospace;margin-top:1px;">12MP · 3840×2160 · 60fps</span>
           </div>
+          <!-- The list above is DeviceCapabilities' curated view; this opens the
+               uncurated Camera2 report behind it. -->
+          <div style="height:0.5px;background:var(--border);margin:12px 0 0;"></div>
+          <div class="diag-open-row" id="openDiagnostics">
+            <div>
+              <div style="color:var(--accent);font-size:14px;font-weight:600;">Camera2 capabilities</div>
+              <div style="color:var(--text-dim);font-size:11px;">Full Camera2 report · export JSON</div>
+            </div>
+            <span style="color:var(--text-dim);font-size:18px;">&#8250;</span>
+          </div>
         </div>
 
         <!-- Video -->
@@ -845,12 +999,9 @@ body {
               <option>4:3</option><option selected>16:9</option><option>1:1</option><option>9:16</option><option>3:4</option>
             </select>
           </div>
-          <div class="setting-row">
-            <span class="setting-label">Codec</span>
-            <select class="setting-select" id="selCodec">
-              <option selected>H.264</option><option>H.265 (HEVC)</option><option>AV1</option>
-            </select>
-          </div>
+          <!-- Video codec row removed for launch (mirrors the app): the
+               encoder negotiates H.264/HEVC by resolution, the choice was
+               decorative. -->
           <div class="setting-row">
             <span class="setting-label">Bitrate</span>
             <select class="setting-select" id="selBitrate">
@@ -876,7 +1027,8 @@ body {
             </div>
           </div>
           <div id="fpsHint" style="padding:0 16px 10px;font-size:12px;color:var(--text-dim);">This device: up to 60 fps at 1080p</div>
-          <div class="setting-row"><span class="setting-label">HDR</span><div class="toggle" data-key="hdr"><div class="toggle-knob"></div></div></div>
+          <!-- HDR row removed for launch (mirrors the app): 10-bit output
+               corrupts the PC sink until AUDIT.md F11 is fixed. -->
           <div class="setting-row"><span class="setting-label">Stabilization</span><div class="toggle on" data-key="stab"><div class="toggle-knob"></div></div></div>
           <div class="setting-row">
             <span class="setting-label">Auto-focus</span>
@@ -970,6 +1122,14 @@ body {
         <!-- PC Control -->
         <div class="section-label">PC CONTROL</div>
         <div class="section-card" style="padding:16px;">
+          <!-- Mirrors the app: the app installs from the Play Store, the PC
+               half downloads from the Drive folder. -->
+          <a href="https://drive.google.com/drive/folders/1Uy3r4a3Cvu92tKXb8zG2lDyv_xjlIYvx"
+             target="_blank" rel="noopener"
+             style="display:block;text-decoration:none;padding:6px 0 10px;">
+            <div style="font-size:14px;font-weight:600;color:#0A84FF;">Descargar el instalador de PC</div>
+            <div style="font-size:11px;color:var(--text-dim);">FrameCast_PC_Setup.zip · Google Drive</div>
+          </a>
           <div style="display:flex;align-items:center;margin-bottom:12px;">
             <div id="pcDot" style="width:8px;height:8px;border-radius:50%;background:#8E8E93;margin-right:8px;"></div>
             <span id="pcStatusText" style="flex:1;font-size:13px;font-family:monospace;color:var(--text-dim);">Not connected</span>
@@ -1028,7 +1188,7 @@ body {
           <!-- Text mode -->
           <div id="overlayTextMode" class="setting-row">
             <span class="setting-label">Text</span>
-            <input class="overlay-text-input" id="overlayTextInput" placeholder="© Your Name" value="© PhoneCam" style="width:140px;margin:0;padding:4px 8px;text-align:right;">
+            <input class="overlay-text-input" id="overlayTextInput" placeholder="© Your Name" value="© FrameCast" style="width:140px;margin:0;padding:4px 8px;text-align:right;">
           </div>
           <!-- Image mode -->
           <div id="overlayImageMode" class="setting-row" style="display:none;">
@@ -1050,6 +1210,22 @@ body {
 
         <div style="text-align:center;margin-top:4px;font-size:12px;color:var(--text-tertiary);">v0.0.13-alpha</div>
 
+      </div>
+
+      <!-- Camera2 diagnostics screen — mirrors DiagnosticsActivity: the
+           summary is always visible, everything technical is one animated
+           "See more" away, and the expanded half is rendered from the same
+           JSON that gets exported. -->
+      <div class="screen settings-screen hidden-right" id="diagnosticsScreen">
+        <div class="settings-header">
+          <button class="settings-back" id="closeDiagnostics">&#8249;</button>
+          <h1 class="settings-title">Camera diagnostics</h1>
+        </div>
+        <div id="diagBody"></div>
+        <div class="diag-export-bar">
+          <button class="diag-btn" id="diagCopy">Copy JSON</button>
+          <button class="diag-btn" id="diagExport">Export JSON</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1109,11 +1285,27 @@ body {
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Lens detection now works on phones that are not in the model database, which is most of them. Three fixes, all measured on a Redmi Note 11S: physical sub-cameras are enumerated (not just cameraIdList); unlisted ids are probed read-only, which is how MIUI hides the ultra-wide — it reports six cameras to dumpsys and exactly two to getCameraIdList(); and lenses are classified by 35mm-equivalent focal length relative to the device's own main sensor instead of raw focal length. The old rule (focal &lt; 3mm = ultra-wide) called three of that phone's four back cameras ultra-wide, including a 2MP macro and a 2MP depth sensor — those are now dropped as auxiliaries, since on this phone not one camera declares DEPTH_OUTPUT. Result: zoom chips went from a fake 1x/2x/5x digital crop to the real 0.6x + 1x. Brand is read from Build.BRAND so a Redmi says Redmi, not Xiaomi, with a coloured monogram beside it — a letter, not the maker's logo, because logos are trademarks and a letter also works for a brand nobody has entered</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Camera2 diagnostics screen (Settings &gt; Device &gt; Camera2 capabilities): every capability the device reports, as structured JSON, with the numbers that matter while picking a lens always visible and the rest behind an animated per-section "See more". Found 8 cameras on the S23 Ultra where cameraIdList alone shows 4 — the ultra-wide and tele have no top-level id, only physical sub-ids. Two rules it holds to: nothing may throw (a diagnostic that crashes on the odd HAL is useless on exactly the device worth diagnosing), and absent is not the same as unsupported (a field the HAL does not publish stays in the report as an explicit null and shows as "—", so "not supported" and "never asked" stay distinguishable). Exports via the system share sheet or the clipboard; the on-screen technical half is rendered from the exported JSON itself, so screen and file cannot drift apart. Verified by an on-device instrumentation test that runs the real probe against the real HAL</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Manual exposure rebuilt as a camera control, not two sliders: ISO and shutter now snap to a 1/6-stop series — the standard third-stop values (100, 125, 160, 200…) with the geometric midpoint between each pair rounded to a camera-looking number (110, 140, 180…), so 37 ISO positions and 53 shutter positions across this sensor instead of 19 and 33, every familiar value still exactly where it was, and no two detents ever showing the same label. Slider lengthened to 260dp and each stop crossed gives a CLOCK_TICK haptic, because at this density the eye cannot confirm a one-stop nudge mid-drag. Values are real again (ISO 400, 1/60 — not ISO 174, "1/47"), and the rail collapsed to value-carrying chips that slide one slider out on tap. The fast end and ISO are whatever the sensor really reports — the old code clamped to 1/8000 and ISO 100, an S23 Ultra does 1/18571 and ISO 50. The slow end stops at 1/24 by policy, not by hardware: exposure time bounds frame rate, so 1/24 is exactly 24fps and anything slower is a slideshow (this sensor's true 0.15s limit is 6fps). A long shutter also sets SENSOR_FRAME_DURATION, without which Camera2 silently clamped it back to the frame interval, and the panel shows the fps that costs in amber (measured: 1/10s really captured at 11fps, which is what the floor now prevents)</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Found the real cause of the "fake pixelation filter" in vertical: it was not the scaling filter, it was the viewfinder being bound at 320x240 and blown up across a 1440x2560 view (confirmed in dumpsys media.camera). CameraX's ResolutionSelector matches its bound size against sensor-orientation sizes and never rotates it, so a 9:16 request for 608x1080 meant "nothing wider than 608" and everything above it was discarded. Bound is now sensor-oriented and capped by pixel budget instead of a 1920x1080 box: 9:16 went 320x240 -> 1920x1080 (27x), 3:4 640x480 -> 1440x1080, 16:9 1440x1080 -> 1920x1080. The streamed video was never affected, which is why OBS looked fine and the phone did not</span>
+    </div>
+    <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
+      <span class="label" style="color:#30D158;">DONE</span>
       <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC Control from app (start/stop) — now also called automatically before streaming, not just from Settings buttons</span>
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
-      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Zero-touch connect: USB now auto-forwards on plug-in (PC-side watcher, no adb/python command), Wi-Fi auto-discovers + auto-starts PC services — Install_PhoneCam.vbs is the only manual step, once, and it's completely silent (no console ever)</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">Zero-touch connect: USB now auto-forwards on plug-in (PC-side watcher, no adb/python command), Wi-Fi auto-discovers + auto-starts PC services — Install_FrameCast.vbs is the only manual step, once, and it's completely silent (no console ever)</span>
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
@@ -1125,7 +1317,7 @@ body {
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
-      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC service now gated on OBS: PhoneCam_Service.vbs is a lightweight WMI watcher (no ports, no processes) that only starts control_server.py while obs64.exe/obs32.exe is actually running, and stops the whole tree when OBS closes — was previously "always on from login"</span>
+      <span class="value" style="color:#F1EFE9;font-size:12px;text-align:right;line-height:1.4;">PC service now gated on OBS: FrameCast_Service.vbs is a lightweight WMI watcher (no ports, no processes) that only starts control_server.py while obs64.exe/obs32.exe is actually running, and stops the whole tree when OBS closes — was previously "always on from login"</span>
     </div>
     <div class="panel-row" style="align-items:flex-start;padding:6px 0;border-bottom:1px solid #262B2A;">
       <span class="label" style="color:#30D158;">DONE</span>
@@ -1243,9 +1435,87 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Declared before the first drawFeed frame runs (it reads all three)
+// Declared before the first drawFeed frame runs — it reads every one of
+// these, and a `const` referenced before its declaration is a ReferenceError
+// (temporal dead zone), not an undefined: getting this order wrong throws on
+// the very first frame and silently kills the rest of the script.
 let aeOn = true;
-const ISO_MIN = 50, ISO_MAX = 6400;
+
+// Stops, not a continuous curve: the same ISO 1/3-stop series and shutter
+// series as ExposureScale.kt, clipped to the S23 Ultra's real reported limits
+// (sensitivityRange [50,3200], exposureTimeRange [53848, 150001124] ns) so the
+// simulator offers exactly what the phone does — ISO 50 at the bottom and 1/7
+// at the top, not the old hardcoded 1/8000..1/15 window.
+const ISO_MIN = 50, ISO_MAX = 3200;
+const SHUTTER_MIN_NS = 53848, SHUTTER_HW_MAX_NS = 150001124;
+// 1/24s — a product floor, not a hardware one (ExposureScale.SLOWEST_VIDEO_
+// SHUTTER_NS). Exposure time bounds frame rate, so 1/24 is exactly 24fps: the
+// slowest shutter at which moving images still read as motion instead of a
+// slideshow. This sensor's true 0.15s limit is 6fps. Rounded DOWN from
+// 41666666.67 so the fps ceiling floors to 24 and not 23.
+const SLOWEST_VIDEO_SHUTTER_NS = 41666666;
+const SHUTTER_MAX_NS = Math.min(SHUTTER_HW_MAX_NS, SLOWEST_VIDEO_SHUTTER_NS);
+
+function stopsWithin(series, min, max) {
+  if (max <= min) return [min];
+  return [min, ...series.filter(v => v > min && v < max), max];
+}
+// 1/6 stops, same construction as ExposureScale.kt: the standard third-stop
+// anchors plus the geometric midpoint of each neighbouring pair, rounded so it
+// still reads like a camera value (halfway between 100 and 125 is 111.8 → 110).
+// Anchors are never moved, so every familiar value stays exactly where it was.
+function twoSignificantFigures(v) {
+  if (v <= 0) return 0;
+  if (v < 100) return Math.round(v);
+  const mag = Math.pow(10, Math.floor(Math.log10(v)) - 1);
+  return Math.round(v / mag) * mag;
+}
+function refine(series, round) {
+  const s = [...series].sort((a, b) => a - b);
+  const out = new Set();
+  s.forEach((v, i) => {
+    out.add(v);
+    if (i + 1 < s.length) {
+      const mid = round(Math.sqrt(v * s[i + 1]));
+      if (mid > v && mid < s[i + 1]) out.add(mid);
+    }
+  });
+  return [...out].sort((a, b) => a - b);
+}
+// One stop per distinct label; the pinned hardware endpoints win ties, since
+// reaching the sensor's real limit is why they are pinned.
+function dropDuplicateLabels(stops) {
+  if (stops.length < 2) return stops;
+  const ends = new Set([stops[0], stops[stops.length - 1]]);
+  const byLabel = new Map();
+  stops.forEach(ns => {
+    const l = formatShutter(ns);
+    if (!byLabel.has(l) || (ends.has(ns) && !ends.has(byLabel.get(l)))) byLabel.set(l, ns);
+  });
+  return [...byLabel.values()].sort((a, b) => a - b);
+}
+
+const ISO_SERIES = refine([25, 32, 40, 50, 64, 80, 100, 125, 160, 200, 250, 320, 400, 500, 640,
+  800, 1000, 1250, 1600, 2000, 2500, 3200, 4000, 5000, 6400, 8000, 10000, 12800, 16000, 20000,
+  25600, 32000, 40000, 51200, 64000, 102400], twoSignificantFigures);
+const SHUTTER_SERIES = [
+  ...refine([8000, 6400, 5000, 4000, 3200, 2500, 2000, 1600, 1250, 1000, 800, 640, 500, 400, 320,
+    250, 200, 160, 125, 100, 80, 60, 50, 40, 30, 25, 20, 15, 13, 10, 8, 6, 5, 4, 3],
+    twoSignificantFigures).map(d => Math.round(1e9 / d)),
+  // Tenths of a second, because this half is displayed with one decimal.
+  ...refine([0.4, 0.5, 0.6, 0.8, 1.0, 1.3, 1.6, 2.0, 2.5, 3.2, 4.0, 5.0, 6.0, 8.0, 10.0, 13.0,
+    15.0, 20.0, 25.0, 30.0].map(s => Math.round(s * 10)), Math.round).map(t => t * 1e8),
+].sort((a, b) => a - b);
+
+const isoStops = stopsWithin(ISO_SERIES, ISO_MIN, ISO_MAX);
+const shutterStops = dropDuplicateLabels(stopsWithin(SHUTTER_SERIES, SHUTTER_MIN_NS, SHUTTER_MAX_NS));
+// Defaults match the app's: ISO 400 and 1/60.
+let isoIndex = isoStops.indexOf(400) >= 0 ? isoStops.indexOf(400) : Math.floor(isoStops.length / 2);
+let shutterIndex = shutterStops.reduce(
+  (best, v, i) => Math.abs(Math.log(v) - Math.log(16666666)) < Math.abs(Math.log(shutterStops[best]) - Math.log(16666666)) ? i : best, 0);
+let evValue = 0;
+let focusValue = 0;
+let openControl = null;   // 'iso' | 'ss' | 'ev' | 'mf'
 
 function drawFeed() {
   const w = canvas.width, h = canvas.height;
@@ -1254,14 +1524,16 @@ function drawFeed() {
   const iso = simIsoValue();
   let brightness, noise;
   if (aeOn) {
-    const ev = parseInt($('#evSlider').value);
-    brightness = 0.15 + (ev + 20) / 60 * 0.5;
+    brightness = 0.15 + (evValue * 10 + 20) / 60 * 0.5;
     noise = 0.05;
   } else {
-    const ss = parseInt($('#ssSlider').value);       // 0=1/8000 (dark) .. 100=1/15 (bright)
-    const isoP = parseInt($('#isoSlider').value);    // 0..100 log ISO
-    brightness = 0.06 + (ss / 100) * 0.45 + (isoP / 100) * 0.25;
-    noise = Math.min(iso / 6400, 1) * 0.35;
+    // Exposure now comes from the real quantities rather than slider
+    // positions, so the preview tracks stops: each stop of shutter or ISO is
+    // one stop of brightness, and the top of the range really does blow out
+    // the frame the way 1/7 at ISO 3200 does on the phone.
+    const stopsFromBase = Math.log2(simShutterNs() / 16666666) + Math.log2(iso / 100);
+    brightness = Math.max(0.02, Math.min(1.0, 0.22 * Math.pow(2, stopsFromBase / 2.2)));
+    noise = Math.min(iso / 3200, 1) * 0.35;
   }
 
   // White balance color shift
@@ -1379,39 +1651,120 @@ drawFeed();
 
 // Exposure controls — AE toggle swaps EV (auto) for shutter+ISO (manual),
 // exactly like the app's Camera2 CONTROL_AE_MODE handling.
-function simIsoValue() {
-  const p = parseInt($('#isoSlider').value);
-  return Math.round(Math.exp(Math.log(ISO_MIN) + (p / 100) * (Math.log(ISO_MAX) - Math.log(ISO_MIN))));
+//
+function simIsoValue() { return isoStops[isoIndex]; }
+function simShutterNs() { return shutterStops[shutterIndex]; }
+
+// Same rule as ExposureScale.formatShutter: fractions while short, seconds
+// with a double-prime once long — "1/1" and "1/0" were what the old formatter
+// produced once the range reached that far. The switch happens at 0.4s rather
+// than a full second because at 1/6-stop density the reciprocals up there
+// crowd: 0.5s, 0.6s and 0.8s all round to "1/2" or "1/1".
+function formatShutter(ns) {
+  const seconds = ns / 1e9;
+  if (seconds >= 0.4) {
+    const whole = Math.abs(seconds - Math.round(seconds)) < 0.05;
+    return whole ? `${Math.round(seconds)}"` : `${seconds.toFixed(1)}"`;
+  }
+  return `1/${Math.max(1, Math.round(1 / seconds))}`;
 }
-function simShutterLabel() {
-  const p = parseInt($('#ssSlider').value);
-  const den = Math.round(Math.exp(Math.log(8000) + (p / 100) * (Math.log(15) - Math.log(8000))));
-  return `1/${den}`;
-}
+function simShutterLabel() { return formatShutter(simShutterNs()); }
+// A sensor cannot deliver frames faster than it exposes them.
+function frameRateCeiling(ns) { return Math.max(1, Math.floor(1e9 / ns)); }
+
+function sessionFps() { return parseInt(($('#selFps') || {}).value) || 30; }
+
 function updateExposureUi() {
   $('#aeToggle').classList.toggle('on', aeOn);
   $('#aeToggle').textContent = aeOn ? 'AE' : 'M';
-  $('#ssGroup').style.display = aeOn ? 'none' : 'flex';
-  $('#isoGroup').style.display = aeOn ? 'none' : 'flex';
-  $('#evGroup').style.display = aeOn ? 'flex' : 'none';
+  $('#ssChip').style.display = aeOn ? 'none' : 'flex';
+  $('#isoChip').style.display = aeOn ? 'none' : 'flex';
+  $('#evChip').style.display = aeOn ? 'flex' : 'none';
+  updateExposureReadouts();
 }
-$('#aeToggle').addEventListener('click', () => { aeOn = !aeOn; updateExposureUi(); });
 
-$('#isoSlider').addEventListener('input', () => {
-  $('#isoVal').textContent = simIsoValue();
-  $('#stateIso').textContent = simIsoValue();
+// Chips always show their value; the panel shows whichever one is open, so
+// the two can never disagree.
+function updateExposureReadouts() {
+  const isoText = String(simIsoValue());
+  const ssText = simShutterLabel();
+  const evText = evValue.toFixed(1);
+  $('#isoVal').textContent = isoText;
+  $('#ssVal').textContent = ssText;
+  $('#evVal').textContent = evText;
+  $('#stateIso').textContent = isoText;
+  $('#stateEv').textContent = evText;
+
+  const value = $('#panelValue'), hint = $('#panelHint');
+  value.classList.remove('capped');
+  hint.classList.remove('visible');
+  if (openControl === 'iso') value.textContent = isoText;
+  else if (openControl === 'ev') value.textContent = evText;
+  else if (openControl === 'mf') value.textContent = $('#mfVal').textContent;
+  else if (openControl === 'ss') {
+    value.textContent = ssText;
+    const ceiling = frameRateCeiling(simShutterNs());
+    if (ceiling < sessionFps()) {
+      value.classList.add('capped');
+      hint.textContent = `≤${ceiling} fps`;
+      hint.classList.add('visible');
+    }
+  }
+}
+
+function openPanel(control) {
+  openControl = control;
+  const panel = $('#expPanel'), slider = $('#panelSlider');
+  const spec = {
+    ss:  { title: 'S',   max: shutterStops.length - 1, value: shutterIndex },
+    iso: { title: 'ISO', max: isoStops.length - 1,     value: isoIndex },
+    ev:  { title: 'EV',  max: 40,                      value: evValue * 10 + 20 },
+    mf:  { title: 'MF',  max: 100,                     value: focusValue },
+  }[control];
+  $('#panelTitle').textContent = spec.title;
+  slider.max = spec.max;          // max before value, so value is not clamped
+  slider.value = spec.value;
+  panel.classList.toggle('focus', control === 'mf');
+  panel.classList.add('open');
+  ['ss', 'iso', 'ev', 'mf'].forEach(c =>
+    $(`#${c}Chip`).classList.toggle('open', c === control));
+  updateExposureReadouts();
+}
+
+function closePanel() {
+  openControl = null;
+  $('#expPanel').classList.remove('open');
+  ['ss', 'iso', 'ev', 'mf'].forEach(c => $(`#${c}Chip`).classList.remove('open'));
+}
+
+function toggleControl(control) {
+  if (openControl === control) closePanel(); else openPanel(control);
+}
+
+$('#ssChip').addEventListener('click', () => toggleControl('ss'));
+$('#isoChip').addEventListener('click', () => toggleControl('iso'));
+$('#evChip').addEventListener('click', () => toggleControl('ev'));
+$('#mfChip').addEventListener('click', () => toggleControl('mf'));
+
+$('#panelSlider').addEventListener('input', e => {
+  const p = parseInt(e.target.value);
+  if (openControl === 'ss') shutterIndex = p;
+  else if (openControl === 'iso') isoIndex = p;
+  else if (openControl === 'ev') evValue = (p - 20) / 10;
+  else if (openControl === 'mf') {
+    focusValue = p;
+    $('#mfVal').textContent = p < 5 ? '∞' : `${(100 / p).toFixed(1)}m`;
+  }
+  updateExposureReadouts();
 });
-$('#ssSlider').addEventListener('input', () => {
-  $('#ssVal').textContent = simShutterLabel();
+
+$('#aeToggle').addEventListener('click', () => {
+  aeOn = !aeOn;
+  // The open slider may drive a control the new mode does not read.
+  if (openControl === 'ev' || openControl === 'ss' || openControl === 'iso') closePanel();
+  if (aeOn) evValue = 0;
+  updateExposureUi();
 });
-$('#evSlider').addEventListener('input', e => {
-  const v = (e.target.value / 10).toFixed(1);
-  $('#evVal').textContent = v;
-  $('#stateEv').textContent = v;
-});
-$('#isoVal').textContent = simIsoValue();
-$('#stateIso').textContent = simIsoValue();
-$('#ssVal').textContent = simShutterLabel();
 
 // Settings selects → update panel
 // Pro-gated settings: 4K resolution, >50 Mbps bitrate, >60 fps all require Pro
@@ -1550,7 +1903,7 @@ function guardProSelect(select, lastRef, setLast) {
     const v = e.target.value;
     if (v.includes('⟐ Pro') && !isPro) {
       e.target.value = lastRef();
-      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      showProToast('This setting requires FrameCast Pro — upgrade to unlock');
       return;
     }
     setLast(v);
@@ -1643,14 +1996,12 @@ document.querySelectorAll('.zoom-chip').forEach(chip => {
     el.addEventListener('click', () => popIt(el)));
 });
 
-// Manual focus rail appears only when AF is set to Manual (mirrors the app)
+// Manual focus chip appears only when AF is set to Manual (mirrors the app).
+// Its slider is the shared one, same as ISO/shutter/EV.
 $('#selAf').addEventListener('change', e => {
-  $('#mfGroup').style.display = e.target.value === 'Manual' ? 'flex' : 'none';
-});
-$('#mfSlider').addEventListener('input', e => {
-  const p = parseInt(e.target.value, 10);
-  // 0 = infinity; slider maps to diopters like the app's LENS_FOCUS_DISTANCE
-  $('#mfVal').textContent = p < 5 ? '∞' : (10 / p).toFixed(1) + 'm';
+  const manual = e.target.value === 'Manual';
+  $('#mfChip').style.display = manual ? 'flex' : 'none';
+  if (!manual && openControl === 'mf') closePanel();
 });
 
 // Bitrate / FPS: also handle the "Custom…" option, which expands a numeric input
@@ -1667,7 +2018,7 @@ function setupCustomSelect(select, expandEl, input, lastRef, setLast, stateEl, m
 
     if (v.includes('⟐ Pro') && !isPro) {
       e.target.value = lastRef();
-      showProToast('This setting requires PhoneCam Pro — upgrade to unlock');
+      showProToast('This setting requires FrameCast Pro — upgrade to unlock');
       return;
     }
     setLast(v);
@@ -1680,7 +2031,7 @@ function setupCustomSelect(select, expandEl, input, lastRef, setLast, stateEl, m
     if (num > maxFree && !isPro) {
       num = maxFree;
       input.value = maxFree;
-      showProToast(`Values above ${maxFree} ${unit} require PhoneCam Pro — upgrade to unlock`);
+      showProToast(`Values above ${maxFree} ${unit} require FrameCast Pro — upgrade to unlock`);
     }
     stateEl.textContent = formatState(num);
   }
@@ -1714,6 +2065,15 @@ function toggleRecording() {
   if (recording) {
     btn.classList.add('recording');
     dot.classList.add('recording');
+    if (captureSource === 'screen') {
+      // Screen mode: the frame is the SCREEN's shape and the panel's limits
+      // (resolution/refresh) are what cap it — mirrors the app exactly.
+      const d = DIAG_REPORT.display;
+      $('#camStatus').textContent = `REC • ${d.widthPx}x${d.heightPx}`;
+      $('#screenModeLimits').textContent =
+        `Pantalla: ${d.widthPx}×${d.heightPx} · ${Math.round(d.refreshRateHz)} Hz — límites de la pantalla, no de la cámara`;
+      $('#screenModeLabel').style.display = 'flex';
+    } else
     $('#camStatus').textContent = `REC • ${res} ${fps}`;
     $('#stateRec').textContent = 'ON';
     $('#stateDot').classList.remove('off');
@@ -1725,6 +2085,7 @@ function toggleRecording() {
   } else {
     btn.classList.remove('recording');
     dot.classList.remove('recording');
+    $('#screenModeLabel').style.display = 'none';
     $('#camStatus').textContent = 'IDLE';
     $('#stateRec').textContent = 'OFF';
     $('#stateDot').classList.add('off');
@@ -1745,6 +2106,53 @@ function updateRecTime() {
 
 $('#recBtn').addEventListener('click', toggleRecording);
 $('#btnToggleRec').addEventListener('click', toggleRecording);
+
+// ── capture source: camera vs screen (mirrors the app's top-right menu) ──
+let captureSource = 'camera';
+function showSrcToast(text) {
+  let el = document.getElementById('srcToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'srcToast';
+    el.style.cssText = 'position:absolute;left:50%;bottom:120px;transform:translateX(-50%);' +
+      'background:rgba(20,25,32,0.95);color:#fff;font-size:12px;padding:9px 14px;border-radius:9px;' +
+      'z-index:60;max-width:80%;text-align:center;transition:opacity 0.3s;pointer-events:none;';
+    document.querySelector('.camera-feed').appendChild(el);
+  }
+  el.textContent = text;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3200);
+}
+function updateSrcBtn() {
+  $('#srcBtn').innerHTML = captureSource === 'screen' ? '&#128241;' : '&#128247;';
+}
+$('#srcBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = $('#srcMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+});
+document.addEventListener('click', () => { $('#srcMenu').style.display = 'none'; });
+document.querySelectorAll('.src-item').forEach((item) => {
+  item.addEventListener('mouseenter', () => { item.style.background = 'rgba(255,255,255,0.08)'; });
+  item.addEventListener('mouseleave', () => { item.style.background = ''; });
+  item.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const wasRecording = recording;
+    const next = item.dataset.src;
+    $('#srcMenu').style.display = 'none';
+    if (next === captureSource) return;
+    if (wasRecording) toggleRecording();     // stop the old source's session
+    captureSource = next;
+    updateSrcBtn();
+    if (next === 'screen') {
+      const d = DIAG_REPORT.display;
+      showSrcToast(`Pantalla: ${d.widthPx}×${d.heightPx} · ${Math.round(d.refreshRateHz)} Hz — límites de la pantalla, no de la cámara`);
+    }
+    if (wasRecording) toggleRecording();     // restart into the new source
+  });
+});
+updateSrcBtn();
 
 // Tier
 function toggleTier() {
@@ -1799,6 +2207,212 @@ function closeSettings() {
   $('#stateScreen').textContent = 'Camera';
   $('#btnOpenSettings2').textContent = 'Open settings';
 }
+// -- Camera2 diagnostics ---------------------------------------------
+// Real output, not mock data: this is the report CameraDiagnostics.probe()
+// produced on the S23 Ultra this app is developed against, trimmed only by
+// capping long arrays and dropping the few enormous fields (the raw
+// StreamConfigurationMap string, the per-size timing table). Everything below
+// is what the device actually said - including the nulls, which are the HAL
+// declining to answer rather than the probe not asking.
+const DIAG_REPORT = {"schemaVersion":1,"system":{"model":"SM-S918B","manufacturer":"samsung","brand":"samsung","device":"dm3q","androidVersion":"16","sdkInt":36,"soc":"QTI SM8550","abis":["arm64-v8a","armeabi-v7a","armeabi"],"ramTotalMb":11044,"ramAvailableMb":3155,"openGlEsVersion":"3.2","vulkanHardwareLevel":1,"vulkanHardwareVersion":4206592,"vulkanSupported":true,"cameraManualSensorFeature":true,"cameraLevelFullFeature":true},"display":{"widthPx":1440,"heightPx":2963,"densityDpi":720,"density":4.5,"xdpi":501.041,"ydpi":502.789,"diagonalInches":6.5565944,"refreshRateHz":120.00001,"hdrSupported":true,"hdrTypes":["HDR10","HLG","HDR10_PLUS"],"summary":"1440x2963 · 720dpi · 120Hz"},"cameras":[{"identification":{"cameraId":"0","logicalName":"logical:0","isPhysicalSubCamera":false,"physicalParentId":null,"physicalCameraIds":["2","5","6","7"],"facing":"BACK","hardwareLevel":"LEVEL_3","version":null},"sensor":{"physicalSizeMm":{"width":9.792,"height":7.344},"pixelArraySize":{"width":4080,"height":3060},"activeArraySize":{"width":4080,"height":3060},"activeArrayRect":{"left":0,"top":0,"right":4080,"bottom":3060},"resolutionMegapixels":12.4848,"pixelPitchMicrons":2.4,"sensorOrientation":90,"colorFilterArrangement":"GBRG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":3200,"exposureTimeMinNs":53848,"exposureTimeMaxNs":150001124,"exposureTimeMinLabel":"1/18571","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150024196,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON","ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","7-11","11-11","7-15","… +4"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120","30-240","240-240"]},{"size":"1920x1080","fpsRanges":["30-120","120-120","30-240","240-240"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["4080x3060","4000x3000","4000x2252","4000x1868","… +23"],"raw":["4080x3060"],"yuv420888":["4080x3060","4000x3000","4000x2252","4000x1868","… +23"],"private":["4080x3060","4000x3000","4000x2252","4000x1868","… +23"],"surfaceTexture":["4080x3060","4000x3000","4000x2252","4000x1868","… +23"],"mediaRecorder":["4080x3060","4000x3000","4000x2252","4000x1868","… +23"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[1.7],"focalLengthsMm":[6.3],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0,1],"opticalStabilizationAvailable":true,"maxDigitalZoom":8,"zoomRatioRange":"0.6-10.0","opticalZoomOutAvailable":true,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":true,"flashModes":["ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"torchAvailable":true,"torchStrengthMaxLevel":5,"torchStrengthDefaultLevel":1},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":true,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":true,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":true,"oisModes":[0,1],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"2","logicalName":"physical:2 of 0","isPhysicalSubCamera":true,"physicalParentId":"0","physicalCameraIds":[],"facing":"BACK","hardwareLevel":"LIMITED","version":null},"sensor":{"physicalSizeMm":{"width":5.6,"height":4.2},"pixelArraySize":{"width":4000,"height":3000},"activeArraySize":{"width":4000,"height":3000},"activeArrayRect":{"left":0,"top":0,"right":4000,"bottom":3000},"resolutionMegapixels":12,"pixelPitchMicrons":1.4,"sensorOrientation":90,"colorFilterArrangement":"RGGB","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":400,"exposureTimeMinNs":49856,"exposureTimeMaxNs":150001124,"exposureTimeMinLabel":"1/20058","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150100836,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","7-15","15-15","24-24","… +2"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120"]},{"size":"1920x1080","fpsRanges":["30-120","120-120"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"raw":["4000x3000"],"yuv420888":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"private":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"surfaceTexture":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"mediaRecorder":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[2.2],"focalLengthsMm":[2.2],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0],"opticalStabilizationAvailable":false,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":false,"flashModes":[],"torchAvailable":false,"torchStrengthMaxLevel":null,"torchStrengthDefaultLevel":null},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":true,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":false,"oisModes":[0],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"5","logicalName":"physical:5 of 0","isPhysicalSubCamera":true,"physicalParentId":"0","physicalCameraIds":[],"facing":"BACK","hardwareLevel":"LEVEL_3","version":null},"sensor":{"physicalSizeMm":{"width":9.792,"height":7.344},"pixelArraySize":{"width":4080,"height":3060},"activeArraySize":{"width":4080,"height":3060},"activeArrayRect":{"left":0,"top":0,"right":4080,"bottom":3060},"resolutionMegapixels":12.4848,"pixelPitchMicrons":2.4,"sensorOrientation":90,"colorFilterArrangement":"GBRG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":3200,"exposureTimeMinNs":43220,"exposureTimeMaxNs":150001544,"exposureTimeMinLabel":"1/23137","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150024196,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON","ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","7-11","11-11","7-15","… +4"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120","30-240","240-240"]},{"size":"1920x1080","fpsRanges":["30-120","120-120","30-240","240-240"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["4080x3060","4080x3060","4000x3000","4000x3000","… +22"],"raw":["4080x3060"],"yuv420888":["4080x3060","4080x3060","4000x3000","4000x3000","… +22"],"private":["4080x3060","4080x3060","4000x3000","4000x3000","… +22"],"surfaceTexture":["4080x3060","4080x3060","4000x3000","4000x3000","… +22"],"mediaRecorder":["4080x3060","4080x3060","4000x3000","4000x3000","… +22"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[1.7],"focalLengthsMm":[6.3],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0,1],"opticalStabilizationAvailable":true,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":true,"flashModes":["ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"torchAvailable":true,"torchStrengthMaxLevel":5,"torchStrengthDefaultLevel":1},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":true,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":true,"oisModes":[0,1],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"6","logicalName":"physical:6 of 0","isPhysicalSubCamera":true,"physicalParentId":"0","physicalCameraIds":[],"facing":"BACK","hardwareLevel":"LIMITED","version":null},"sensor":{"physicalSizeMm":{"width":4.08576,"height":3.06432},"pixelArraySize":{"width":3648,"height":2736},"activeArraySize":{"width":3648,"height":2736},"activeArrayRect":{"left":0,"top":0,"right":3648,"bottom":2736},"resolutionMegapixels":9.980928,"pixelPitchMicrons":1.12,"sensorOrientation":90,"colorFilterArrangement":"GRBG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":400,"exposureTimeMinNs":53848,"exposureTimeMaxNs":150004560,"exposureTimeMinLabel":"1/18571","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150090720,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON","ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","15-15","24-24","7-30","… +1"],"maxAeTargetFps":30,"highSpeedVideoModes":[]},"resolutions":{"jpeg":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"raw":["3648x2736"],"yuv420888":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"private":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"surfaceTexture":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"mediaRecorder":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[2.4],"focalLengthsMm":[7.9],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0,1],"opticalStabilizationAvailable":true,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":true,"flashModes":["ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"torchAvailable":true,"torchStrengthMaxLevel":5,"torchStrengthDefaultLevel":1},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":false,"privateReprocessing":true,"yuvReprocessing":false,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":true,"oisModes":[0,1],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"7","logicalName":"physical:7 of 0","isPhysicalSubCamera":true,"physicalParentId":"0","physicalCameraIds":[],"facing":"BACK","hardwareLevel":"LIMITED","version":null},"sensor":{"physicalSizeMm":{"width":4.08576,"height":3.06432},"pixelArraySize":{"width":3648,"height":2736},"activeArraySize":{"width":3648,"height":2736},"activeArrayRect":{"left":0,"top":0,"right":3648,"bottom":2736},"resolutionMegapixels":9.980928,"pixelPitchMicrons":1.12,"sensorOrientation":90,"colorFilterArrangement":"GRBG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":400,"exposureTimeMinNs":53848,"exposureTimeMaxNs":150004560,"exposureTimeMinLabel":"1/18571","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150090720,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON","ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","15-15","24-24","7-30","… +1"],"maxAeTargetFps":30,"highSpeedVideoModes":[]},"resolutions":{"jpeg":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"raw":["3648x2736"],"yuv420888":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"private":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"surfaceTexture":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"mediaRecorder":["3648x2736","3648x2052","2736x2736","3648x1704","… +17"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[4.9],"focalLengthsMm":[27.2],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0,1],"opticalStabilizationAvailable":true,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":true,"flashModes":["ON_AUTO_FLASH","ON_ALWAYS_FLASH"],"torchAvailable":true,"torchStrengthMaxLevel":5,"torchStrengthDefaultLevel":1},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":false,"privateReprocessing":true,"yuvReprocessing":false,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":true,"oisModes":[0,1],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"1","logicalName":"logical:1","isPhysicalSubCamera":false,"physicalParentId":null,"physicalCameraIds":[],"facing":"FRONT","hardwareLevel":"FULL","version":null},"sensor":{"physicalSizeMm":{"width":4.48,"height":3.36},"pixelArraySize":{"width":4000,"height":3000},"activeArraySize":{"width":4000,"height":3000},"activeArrayRect":{"left":0,"top":0,"right":4000,"bottom":3000},"resolutionMegapixels":12,"pixelPitchMicrons":1.12,"sensorOrientation":270,"colorFilterArrangement":"GRBG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":800,"exposureTimeMinNs":91077,"exposureTimeMaxNs":150006780,"exposureTimeMinLabel":"1/10980","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150121488,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","7-15","15-15","24-24","… +2"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120"]},{"size":"1920x1080","fpsRanges":["30-120","120-120"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["4000x3000","3648x2736","4000x2252","3840x2160","… +19"],"raw":["4000x3000"],"yuv420888":["4000x3000","3648x2736","4000x2252","3840x2160","… +19"],"private":["4000x3000","3648x2736","4000x2252","3840x2160","… +19"],"surfaceTexture":["4000x3000","3648x2736","4000x2252","3840x2160","… +19"],"mediaRecorder":["4000x3000","3648x2736","4000x2252","3840x2160","… +19"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[2.2],"focalLengthsMm":[3.3],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0],"opticalStabilizationAvailable":false,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":false,"flashModes":[],"torchAvailable":false,"torchStrengthMaxLevel":null,"torchStrengthDefaultLevel":null},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":false,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":[],"hdrProfiles":[],"tenBitOutputSupported":false},"stabilization":{"oisAvailable":false,"oisModes":[0],"eisAvailable":false,"videoStabilizationModes":["OFF"],"previewStabilizationSupported":false},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"2","logicalName":"logical:2","isPhysicalSubCamera":false,"physicalParentId":null,"physicalCameraIds":[],"facing":"BACK","hardwareLevel":"LIMITED","version":null},"sensor":{"physicalSizeMm":{"width":5.6,"height":4.2},"pixelArraySize":{"width":4000,"height":3000},"activeArraySize":{"width":4000,"height":3000},"activeArrayRect":{"left":0,"top":0,"right":4000,"bottom":3000},"resolutionMegapixels":12,"pixelPitchMicrons":1.4,"sensorOrientation":90,"colorFilterArrangement":"RGGB","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":400,"exposureTimeMinNs":49856,"exposureTimeMaxNs":150001124,"exposureTimeMinLabel":"1/20058","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150100836,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","7-15","15-15","24-24","… +2"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120"]},{"size":"1920x1080","fpsRanges":["30-120","120-120"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"raw":["4000x3000"],"yuv420888":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"private":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"surfaceTexture":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"mediaRecorder":["4000x3000","4000x3000","4000x2252","4000x2252","… +20"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[2.2],"focalLengthsMm":[2.2],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0],"opticalStabilizationAvailable":false,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":false,"flashModes":[],"torchAvailable":false,"torchStrengthMaxLevel":null,"torchStrengthDefaultLevel":null},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":true,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":["STANDARD","HLG10"],"hdrProfiles":["HLG10"],"tenBitOutputSupported":true},"stabilization":{"oisAvailable":false,"oisModes":[0],"eisAvailable":true,"videoStabilizationModes":["OFF","ON (EIS)","PREVIEW_STABILIZATION"],"previewStabilizationSupported":true},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}},{"identification":{"cameraId":"3","logicalName":"logical:3","isPhysicalSubCamera":false,"physicalParentId":null,"physicalCameraIds":[],"facing":"FRONT","hardwareLevel":"FULL","version":null},"sensor":{"physicalSizeMm":{"width":3.79904,"height":2.84928},"pixelArraySize":{"width":3392,"height":2544},"activeArraySize":{"width":3392,"height":2544},"activeArrayRect":{"left":0,"top":0,"right":3392,"bottom":2544},"resolutionMegapixels":8.629248,"pixelPitchMicrons":1.12,"sensorOrientation":270,"colorFilterArrangement":"GRBG","whiteLevel":1023,"blackLevelPattern":[64,64,64,64],"timestampSource":1,"maxResolutionPixelArray":null},"exposure":{"isoMin":50,"isoMax":3200,"isoMaxAnalog":800,"exposureTimeMinNs":36505,"exposureTimeMaxNs":150035550,"exposureTimeMinLabel":"1/27394","exposureTimeMaxLabel":"1/7","maxFrameDurationNs":150150280,"exposureCompensationMin":-20,"exposureCompensationMax":20,"exposureCompensationStep":"1/10","exposureCompensationStepEv":0.1,"aeLockAvailable":true,"aeModes":["OFF","ON"],"aeAntibandingModes":["ANTIBANDING_0","ANTIBANDING_1","ANTIBANDING_2","ANTIBANDING_3"]},"fpsAndVideo":{"aeTargetFpsRanges":["10-10","15-15","24-24","7-30","… +1"],"maxAeTargetFps":30,"highSpeedVideoModes":[{"size":"1280x720","fpsRanges":["30-120","120-120"]},{"size":"1920x1080","fpsRanges":["30-120","120-120"]},{"size":"1920x824","fpsRanges":["30-120","120-120"]}]},"resolutions":{"jpeg":["3392x2544","3392x1908","2208x2208","2560x1440","… +16"],"raw":["3392x2544"],"yuv420888":["3392x2544","3392x1908","2208x2208","2560x1440","… +16"],"private":["3392x2544","3392x1908","2208x2208","2560x1440","… +16"],"surfaceTexture":["3392x2544","3392x1908","2208x2208","2560x1440","… +16"],"mediaRecorder":["3392x2544","3392x1908","2208x2208","2560x1440","… +16"],"heic":[],"depth16":[],"nv21":[],"yv12":[]},"lens":{"aperturesF":[2.2],"focalLengthsMm":[3.3],"minimumFocusDistanceDiopters":null,"minimumFocusDistanceMeters":null,"hyperfocalDistanceDiopters":null,"hyperfocalDistanceMeters":null,"focusDistanceCalibration":1,"opticalStabilizationModes":[0],"opticalStabilizationAvailable":false,"maxDigitalZoom":8,"zoomRatioRange":"1.0-8.0","opticalZoomOutAvailable":false,"distortion":[],"facingIsExternal":false},"focus":{"afModes":["OFF (manual)","AUTO","MACRO","CONTINUOUS_VIDEO","… +1"],"manualFocusSupported":true,"continuousVideo":true,"continuousPicture":true,"macro":true,"edof":false,"maxRegionsAf":1},"whiteBalance":{"awbAvailable":true,"awbLockAvailable":true,"awbModes":["AUTO","INCANDESCENT","FLUORESCENT","DAYLIGHT","… +2"],"maxRegionsAwb":0},"flash":{"flashAvailable":false,"flashModes":[],"torchAvailable":false,"torchStrengthMaxLevel":null,"torchStrengthDefaultLevel":null},"capabilities":{"raw":true,"burstCapture":true,"manualSensor":true,"manualPostProcessing":true,"readSensorSettings":true,"constrainedHighSpeedVideo":true,"privateReprocessing":true,"yuvReprocessing":false,"depthOutput":false,"motionTracking":false,"logicalMultiCamera":false,"monochrome":false,"ultraHighResolutionSensor":false,"dynamicRangeProfiles":[],"hdrProfiles":[],"tenBitOutputSupported":false},"stabilization":{"oisAvailable":false,"oisModes":[0],"eisAvailable":false,"videoStabilizationModes":["OFF"],"previewStabilizationSupported":false},"outputFormats":{"jpeg":true,"raw":true,"dng":true,"yuv420888":true,"nv21":false,"nv12":null,"nv12Note":"not enumerable; reached via PRIVATE/opaque surfaces","private":true,"heic":false,"heif":false,"depth16":false,"y8":false,"rawPrivate":true,"raw10":true,"raw12":false,"allFormatCodes":["RAW_SENSOR","JPEG","PRIVATE","YUV_420_888","… +3"]}}]};
+
+function diagKv(k, v, depth) {
+  const row = document.createElement('div');
+  row.className = 'diag-kv';
+  row.style.paddingLeft = (depth * 8) + 'px';
+  const kEl = document.createElement('span'); kEl.className = 'k'; kEl.textContent = k;
+  const vEl = document.createElement('span'); vEl.className = 'v'; vEl.textContent = v;
+  row.append(kEl, vEl);
+  return row;
+}
+// JSON null is a real answer - "this device does not publish it" - so it has
+// to look like one instead of like a blank.
+function diagScalar(v) {
+  if (v === null || v === undefined) return '\u2014';
+  if (typeof v === 'boolean') return v ? '\u2713' : '\u2717';
+  return String(v);
+}
+function diagHumanize(key) {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase());
+}
+function diagRender(value, into, depth) {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    Object.entries(value).forEach(function (entry) {
+      const k = entry[0], v = entry[1];
+      const nested = v !== null && typeof v === 'object' &&
+        (!Array.isArray(v) || (v.length && typeof v[0] === 'object'));
+      if (nested) {
+        const t = document.createElement('div');
+        t.className = 'diag-group';
+        t.style.paddingLeft = ((depth + 1) * 8) + 'px';
+        t.textContent = diagHumanize(k);
+        into.appendChild(t);
+        diagRender(v, into, depth + 1);
+      } else {
+        into.appendChild(diagKv(diagHumanize(k),
+          Array.isArray(v) ? v.map(diagScalar).join(', ') : diagScalar(v), depth + 1));
+      }
+    });
+  } else if (Array.isArray(value)) {
+    if (!value.length) { into.appendChild(diagKv('\u2014', '(none)', depth + 1)); return; }
+    value.forEach(function (item, i) {
+      if (item !== null && typeof item === 'object') {
+        diagRender(item, into, depth + 1);
+        if (i !== value.length - 1) {
+          const s = document.createElement('div'); s.className = 'diag-sep'; into.appendChild(s);
+        }
+      } else {
+        into.appendChild(diagKv('', diagScalar(item), depth + 1));
+      }
+    });
+  } else {
+    into.appendChild(diagKv('', diagScalar(value), depth + 1));
+  }
+}
+
+// Content is built on first open: a full report is thousands of rows and most
+// of them are never looked at.
+function diagExpander(label, buildContent) {
+  const wrap = document.createElement('div');
+  const header = document.createElement('div');
+  header.className = 'diag-more';
+  header.innerHTML = '<span>' + label + '</span><span class="caret">\u2304</span>';
+  const content = document.createElement('div');
+  content.className = 'diag-content';
+  let built = false;
+  header.addEventListener('click', function () {
+    const opening = !header.classList.contains('open');
+    header.classList.toggle('open', opening);
+    if (opening && !built) { built = true; buildContent(content); }
+    if (opening) {
+      content.style.height = content.scrollHeight + 'px';
+      // Released to auto once open, so a value that rewraps later is not clipped.
+      setTimeout(function () {
+        if (header.classList.contains('open')) content.style.height = 'auto';
+      }, 240);
+    } else {
+      content.style.height = content.scrollHeight + 'px';
+      requestAnimationFrame(function () { content.style.height = '0px'; });
+    }
+  });
+  wrap.append(header, content);
+  return wrap;
+}
+
+function diagSummaryRows(cam) {
+  const s = cam.sensor, e = cam.exposure, l = cam.lens;
+  const rows = [
+    ['Sensor', s.resolutionMegapixels != null ? s.resolutionMegapixels.toFixed(1) + ' MP' : null],
+    ['Max resolution', (cam.resolutions.jpeg || [])[0] || null],
+    ['Sensor size', s.physicalSizeMm ? s.physicalSizeMm.width.toFixed(2) + '\u00d7' + s.physicalSizeMm.height.toFixed(2) + ' mm' : null],
+    ['Pixel pitch', s.pixelPitchMicrons != null ? s.pixelPitchMicrons.toFixed(2) + ' \u00b5m' : null],
+    ['Focal length', (l.focalLengthsMm || [])[0] != null ? l.focalLengthsMm[0].toFixed(2) + ' mm' : null],
+    ['Aperture', (l.aperturesF || [])[0] != null ? 'f/' + l.aperturesF[0].toFixed(1) : null],
+    ['ISO', (e.isoMin != null && e.isoMax != null) ? e.isoMin + '\u2013' + e.isoMax : null],
+    ['Shutter', (e.exposureTimeMinLabel && e.exposureTimeMaxLabel) ? e.exposureTimeMinLabel + ' \u2013 ' + e.exposureTimeMaxLabel : null]
+  ];
+  return rows.filter(function (r) { return r[1] !== null && r[1] !== undefined; });
+}
+
+function buildDiagnostics() {
+  const body = $('#diagBody');
+  if (body.dataset.built) return;
+  body.dataset.built = '1';
+
+  const label = document.createElement('div');
+  label.className = 'section-label';
+  label.textContent = 'DEVICE & DISPLAY';
+  body.appendChild(label);
+
+  const sys = DIAG_REPORT.system, disp = DIAG_REPORT.display;
+  const devCard = document.createElement('div');
+  devCard.className = 'diag-card';
+  devCard.innerHTML =
+    '<div class="diag-card-title">' + sys.manufacturer + ' ' + sys.model + '</div>' +
+    '<div class="diag-card-sub">Android ' + sys.androidVersion + ' \u00b7 SDK ' + sys.sdkInt + ' \u00b7 ' + sys.soc + '</div>' +
+    '<div class="diag-card-sub">' + disp.summary + '</div>';
+  devCard.appendChild(diagExpander('See more', function (c) {
+    [['system', sys], ['display', disp]].forEach(function (pair) {
+      const t = document.createElement('div');
+      t.className = 'diag-block-title';
+      t.textContent = diagHumanize(pair[0]);
+      c.appendChild(t);
+      diagRender(pair[1], c, 0);
+    });
+  }));
+  body.appendChild(devCard);
+
+  const camLabel = document.createElement('div');
+  camLabel.className = 'section-label';
+  camLabel.textContent = 'CAMERAS (' + DIAG_REPORT.cameras.length + ')';
+  body.appendChild(camLabel);
+
+  DIAG_REPORT.cameras.forEach(function (cam) {
+    const id = cam.identification;
+    const card = document.createElement('div');
+    card.className = 'diag-card';
+    const kind = id.isPhysicalSubCamera ? 'Physical sub-camera' : 'Logical camera';
+    card.innerHTML =
+      '<div class="diag-card-title">' + id.facing + ' \u00b7 ID ' + id.cameraId + '</div>' +
+      '<div class="diag-card-sub">' + kind + ' \u00b7 ' + id.hardwareLevel + '</div>' +
+      '<div class="diag-sep"></div>';
+    diagSummaryRows(cam).forEach(function (r) { card.appendChild(diagKv(r[0], r[1], 0)); });
+
+    const badges = [];
+    if (cam.stabilization.oisAvailable) badges.push('OIS');
+    if (cam.flash.flashAvailable) badges.push('FLASH');
+    if (cam.capabilities.manualSensor) badges.push('MANUAL');
+    if (cam.capabilities.raw) badges.push('RAW');
+    if (cam.capabilities.burstCapture) badges.push('BURST');
+    if (cam.capabilities.logicalMultiCamera) badges.push('MULTI');
+    if (badges.length) {
+      const b = document.createElement('div');
+      b.className = 'diag-badges';
+      b.textContent = badges.join(' \u00b7 ');
+      card.appendChild(b);
+    }
+
+    card.appendChild(diagExpander('See more', function (c) {
+      Object.entries(cam).forEach(function (entry) {
+        const t = document.createElement('div');
+        t.className = 'diag-block-title';
+        t.textContent = diagHumanize(entry[0]);
+        c.appendChild(t);
+        diagRender(entry[1], c, 0);
+      });
+    }));
+    body.appendChild(card);
+  });
+}
+
+function openDiagnostics() {
+  buildDiagnostics();
+  $('#settingsScreen').classList.add('hidden-left');
+  $('#diagnosticsScreen').classList.remove('hidden-right');
+  currentScreen = 'diagnostics';
+  $('#stateScreen').textContent = 'Diagnostics';
+}
+function closeDiagnostics() {
+  $('#diagnosticsScreen').classList.add('hidden-right');
+  $('#settingsScreen').classList.remove('hidden-left');
+  currentScreen = 'settings';
+  $('#stateScreen').textContent = 'Settings';
+}
+$('#openDiagnostics').addEventListener('click', openDiagnostics);
+$('#closeDiagnostics').addEventListener('click', closeDiagnostics);
+$('#diagCopy').addEventListener('click', function () {
+  if (navigator.clipboard) navigator.clipboard.writeText(JSON.stringify(DIAG_REPORT, null, 2));
+});
+// The web analogue of the app's share sheet: the user chooses where it lands.
+$('#diagExport').addEventListener('click', function () {
+  const blob = new Blob([JSON.stringify(DIAG_REPORT, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'framecast-camera2-' + DIAG_REPORT.system.model + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
 $('#openSettings').addEventListener('click', openSettings);
 $('#closeSettings').addEventListener('click', closeSettings);
 $('#btnOpenSettings2').addEventListener('click', () => { currentScreen === 'camera' ? openSettings() : closeSettings(); });
@@ -1909,7 +2523,7 @@ setInterval(() => { if (recording) { $('#stateLat').textContent = Math.floor(1 +
 
 // ─── On-device settings persistence (localStorage — no server, plain text is tiny) ───
 const STORAGE_KEY = 'phonecam_settings_v1';
-const TOGGLE_KEYS = ['hdr', 'stab', 'audio', 'nr', 'wind', 'audioMeter', 'grid', 'mirror', 'lowlat', 'reconn', 'syncObs', 'overlay-show', 'ts'];
+const TOGGLE_KEYS = ['stab', 'audio', 'nr', 'wind', 'audioMeter', 'grid', 'mirror', 'lowlat', 'reconn', 'syncObs', 'overlay-show', 'ts'];
 let settingsLoaded = false;
 
 function saveSettings() {
@@ -1927,7 +2541,6 @@ function saveSettings() {
     customWidth: $('#customWidthInput').value,
     customHeight: $('#customHeightInput').value,
     aspectRatio: $('#selAspectRatio').value,
-    codec: $('#selCodec').value,
     bitrate: $('#selBitrate').value,
     customBitrate: $('#customBitrateInput').value,
     fps: $('#selFps').value,
@@ -1946,17 +2559,20 @@ function saveSettings() {
     overlayMode,
     overlayText: $('#overlayTextInput').value,
     overlayImageSrc: overlayImage ? overlayImage.src : null,
-    iso: $('#isoSlider').value,
-    ss: $('#ssSlider').value,
+    // Stored as VALUES, not slider positions — same reason the app saves
+    // manual_iso/manual_shutter_ns: the stop list is rebuilt per camera, so
+    // an index means a different exposure on a different lens.
+    iso: simIsoValue(),
+    ss: simShutterNs(),
     aeOn,
-    ev: $('#evSlider').value,
+    ev: evValue,
     streamBrightness: $('#selStreamBrightness').value,
     toggles,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (err) {
-    console.warn('PhoneCam: could not persist settings (storage full?)', err);
+    console.warn('FrameCast: could not persist settings (storage full?)', err);
   }
 }
 
@@ -1986,14 +2602,13 @@ function loadSettings() {
   setSelectIfPresent($('#selResolution'), saved.resolution);
   lastResolution = $('#selResolution').value;
   setSelectIfPresent($('#selAspectRatio'), saved.aspectRatio);
-  setSelectIfPresent($('#selCodec'), saved.codec);
   setSelectIfPresent($('#selBitrate'), saved.bitrate);
   lastBitrate = $('#selBitrate').value;
   setSelectIfPresent($('#selFps'), saved.fps);
   lastFps = $('#selFps').value;
   setSelectIfPresent($('#selAf'), saved.af);
   setSelectIfPresent($('#selAfSpeed'), saved.afSpeed);
-  $('#mfGroup').style.display = $('#selAf').value === 'Manual' ? 'flex' : 'none';
+  $('#mfChip').style.display = $('#selAf').value === 'Manual' ? 'flex' : 'none';
   setSelectIfPresent($('#selSampleRate'), saved.sampleRate);
   setSelectIfPresent($('#selAudioBitrate'), saved.audioBitrate);
   setSelectIfPresent($('#selAudioCodec'), saved.audioCodec);
@@ -2012,17 +2627,19 @@ function loadSettings() {
   if ($('#selResolution').value === 'custom') $('#customResolutionRow').classList.add('open');
 
   if (saved.pcIp) { $('#inputPcIp').value = saved.pcIp; $('#panelIp').textContent = saved.pcIp; }
-  if (saved.iso != null) {
-    // iso is stored as 0..100 slider progress (log-ISO), not a raw ISO number
-    $('#isoSlider').value = Math.min(100, Math.max(0, saved.iso));
-    $('#isoVal').textContent = simIsoValue();
-    $('#stateIso').textContent = simIsoValue();
-  }
-  if (saved.ss != null) { $('#ssSlider').value = saved.ss; $('#ssVal').textContent = simShutterLabel(); }
+  // Restored by nearest stop on a log scale, like ExposureScale.nearestIndex:
+  // a saved ISO of 700 belongs on 640, not dragged up to 800 by a plain
+  // subtraction. Older saves held a 0..100 slider position instead of a
+  // value; those land on the nearest stop too, which is a harmless one-time
+  // shift rather than a crash.
+  const nearestStop = (stops, value) => stops.reduce(
+    (best, v, i) => Math.abs(Math.log(v) - Math.log(value)) < Math.abs(Math.log(stops[best]) - Math.log(value)) ? i : best, 0);
+  if (saved.iso != null && saved.iso > 0) isoIndex = nearestStop(isoStops, saved.iso);
+  if (saved.ss != null && saved.ss > 0) shutterIndex = nearestStop(shutterStops, saved.ss);
   if (saved.aeOn === false) { aeOn = false; }
+  if (saved.ev != null) evValue = Math.max(-2, Math.min(2, saved.ev));
   updateExposureUi();
   setSelectIfPresent($('#selStreamBrightness'), saved.streamBrightness);
-  if (saved.ev) { $('#evSlider').value = saved.ev; const v = (saved.ev / 10).toFixed(1); $('#evVal').textContent = v; $('#stateEv').textContent = v; }
 
   if (saved.toggles) {
     Object.entries(saved.toggles).forEach(([key, on]) => {
@@ -2060,8 +2677,8 @@ settingsScreenEl.addEventListener('input', saveSettings);
 settingsScreenEl.addEventListener('click', e => {
   if (e.target.closest('.toggle')) saveSettings();
 });
-$('#isoSlider').addEventListener('change', saveSettings);
-$('#evSlider').addEventListener('change', saveSettings);
+$('#panelSlider').addEventListener('change', saveSettings);
+$('#aeToggle').addEventListener('click', saveSettings);
 $('#btnToggleTier').addEventListener('click', saveSettings);
 
 // ── Custom minimalist dropdown, replacing the native OS <select> popup ──

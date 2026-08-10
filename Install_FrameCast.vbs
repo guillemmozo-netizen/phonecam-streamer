@@ -1,6 +1,6 @@
-' PhoneCam PC - one-click, silent installer. Double-click this file (it runs
+' FrameCast PC - one-click, silent installer. Double-click this file (it runs
 ' via wscript.exe, which never shows a console window). Sets up a private
-' Python environment and registers a watcher that starts PhoneCam whenever
+' Python environment and registers a watcher that starts FrameCast whenever
 ' OBS is running - nothing else to run, ever again. Works from any folder:
 ' every path below is derived from this script's own location, never
 ' hardcoded, so it doesn't matter where the zip was extracted to.
@@ -26,19 +26,19 @@ logPath = appDir & "\setup_log.txt"
 If Not fso.FolderExists(appDir) Then
     MsgBox "Could not find the pc_receiver folder next to this installer." & vbCrLf & vbCrLf & _
            "Expected: " & appDir & vbCrLf & vbCrLf & _
-           "Re-download/re-extract PhoneCam_PC_Setup.zip and make sure " & _
-           "Install_PhoneCam.vbs and the pc_receiver folder stay together " & _
+           "Re-download/re-extract FrameCast_PC_Setup.zip and make sure " & _
+           "Install_FrameCast.vbs and the pc_receiver folder stay together " & _
            "(don't move one without the other), then run this installer " & _
-           "again.", vbCritical, "PhoneCam Setup - Error"
+           "again.", vbCritical, "FrameCast Setup - Error"
     WScript.Quit 1
 End If
 If Not fso.FileExists(helperBat) Then
     MsgBox "pc_receiver is missing _setup_helper.bat." & vbCrLf & vbCrLf & _
            "Expected: " & helperBat & vbCrLf & vbCrLf & _
            "The pc_receiver folder looks incomplete - re-download/" & _
-           "re-extract PhoneCam_PC_Setup.zip (don't copy files out of it " & _
+           "re-extract FrameCast_PC_Setup.zip (don't copy files out of it " & _
            "individually) and run this installer again.", _
-           vbCritical, "PhoneCam Setup - Error"
+           vbCritical, "FrameCast Setup - Error"
     WScript.Quit 1
 End If
 
@@ -49,7 +49,7 @@ If pyCheck <> 0 Then
     MsgBox "Python was not found on this PC." & vbCrLf & vbCrLf & _
            "Install it from https://www.python.org/downloads/" & vbCrLf & _
            "(tick ""Add python.exe to PATH"" during setup), then run " & _
-           "this installer again.", vbExclamation, "PhoneCam Setup"
+           "this installer again.", vbExclamation, "FrameCast Setup"
     WScript.Quit 1
 End If
 
@@ -82,11 +82,11 @@ If setupResult <> 0 Or Not fso.FileExists(venvPy) Then
             If Trim(lastLines) <> "" Then detail = lastLines
         End If
     End If
-    MsgBox "PhoneCam setup failed (exit code " & setupResult & ")." & vbCrLf & vbCrLf & _
+    MsgBox "FrameCast setup failed (exit code " & setupResult & ")." & vbCrLf & vbCrLf & _
            "Last lines of " & logPath & ":" & vbCrLf & vbCrLf & detail & vbCrLf & _
            "Fix the issue above (often a missing internet connection for " & _
            "the first-time dependency download) and run this installer " & _
-           "again.", vbCritical, "PhoneCam Setup - Error"
+           "again.", vbCritical, "FrameCast Setup - Error"
     WScript.Quit 1
 End If
 
@@ -114,6 +114,25 @@ ElseIf obsResult = 4 Then
     obsNote = vbCrLf & vbCrLf & "Note: OBS's WebSocket settings could not be " & _
               "updated automatically. You can enable it by hand in OBS: " & _
               "Tools > WebSocket Server Settings > Enable WebSocket server."
+End If
+
+' 3a-bis. Create FrameCast's own capture source in OBS, so the user never has
+' to. The auto-fit only ever reshapes a source named exactly FrameCast (that
+' exactness is what stops it rewriting a webcam's transform), which otherwise
+' turns into a manual "name it exactly right" step.
+'
+' Only possible while OBS is running and answering, which at install time it
+' usually is not - the WebSocket server may have just been switched on above
+' and needs an OBS restart. That is fine and deliberately silent: the receiver
+' creates the same source itself the first time it syncs (obs_sync.
+' ensure_source), so the only difference is when it appears. Exit code 4 is
+' the one case worth mentioning, since it means OBS answered and still said no.
+Dim sourceResult
+sourceResult = shell.Run("""" & venvPy & """ -m pc_receiver.create_obs_source", 0, True)
+If sourceResult = 4 Then
+    obsNote = obsNote & vbCrLf & vbCrLf & "Note: the ""FrameCast"" source could " & _
+              "not be added to OBS automatically. It will be created the first " & _
+              "time you stream with OBS open."
 End If
 
 ' 3b. Check the one part of the audio path that cannot be shipped with this
@@ -144,33 +163,54 @@ ElseIf audioResult = 3 Then
                 "unaffected."
 End If
 
-' 4. Register Windows startup - points at PhoneCam_Service.vbs, a lightweight
-' watcher (not the full PhoneCam services) that waits for OBS to be running
-' before starting anything, and stops everything again once OBS closes. So
-' this registers a login-time watcher, not "run all the time" - the actual
-' services (network ports, adb polling, etc.) only exist while OBS is open.
+' 3.9. Clean up any pre-rename PhoneCam install: its Startup shortcut would
+' relaunch the old watcher at every login, and an old watcher already running
+' would keep starting its own control_server alongside the new one - two of
+' everything, fighting over the same ports. Best-effort: nothing here may
+' stop the install.
+Dim oldShortcut, wmi, oldProcs, oldProc
+On Error Resume Next
+oldShortcut = shell.SpecialFolders("Startup") & "\PhoneCam.lnk"
+If fso.FileExists(oldShortcut) Then fso.DeleteFile oldShortcut, True
+Set wmi = GetObject("winmgmts:\\.\root\cimv2")
+Set oldProcs = wmi.ExecQuery("SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name='wscript.exe'")
+For Each oldProc In oldProcs
+    If InStr(1, oldProc.CommandLine & "", "PhoneCam_Service.vbs", vbTextCompare) > 0 Then
+        shell.Run "taskkill /PID " & oldProc.ProcessId & " /T /F", 0, True
+    End If
+Next
+On Error GoTo 0
+
+' 4. Register Windows startup - points at FrameCast_Service.vbs, which starts
+' control_server the moment the user logs in and restarts it if it ever dies.
+' Always-on by design: the phone must be able to connect from the first
+' second, without OBS or anything else having been opened first.
 startupFolder = shell.SpecialFolders("Startup")
-shortcutPath = startupFolder & "\PhoneCam.lnk"
+shortcutPath = startupFolder & "\FrameCast.lnk"
 Set shortcut = shell.CreateShortcut(shortcutPath)
 shortcut.TargetPath = "wscript.exe"
-shortcut.Arguments = """" & appDir & "\PhoneCam_Service.vbs"""
+shortcut.Arguments = """" & appDir & "\FrameCast_Service.vbs"""
 shortcut.WorkingDirectory = appDir
 shortcut.WindowStyle = 7
-shortcut.IconLocation = shell.ExpandEnvironmentStrings("%SystemRoot%") & "\System32\shell32.dll,175"
+' The official FrameCast icon when the branding folder shipped intact; a
+' neutral system icon as fallback, never a wrong one.
+If fso.FileExists(rootDir & "\branding\framecast.ico") Then
+    shortcut.IconLocation = rootDir & "\branding\framecast.ico,0"
+Else
+    shortcut.IconLocation = shell.ExpandEnvironmentStrings("%SystemRoot%") & "\System32\shell32.dll,175"
+End If
 shortcut.Save
 
-' 5. Start the watcher now - no need to log out/in first. It stays idle
-' (near-zero resource use) until it sees obs64.exe/obs32.exe running,
-' wherever OBS itself happens to be installed - it matches by process name,
-' not by location, so that doesn't matter either.
-shell.Run "wscript.exe """ & appDir & "\PhoneCam_Service.vbs""", 0, False
+' 5. Start the service now - no need to log out/in first. From this moment
+' the PC is listening and ready for the phone.
+shell.Run "wscript.exe """ & appDir & "\FrameCast_Service.vbs""", 0, False
 
-MsgBox "PhoneCam is set up." & vbCrLf & vbCrLf & _
-       "It now starts automatically whenever you open OBS, with no window " & _
-       "ever showing up, and stops again when you close OBS. From now on, " & _
-       "whenever OBS is running:" & vbCrLf & vbCrLf & _
+MsgBox "FrameCast is set up." & vbCrLf & vbCrLf & _
+       "It now runs from the moment this PC starts - completely invisibly, " & _
+       "no window ever - so it is always ready to receive the phone " & _
+       "instantly. From now on:" & vbCrLf & vbCrLf & _
        "  - USB: just plug the phone in." & vbCrLf & _
        "  - WiFi: just open the app on the same network." & vbCrLf & vbCrLf & _
        "Nothing else to run, ever again." & vbCrLf & vbCrLf & _
        "(OBS with its Virtual Camera must be installed for the phone to " & _
-       "show up as a webcam.)" & obsNote & audioNote, vbInformation, "PhoneCam Setup - Done"
+       "show up as a webcam.)" & obsNote & audioNote, vbInformation, "FrameCast Setup - Done"

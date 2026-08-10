@@ -1,0 +1,51 @@
+=== VIEWFINDER: resolucion real del preview por composicion ===
+Dispositivo : SM-S918B (S23 Ultra), pantalla 1440x3088
+Preset      : 1080p, camara trasera, sesion en reposo (sin stream)
+Medida      : adb shell dumpsys media.camera -> Stream[0] "Dims:" de la sesion viva
+              (el tamano que la camara abre de verdad, no el que se pide)
+Sintoma     : "el video en el movil en vertical se ve muy pixelado, y no parece
+              pixelado real, parece un filtro falso"
+
+--- ANTES (bound en orientacion de pantalla + tope como caja 1920x1080) ---
+4:3   pedido 1440x1080  -> camara 1440x1080  = 1555200 px
+16:9  pedido 1920x1080  -> camara 1440x1080  = 1555200 px
+1:1   pedido 1080x1080  -> camara  960x720   =  691200 px
+9:16  pedido  608x1080  -> camara  320x240   =   76800 px   <-- el defecto
+3:4   pedido  810x1080  -> camara  640x480   =  307200 px   <-- mismo defecto
+
+--- DESPUES (bound en orientacion de sensor + tope como presupuesto de pixeles) ---
+4:3   pedido 1440x1080  -> camara 1440x1080  = 1555200 px   sin cambio
+16:9  pedido 1920x1080  -> camara 1920x1080  = 2073600 px   +33%
+1:1   pedido 1080x1080  -> camara  960x720   =  691200 px   sin cambio
+9:16  pedido 1920x1080  -> camara 1920x1080  = 2073600 px   x27
+3:4   pedido 1440x1080  -> camara 1440x1080  = 1555200 px   x5,06
+
+Ninguna composicion baja. Log por sesion, ya en el codigo:
+  preview: asked=1920x1080 bound=1920x1080 view=9:16
+
+--- POR QUE 608x1080 ACABA EN 320x240 ---
+ResolutionSelector compara su bound contra StreamConfigurationMap, que da
+tamanos en orientacion de sensor (apaisados). No lo rota: el camino antiguo
+setTargetResolution si lo hacia (SupportedOutputSizesSorterLegacy.
+flipSizeByRotation), el de ResolutionSelector no. Asi que 608x1080 no pide
+"un cuadro alto", pide "nada mas ancho de 608", y
+FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER descarta todo lo que supere ese ancho.
+De las 27 salidas PRIVATE del sensor, las unicas con ancho <= 608 y alto <= 1080
+son 352x288, 320x240 y 176x144; el grupo 4:3 (el preferido por defecto) se queda
+con 320x240.
+
+Reproducido fuera del telefono con la lista real de tamanos del dispositivo y
+el algoritmo de CameraX 1.4.2: predice 320x240 / 640x480 / 1440x1080 / 1440x1080
+/ 960x720 — las cinco medidas de "ANTES", exactas.
+
+--- LO QUE NO ESTABA ROTO ---
+El video enviado al PC. VideoCapture usa OPTION_CUSTOM_ORDERED_RESOLUTIONS,
+construido desde el MediaSpec de StreamingVideoOutput, y ese camino devuelve su
+lista antes de leer ningun ResolutionSelector. Ver paridad_vertical.txt: 9:16 en
+vertical capturaba 1920x1080 para un encoder de 1080x1920, deficit 0%. Por eso
+en OBS se veia bien y en el movil no.
+
+El bound del videoSelector estaba igual de mal escrito (portrait) aunque nadie
+lo lea; se corrige tambien, porque el dia que esa lista venga vacia — el fallo
+exacto que getMediaCapabilities existe para evitar — apuntaria a los frames que
+si salen por la red.

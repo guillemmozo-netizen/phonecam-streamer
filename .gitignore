@@ -19,6 +19,11 @@ pc_receiver/setup_log.txt
 .control_token
 .watcher.lock
 
+# Identidad de firma de la app: NUNCA al repo. Perderla = no poder actualizar
+# la app; filtrarla = cualquiera puede suplantar una actualizacion.
+android-app/keystore/
+android-app/keystore.properties
+
 # Artefactos de las campanas de validacion en dispositivo: los volcados de
 # logcat y los APK de comparacion son de un solo uso y pesan decenas de MB.
 # La evidencia que importa vive curada en docs/evidencia/.

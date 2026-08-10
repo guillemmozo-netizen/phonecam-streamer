@@ -95,6 +95,28 @@ only what the source's texture matrix has not already applied — the direct
 Camera2 path arrives with the sensor mounting already folded in, CameraX's
 processed stream does not.
 
+**The viewfinder is a second branch off the same bind, and it is not on the
+chain above.** `Preview` gets its own `ResolutionSelector`, so nothing that
+keeps the streamed frame honest protects the viewfinder — a fault there is
+invisible on the PC and visible only on the phone. Two rules it has to obey,
+both learned by getting them wrong (evidence in
+[evidencia/viewfinder_preview.txt](evidencia/viewfinder_preview.txt)):
+
+- **The bound size is in SENSOR orientation.** `ResolutionSelector` compares
+  it directly against `StreamConfigurationMap`'s sizes, which are landscape,
+  and never rotates it — unlike the deprecated `setTargetResolution` path,
+  which did. A portrait bound therefore does not mean "a tall frame", it
+  means "nothing wider than the short edge", and
+  `FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER` then throws away everything
+  above it. Asking for 608×1080 bound the camera at **320×240**.
+- **The 1080p cap is a pixel budget, not a box** — the same lesson as the
+  tier ceiling, one layer up. `StreamConfig.sensorOriented` and
+  `fitPixelBudget` are the two calls that encode both.
+
+The cap itself stays: a raw 4K/8K surface into `PreviewView` cost ~0.5 s of
+viewfinder lag, and "closest lower" stays too, so a 480p preset previews like
+480p instead of flattering itself.
+
 ### Diagnosing geometry on a device
 
 One line per session says what the pipeline really did:
@@ -102,11 +124,56 @@ One line per session says what the pipeline really did:
 ```
 geom[camerax]: θ=90 crop=0,0→1920,1080 buffer=1920x1080 encoder=1080x1920 scale=1.0x1.0
 capture need: 1080x1920 (encoder=1080x1920 hold=1)
+preview: asked=1920x1080 bound=1920x1080 view=9:16
 ```
 
 Compare `buffer` against `encoder`: fewer pixels in the buffer means the
 renderer is upscaling, which is what `capture need` exists to diagnose on
-phones whose CameraX under-provisions differently from this one.
+phones whose CameraX under-provisions differently from this one. The
+`preview` line is the viewfinder's equivalent — `asked` is what the selector
+was given, `bound` is what CameraX actually opened, and a `bound` far below
+`asked` is the viewfinder being upscaled to the screen. Without a phone,
+`adb shell dumpsys media.camera` reports the same number as `Dims:` under
+the live session's `Stream[0]`.
+
+### The full capability report
+
+Settings → Device → **Camera2 capabilities** (`CameraDiagnostics`) dumps
+everything the device reports — per camera: identification, sensor, exposure,
+fps/video, resolutions, lens, focus, white balance, flash, capabilities,
+stabilization, output formats; plus display and system — as structured JSON,
+exportable through the share sheet or the clipboard.
+
+It is deliberately **not** `DeviceCapabilities`. That one decides what the app
+should offer and overrides the runtime probe with `DeviceModelDatabase` where
+OEM HALs misreport their own hardware; this one reports what the device says,
+uncorrected, because a diagnostic has to be able to show the lie. Two rules
+hold it together:
+
+- **Nothing may throw.** Every characteristic read is guarded, every section
+  is guarded; a failure becomes a field saying so and the rest of the report
+  still lands. The device whose HAL returns something unexpected is precisely
+  the one worth diagnosing.
+- **Absent ≠ unsupported.** A field the HAL does not publish stays in the
+  report as an explicit `null` and renders as `—`. `JSONObject.put(key, null)`
+  removes the key, which would quietly turn "this device does not say" into
+  "this report never looked".
+
+On an S23 Ultra it finds **8 cameras** where `cameraIdList` alone shows 4: the
+ultra-wide and the tele have no top-level id, only physical sub-ids behind the
+logical camera. The screen's technical half is rendered from the exported JSON
+itself, so what is on screen and what is in the file cannot drift.
+
+`CameraDiagnosticsDeviceTest` (instrumentation, `connectedDebugAndroidTest`)
+runs the real probe against the real HAL and asserts every section is present
+and populated on whatever device is attached — the JVM has no CameraManager to
+answer, so that half cannot be unit-tested. It also writes the report to
+`files/diagnostics-dump.json`, which is how to read it off a device whose
+screen cannot be driven:
+
+```bash
+adb shell run-as com.phonecam.streamer cat files/diagnostics-dump.json
+```
 
 ## OBS composition sync
 
