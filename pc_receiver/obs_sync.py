@@ -234,6 +234,81 @@ def _select_virtual_camera(ws, input_name: str, device_key: str) -> None:
     )
 
 
+# The RECORDING end of a virtual cable, as OBS lists it under a capture
+# source's audio devices.
+#
+# Deliberately not audio_sinks.VIRTUAL_CABLE_HINTS: the receiver *plays into*
+# the cable's input end ("CABLE Input"), and OBS has to *record from* the same
+# cable's other end ("CABLE Output"). Reusing the receiver's list here would
+# select the wrong end of the right cable, which is silent — and silence that
+# looks correctly configured is the worst kind.
+_CABLE_CAPTURE_HINTS = ("cable output", "voicemeeter out", "virtual audio")
+
+# dshow's audio_output_mode: 0 = capture into OBS's mixer, 1/2 = also play out
+# the desktop's speakers. 0 on purpose — the phone's microphone coming out of
+# the same PC the call is on is a feedback loop, the same reason the receiver
+# refuses to use the speakers unless asked (see audio_sinks.create_audio_sink).
+_AUDIO_CAPTURE_ONLY = 0
+
+
+def configure_source_audio(ws, name: str) -> bool:
+    """Points [name]'s audio input at the virtual cable the receiver plays the
+    phone's audio into, and returns whether anything was changed.
+
+    Without this the source carries video only, and "use custom audio device"
+    left to its own devices lands on whatever OBS lists first — on the
+    reference PC, the laptop's own Realtek microphone. That looks configured
+    and sounds like the room, not the phone.
+
+    Two deliberate refusals:
+      - no cable installed -> change nothing. Enabling a custom audio device
+        with no cable to point at can only select some real microphone, which
+        is worse than leaving the source silent and saying why.
+      - already on a cable -> change nothing, so a user who picked a specific
+        cable end (VoiceMeeter has several) keeps it.
+    """
+    status = _request(ws, "GetInputPropertiesListPropertyItems", "phonecam-audio-devices", {
+        "inputName": name,
+        "propertyName": "audio_device_id",
+    })
+    items = (status.get("responseData") or {}).get("propertyItems") or []
+
+    def is_cable(text: str) -> bool:
+        folded = text.casefold()
+        return any(hint in folded for hint in _CABLE_CAPTURE_HINTS)
+
+    cable = next((i for i in items if is_cable(str(i.get("itemName", "")))), None)
+    if cable is None:
+        log.info(
+            "obs_sync: no virtual audio cable among this PC's capture devices (%s), so "
+            "'%s' is left video-only. The phone's microphone needs VB-CABLE or "
+            "VoiceMeeter installed — see docs/AUDIO.md.",
+            [str(i.get("itemName", "")) for i in items] or "none", name,
+        )
+        return False
+
+    current = (_request(ws, "GetInputSettings", "phonecam-audio-current", {"inputName": name})
+               .get("responseData") or {}).get("inputSettings") or {}
+    if current.get("use_custom_audio_device") and is_cable(str(current.get("audio_device_id", ""))):
+        log.info("obs_sync: '%s' already captures audio from a virtual cable", name)
+        return False
+
+    _request(ws, "SetInputSettings", "phonecam-audio-set", {
+        "inputName": name,
+        "inputSettings": {
+            "use_custom_audio_device": True,
+            "audio_device_id": cable.get("itemValue"),
+            "audio_output_mode": _AUDIO_CAPTURE_ONLY,
+        },
+        "overlay": True,
+    })
+    log.info(
+        "obs_sync: '%s' now captures audio from '%s' (was %r)",
+        name, cable.get("itemName"), current.get("audio_device_id"),
+    )
+    return True
+
+
 def ensure_source(ws, scene: str) -> Optional[dict]:
     """Creates FrameCast's own capture source in [scene] if it isn't there,
     and returns its scene item (or None if it could not be created).
@@ -288,6 +363,7 @@ def ensure_source(ws, scene: str) -> Optional[dict]:
         })
         if (status.get("requestStatus") or {}).get("result"):
             _select_virtual_camera(ws, wanted, device_key)
+            configure_source_audio(ws, wanted)
 
     if not (status.get("requestStatus") or {}).get("result"):
         log.warning(

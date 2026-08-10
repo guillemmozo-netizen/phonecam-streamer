@@ -31,6 +31,7 @@ import sys
 from pc_receiver.obs_sync import (
     _current_scene,
     _find_scene_item,
+    configure_source_audio,
     ensure_source,
     open_connection,
     read_config,
@@ -64,7 +65,13 @@ def main() -> int:
         if not scene:
             print("OBS did not report a current scene")
             return 4
-        if _find_scene_item(ws, scene, source_names()) is not None:
+        existing = _find_scene_item(ws, scene, source_names())
+        if existing is not None:
+            # The source is there, but its audio may never have been wired to
+            # the cable — including the case where the user enabled "use
+            # custom audio device" by hand and OBS defaulted it to a real
+            # microphone. Fixing that is the whole point of running this.
+            configure_source_audio(ws, str(existing.get("sourceName", wanted)))
             print(f"'{wanted}' is already in scene '{scene}'")
             return 0
         if ensure_source(ws, scene) is None:

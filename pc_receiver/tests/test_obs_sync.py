@@ -35,7 +35,7 @@ class FakeWs:
 
     def __init__(self, video_settings=None, fail_set=False, scene_items=None,
                  inputs=None, input_kinds=None, devices=None, fail_create=False,
-                 events=False):
+                 events=False, audio_devices=None, input_settings=None):
         self.requests: list[tuple[str, dict]] = []
         self.closed = False
         self._replies: list[str] = []
@@ -53,6 +53,12 @@ class FakeWs:
             ["dshow_input", "color_source_v3"] if input_kinds is None else list(input_kinds)
         )
         self._devices = self.DEFAULT_DEVICES if devices is None else list(devices)
+        # What OBS offers as *capture* devices for a dshow source, and the
+        # settings each input currently holds. Both matter for the audio
+        # wiring: the receiver plays into a cable's input end, OBS has to
+        # record from its output end.
+        self._audio_devices = [] if audio_devices is None else list(audio_devices)
+        self._input_settings = dict(input_settings or {})
         self._fail_create = fail_create
         # Real obs-websocket pushes events down the same socket as responses.
         # Off by default only to keep the other tests' transcripts readable —
@@ -103,7 +109,16 @@ class FakeWs:
                 if kind == "CreateInput":
                     self._inputs.append({"inputName": name})
         elif kind == "GetInputPropertiesListPropertyItems":
-            data, ok = {"propertyItems": self._devices}, True
+            wanted = (msg.get("requestData") or {}).get("propertyName")
+            items = self._audio_devices if wanted == "audio_device_id" else self._devices
+            data, ok = {"propertyItems": items}, True
+        elif kind == "GetInputSettings":
+            name = (msg["requestData"] or {}).get("inputName")
+            data, ok = {"inputSettings": dict(self._input_settings.get(name, {}))}, True
+        elif kind == "SetInputSettings":
+            d = msg["requestData"]
+            self._input_settings.setdefault(d["inputName"], {}).update(d["inputSettings"])
+            data, ok = {}, True
         else:
             data, ok = {}, True
         if self._events:
@@ -924,3 +939,69 @@ def test_an_unreadable_pending_file_is_discarded_rather_than_retried():
     obs_sync._write_pending({"request": {"width": "wide"}, "attempts": 0})
     assert obs_sync.replay_pending() is False
     assert obs_sync.has_pending() is False
+
+
+# ─────────── the source's audio has to come from the cable, not a mic ───────────
+
+CABLE = [
+    {"itemName": "Micrófono (Realtek(R) Audio)", "itemValue": "Micrófono (Realtek(R) Audio):"},
+    {"itemName": "CABLE Output (VB-Audio Virtual Cable)", "itemValue": "CABLE Output:"},
+]
+
+
+def test_the_source_captures_audio_from_the_virtual_cable():
+    """The receiver plays the phone's audio into the cable's input end; this
+    is OBS being pointed at the other end of the same cable."""
+    ws = FakeWs(audio_devices=CABLE)
+    assert obs_sync.configure_source_audio(ws, "FrameCast") is True
+    applied = [d for k, d in ws.requests if k == "SetInputSettings"][0]["inputSettings"]
+    assert applied["use_custom_audio_device"] is True
+    assert applied["audio_device_id"] == "CABLE Output:"
+    # Capture into the mixer, never out of the desktop speakers: the phone's
+    # microphone played on the PC the call is on is a feedback loop.
+    assert applied["audio_output_mode"] == 0
+
+
+def test_a_real_microphone_is_never_selected():
+    """With no cable installed the only candidates are real microphones, and
+    picking one gives a source that looks configured and records the room."""
+    ws = FakeWs(audio_devices=[CABLE[0]])
+    assert obs_sync.configure_source_audio(ws, "FrameCast") is False
+    assert [d for k, d in ws.requests if k == "SetInputSettings"] == []
+
+
+def test_a_cable_already_chosen_is_left_alone():
+    """VoiceMeeter offers several ends; a deliberate choice is not overridden."""
+    ws = FakeWs(
+        audio_devices=CABLE,
+        input_settings={"FrameCast": {
+            "use_custom_audio_device": True,
+            "audio_device_id": "VoiceMeeter Out B1:",
+        }},
+    )
+    assert obs_sync.configure_source_audio(ws, "FrameCast") is False
+    assert [d for k, d in ws.requests if k == "SetInputSettings"] == []
+
+
+def test_a_microphone_chosen_by_hand_is_corrected():
+    """The reported case: the checkbox was on and OBS had defaulted it to the
+    laptop's own microphone, so the source sounded like the room."""
+    ws = FakeWs(
+        audio_devices=CABLE,
+        input_settings={"FrameCast": {
+            "use_custom_audio_device": True,
+            "audio_device_id": "Micrófono (Realtek(R) Audio):",
+        }},
+    )
+    assert obs_sync.configure_source_audio(ws, "FrameCast") is True
+    applied = [d for k, d in ws.requests if k == "SetInputSettings"][0]["inputSettings"]
+    assert applied["audio_device_id"] == "CABLE Output:"
+
+
+def test_a_new_source_gets_its_audio_wired_on_creation():
+    ws = FakeWs(scene_items=[], audio_devices=CABLE)
+    sync(ws, allow_scene_requests=True)
+    audio = [d for k, d in ws.requests
+             if k == "SetInputSettings" and "audio_device_id" in d.get("inputSettings", {})]
+    assert len(audio) == 1
+    assert audio[0]["inputSettings"]["audio_device_id"] == "CABLE Output:"
