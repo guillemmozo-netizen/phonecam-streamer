@@ -17,10 +17,18 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // The applicationId predates the FrameCast rename and CANNOT change:
-        // it is the installed app's identity — a new id would be a different
-        // app that existing installs never update to.
-        applicationId = "com.phonecam.streamer"
+        // The identity the world sees: the Play listing's URL, the id in the
+        // user's app settings, the app AdMob is registered against. Permanent
+        // from the first publish onwards — which is exactly why it was worth
+        // fixing before that, while "nobody has installed this yet" was still
+        // true. It used to read com.phonecam.streamer, from before the
+        // FrameCast rename.
+        //
+        // Deliberately NOT the same as `namespace` above. That one is the
+        // Kotlin package — internal, invisible, and referenced by every file
+        // and every relative name in the manifest, so renaming it would be a
+        // large diff that changes nothing anyone can see.
+        applicationId = "com.framecast.app"
         minSdk = 26
         targetSdk = 34
         // 15, not 14: lets the public 0.0.14 install cleanly over the

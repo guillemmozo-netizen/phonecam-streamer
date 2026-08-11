@@ -172,7 +172,7 @@ answer, so that half cannot be unit-tested. It also writes the report to
 screen cannot be driven:
 
 ```bash
-adb shell run-as com.phonecam.streamer cat files/diagnostics-dump.json
+adb shell run-as com.framecast.app cat files/diagnostics-dump.json
 ```
 
 ## OBS composition sync

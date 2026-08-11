@@ -53,9 +53,9 @@ private const val MEASURE_SECONDS = 10L
  * explained away by anything the app already does.
  *
  * Launch:
- *   adb shell am start -n com.phonecam.streamer/.probe.Camera2ProbeActivity
+ *   adb shell am start -n com.framecast.app/.probe.Camera2ProbeActivity
  * Results: logcat tag Camera2Probe, on screen, and
- *   /sdcard/Android/data/com.phonecam.streamer/files/camera2_probe.txt
+ *   /sdcard/Android/data/com.framecast.app/files/camera2_probe.txt
  */
 // Lint: debug-only measurement harness, launched by hand over adb on a device
 // that already granted CAMERA (the app asked at first run). It targets the
