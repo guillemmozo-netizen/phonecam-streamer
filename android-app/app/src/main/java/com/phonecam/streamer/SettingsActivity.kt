@@ -2,6 +2,7 @@ package com.phonecam.streamer
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import java.io.File
@@ -11,6 +12,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.phonecam.streamer.databinding.ActivitySettingsBinding
@@ -72,10 +74,26 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.backButton.setOnClickListener {
-            finish()
-            overridePendingTransition(R.anim.fade_in, R.anim.slide_down)
+        // Registered on the activity rather than applied per-finish: from
+        // Android 16 the predictive back GESTURE never calls onBackPressed,
+        // so the old override was dead code on exactly the way most people
+        // leave this screen — the panel would vanish instead of sliding down.
+        // This applies to every exit, gesture included.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.fade_in, R.anim.slide_down)
+        } else {
+            // Below Android 14 there is no overrideActivityTransition, and
+            // overriding onBackPressed is not an option either — it is the
+            // very method the gesture stopped calling. The dispatcher is the
+            // one route that works on both sides of that line.
+            onBackPressedDispatcher.addCallback(this) {
+                finish()
+                @Suppress("DEPRECATION")
+                overridePendingTransition(R.anim.fade_in, R.anim.slide_down)
+            }
         }
+
+        binding.backButton.setOnClickListener { finish() }
 
         binding.upgradeButton.setOnClickListener {
             AppToast.info(this, getString(R.string.sub_coming_soon))
@@ -855,9 +873,4 @@ class SettingsActivity : AppCompatActivity() {
         }.start()
     }
 
-    @Deprecated("Use onBackPressedDispatcher")
-    override fun onBackPressed() {
-        super.onBackPressed()
-        overridePendingTransition(R.anim.fade_in, R.anim.slide_down)
-    }
 }

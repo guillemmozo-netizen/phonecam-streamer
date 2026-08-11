@@ -8,12 +8,6 @@ plugins {
 
 android {
     namespace = "com.phonecam.streamer"
-    // Several updated dependencies (androidx.activity, core-ktx, the
-    // androidx.navigationevent transitive) now require compiling against
-    // API 36+ — bumped only compileSdk, not targetSdk/minSdk: compileSdk
-    // just controls which APIs are visible at build time, it doesn't
-    // change the shipped app's runtime behavior the way targetSdk does
-    // (Android's own recommendation: bump these independently).
     compileSdk = 36
 
     defaultConfig {
@@ -29,8 +23,21 @@ android {
         // and every relative name in the manifest, so renaming it would be a
         // large diff that changes nothing anyone can see.
         applicationId = "com.framecast.app"
+        // Android 8.0. Low on purpose — it is what decides how many phones
+        // can install this at all, and 26 already reaches essentially every
+        // device still receiving apps. Going lower would buy a rounding
+        // error's worth of users and cost real guards: notification channels,
+        // adaptive icons and several MediaCodec paths here are all 26+.
         minSdk = 26
-        targetSdk = 34
+        // The highest there is, and Play requires the newest-but-one anyway
+        // (34 would be refused today). Verified on an Android 16 device
+        // rather than assumed, because targetSdk is the one number that
+        // changes runtime behaviour: Android 15+ enforces edge-to-edge with
+        // no opt-out, which is exactly the kind of change that quietly puts
+        // a camera UI under the status bar. Both screens were checked and
+        // the layouts already handled it (fitsSystemWindows / the top bar's
+        // own padding), and a full session still streams at 30fps.
+        targetSdk = 36
         // 15, not 14: lets the public 0.0.14 install cleanly over the
         // rc1 builds already on testers' phones.
         versionCode = 15
