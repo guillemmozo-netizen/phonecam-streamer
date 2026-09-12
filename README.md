@@ -1,6 +1,6 @@
 # FrameCast
 
-**v0.0.14 (alpha pública / public alpha)**
+**v0.1.0 (alpha pública / public alpha)**
 
 ---
 
@@ -54,7 +54,10 @@ propia app te lo indica al activarlo.
    redes privadas (necesario para el modo Wi-Fi).
 
 **En el móvil:**
-1. Instala **FrameCast** desde **Google Play**.
+1. Instala **FrameCast**: desde **Google Play** (en pruebas — enlace de
+   verificador bajo petición) o descargando el
+   [APK firmado directamente desde GitHub](https://github.com/guillemmozo-netizen/phonecam-streamer/releases/latest/download/FrameCast-0.1.0.apk)
+   (requiere permitir "Orígenes desconocidos" en el sistema).
 2. En la app: Ajustes → Control del PC → **"Descargar el instalador de PC"**
    te lleva a este ZIP (GitHub), por si aún no lo tienes en el ordenador.
    Debajo hay un espejo en Google Drive; Drive avisa de “archivo
@@ -204,7 +207,10 @@ you enable it.
    private networks (needed for Wi-Fi mode).
 
 **On the phone:**
-1. Install **FrameCast** from **Google Play**.
+1. Install **FrameCast**: from **Google Play** (in testing — tester link on
+   request) or by downloading the
+   [signed APK directly from GitHub](https://github.com/guillemmozo-netizen/phonecam-streamer/releases/latest/download/FrameCast-0.1.0.apk)
+   (requires allowing "Unknown sources" in system settings).
 2. In the app: Settings → PC control → **"Download the PC installer"** takes
    you to this ZIP (GitHub), in case it is not on your computer yet. A Google
    Drive mirror sits below it; Drive warns about a “suspicious file” for any
