@@ -38,10 +38,16 @@ android {
         // the layouts already handled it (fitsSystemWindows / the top bar's
         // own padding), and a full session still streams at 30fps.
         targetSdk = 36
-        // 15, not 14: lets the public 0.0.14 install cleanly over the
-        // rc1 builds already on testers' phones.
-        versionCode = 15
-        versionName = "0.0.14"
+        // 17, not 16: the versionCode uniqueness is global across every
+        // track, not per-track — uploading the SAME artifact as a fresh
+        // bundle to a second track (closed testing, after the promote-from-
+        // internal flow left it empty) was rejected because 16 was already
+        // consumed by the internal-testing release. No content actually
+        // changed between 16 and 17.
+        versionCode = 17
+        // The first version the public sees, so it is named like one. The
+        // 0.0.x line was internal.
+        versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
